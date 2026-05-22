@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
 import { PlusCircle, ImageIcon, Boxes } from "lucide-react";
 
@@ -45,18 +44,14 @@ export default async function PacksPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {packs.map((p) => {
             const totalUnits = p.items.reduce((s, i) => s + i.quantity, 0);
             return (
-              <Link
-                key={p.id}
-                href={`/packs/${p.id}`}
-                className="group"
-              >
-                <Card className="overflow-hidden h-full transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/50">
-                  {/* Imagen / placeholder */}
-                  <div className="relative aspect-[4/3] bg-gradient-to-br from-muted to-muted/60 -mt-6 -mx-6 mb-0">
+              <Link key={p.id} href={`/packs/${p.id}`} className="group">
+                <div className="rounded-2xl border bg-card overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/50 active:scale-[0.99]">
+                  {/* Imagen */}
+                  <div className="relative aspect-[5/3] bg-gradient-to-br from-muted to-muted/60">
                     {p.imageUrl ? (
                       <Image
                         src={p.imageUrl}
@@ -70,26 +65,40 @@ export default async function PacksPage() {
                         <ImageIcon className="size-12 text-muted-foreground/40" />
                       </div>
                     )}
-                    <Badge
-                      variant={p.isActive ? "default" : "secondary"}
-                      className="absolute top-3 right-3 shadow-sm"
-                    >
-                      {p.isActive ? "Activo" : "Inactivo"}
-                    </Badge>
-                    <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm rounded-md px-2 py-1 text-[10px] font-mono text-muted-foreground shadow-sm">
-                      {p.sku}
-                    </div>
+                    {!p.isActive && (
+                      <Badge
+                        variant="secondary"
+                        className="absolute top-2 right-2 shadow-sm"
+                      >
+                        Inactivo
+                      </Badge>
+                    )}
                   </div>
 
-                  <CardContent className="pt-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-base leading-tight group-hover:text-primary transition-colors">
-                        {p.name}
-                      </h3>
-                      <span className="text-lg font-bold tabular-nums shrink-0">
-                        {formatCurrency(p.price)}
+                  {/* Contenido */}
+                  <div className="p-4 flex-1 flex flex-col gap-3">
+                    {/* Header: SKU + estado */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {p.sku}
                       </span>
+                      {p.isActive && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-green-700 dark:text-green-400">
+                          <span className="size-1.5 rounded-full bg-green-600" />
+                          Activo
+                        </span>
+                      )}
                     </div>
+
+                    {/* Nombre */}
+                    <h3 className="font-bold text-base leading-tight group-hover:text-primary transition-colors">
+                      {p.name}
+                    </h3>
+
+                    {/* Precio (full width, prominente) */}
+                    <p className="text-2xl font-bold tabular-nums leading-none">
+                      {formatCurrency(p.price)}
+                    </p>
 
                     {p.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2">
@@ -97,7 +106,8 @@ export default async function PacksPage() {
                       </p>
                     )}
 
-                    <div className="border-t pt-3">
+                    {/* Contenido */}
+                    <div className="border-t pt-3 mt-auto">
                       <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
                         <Boxes className="size-3" />
                         <span>Contenido · {totalUnits} unidades</span>
@@ -118,8 +128,8 @@ export default async function PacksPage() {
                         ))}
                       </ul>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </Link>
             );
           })}

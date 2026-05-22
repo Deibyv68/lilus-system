@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
 import { PlusCircle, ImageIcon, Package, FileText } from "lucide-react";
 
@@ -48,8 +47,9 @@ export default async function ProductsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {products.map((p) => (
             <Link key={p.id} href={`/productos/${p.id}`} className="group">
-              <Card className="overflow-hidden h-full transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/50 active:scale-[0.98]">
-                <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/60 -mt-6 -mx-6 mb-0">
+              <div className="rounded-2xl border bg-card overflow-hidden h-full flex flex-col transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/50 active:scale-[0.98]">
+                {/* Imagen */}
+                <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/60">
                   {p.imageUrl ? (
                     <Image
                       src={p.imageUrl}
@@ -82,29 +82,30 @@ export default async function ProductsPage() {
                   </div>
                 </div>
 
-                <CardContent className="pt-3 pb-4 space-y-1.5">
-                  <p className="text-[10px] font-mono text-muted-foreground">
+                {/* Contenido */}
+                <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5">
+                  <p className="text-[10px] font-mono text-muted-foreground truncate">
                     {p.sku}
                   </p>
-                  <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5em]">
                     {p.name}
                   </h3>
-                  <div className="flex items-end justify-between gap-2 pt-1">
-                    <span className="text-lg font-bold tabular-nums">
+                  <div className="flex items-end justify-between gap-2 mt-auto pt-1">
+                    <span className="text-lg font-bold tabular-nums leading-none">
                       {formatCurrency(p.price)}
                     </span>
                     {p.stock > 0 ? (
-                      <span className="text-[10px] text-muted-foreground tabular-nums">
-                        Stock: {p.stock}
+                      <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                        Stock {p.stock}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-amber-600 font-medium">
+                      <span className="text-[10px] text-amber-600 font-medium whitespace-nowrap">
                         Sin stock
                       </span>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
