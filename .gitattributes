@@ -1,0 +1,13 @@
+# Forzar LF para scripts y archivos de configuración que se ejecutan en Linux.
+# Sin esto, Windows convierte LF→CRLF al checkout y los shell scripts fallan
+# en la laptop con "command not found".
+
+*.sh                 text eol=lf
+deploy/*.service     text eol=lf
+.env*                text eol=lf
+Dockerfile           text eol=lf
+*.yaml               text eol=lf
+*.yml                text eol=lf
+
+# El resto sigue el comportamiento por defecto.
+*                    text=auto
