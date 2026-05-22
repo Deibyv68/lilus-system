@@ -1,0 +1,16 @@
+[Unit]
+Description=Cloudflare Tunnel for LILUS
+After=network.target lilus.service
+Requires=lilus.service
+
+[Service]
+Type=simple
+User=__USER__
+ExecStart=/usr/local/bin/cloudflared tunnel --url http://localhost:3000 --no-autoupdate
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

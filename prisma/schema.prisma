@@ -1,0 +1,229 @@
+// LILUS — Sistema de gestión de ventas de jabones artesanales
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Productos ----------
+
+model Product {
+  id              String   @id @default(cuid())
+  sku             String   @unique
+  name            String
+  description     String?
+  shortName       String?  // nombre corto para etiqueta 2x1
+  imageUrl        String?  // /uploads/products/xxx.jpg
+  labelPdfUrl     String?  // PDF de etiqueta de producto (la que el usuario sube)
+  price           Float    // precio de venta unitario
+  productionCost  Float    @default(0)
+  weightGrams     Float?   // gramos, para envíos
+  ingredients     String?  // texto libre, va en la etiqueta 2x1
+  shelfLifeMonths Int?     @default(12) // meses de vida útil por defecto
+  stock           Int      @default(0)  // stock manual (no se descuenta de packs)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  variants        ProductVariant[]
+  packItems       PackItem[]
+  orderItems      OrderItem[]
+  productionUnits ProductionUnit[]
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  name      String  // ej "Lavanda", "Avena", "Tamaño grande"
+  sku       String  @unique
+  price     Float?  // si null, hereda del producto
+  stock     Int     @default(0)
+  isActive  Boolean @default(true)
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+}
+
+// ---------- Packs ----------
+
+model Pack {
+  id              String   @id @default(cuid())
+  sku             String   @unique
+  name            String
+  description     String?
+  imageUrl        String?
+  price           Float
+  productionCost  Float    @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items      PackItem[]
+  orderItems OrderItem[]
+}
+
+model PackItem {
+  id        String @id @default(cuid())
+  packId    String
+  productId String
+  quantity  Int    @default(1)
+
+  pack    Pack    @relation(fields: [packId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([packId, productId])
+}
+
+// ---------- Envíos ----------
+
+model ShippingZone {
+  id        String   @id @default(cuid())
+  name      String   @unique // "Quito", "Fuera de Quito"
+  isDefault Boolean  @default(false) // zona usada por defecto si no se selecciona
+  createdAt DateTime @default(now())
+
+  rates     ShippingRate[]
+  addresses ShippingAddress[]
+  orders    Order[]
+}
+
+model Carrier {
+  id                  String   @id @default(cuid())
+  name                String   @unique // "Servientrega", "Tramaco", "Laar"
+  isActive            Boolean  @default(true)
+  trackingUrlTemplate String?  // ej: "https://www.servientrega.com.ec/Tracking/?guia={tracking}"
+  createdAt           DateTime @default(now())
+
+  rates  ShippingRate[]
+  orders Order[]
+}
+
+model ShippingRate {
+  id        String  @id @default(cuid())
+  zoneId    String
+  carrierId String
+  price     Float   // tarifa fija por envío
+  notes     String?
+
+  zone    ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  carrier Carrier      @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+
+  @@unique([zoneId, carrierId])
+}
+
+// ---------- Clientes ----------
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  cedula    String?  // cédula o RUC
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addresses ShippingAddress[]
+  orders    Order[]
+}
+
+model ShippingAddress {
+  id         String  @id @default(cuid())
+  customerId String
+  zoneId     String? // Quito / Fuera de Quito
+  province   String
+  city       String
+  address    String  // dirección principal
+  reference  String? // referencia adicional
+  isDefault  Boolean @default(false)
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  zone     ShippingZone? @relation(fields: [zoneId], references: [id])
+  orders   Order[]
+}
+
+// Necesitamos relación inversa
+// (Prisma exige declarar la opuesta en ShippingZone -> addresses)
+
+// ---------- Pedidos ----------
+
+model Order {
+  id                 String      @id @default(cuid())
+  orderNumber        String      @unique // ej "LILUS-000123"
+  status             OrderStatus @default(PENDING)
+  customerId         String
+  shippingAddressId  String?
+  carrierId          String?
+  zoneId             String?
+  shippingCost       Float       @default(0)
+  subtotal           Float       @default(0)
+  total              Float       @default(0)
+  trackingNumber     String?     // guía de la transportadora
+  shippedAt          DateTime?   // cuándo se marcó como enviado
+  notes              String?
+  source             String?     // "WhatsApp", "Instagram", "Manual"...
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  shippingAddress ShippingAddress? @relation(fields: [shippingAddressId], references: [id])
+  carrier         Carrier?         @relation(fields: [carrierId], references: [id])
+  zone            ShippingZone?    @relation(fields: [zoneId], references: [id])
+  items           OrderItem[]
+  productionUnits ProductionUnit[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String?
+  variantId   String?
+  packId      String?
+  itemName    String  // snapshot del nombre
+  itemSku     String  // snapshot del SKU
+  quantity    Int     @default(1)
+  unitPrice   Float
+  lineTotal   Float
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?        @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+  pack    Pack?           @relation(fields: [packId], references: [id])
+}
+
+// Cada unidad física que se va a empaquetar (sirve para etiqueta 2x1).
+// Si el pedido lleva un pack con 3 jabones, se generan 3 ProductionUnit.
+model ProductionUnit {
+  id              String   @id @default(cuid())
+  orderId         String
+  productId       String
+  productName     String   // snapshot
+  productSku      String   // snapshot
+  batchCode       String   // lote: ej "L20260521-001"
+  manufactureDate DateTime @default(now())
+  expiryDate      DateTime // calculada en base a shelfLifeMonths
+  ingredients     String?  // snapshot
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+// ---------- Configuración global ----------
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
