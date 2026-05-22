@@ -4,16 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
-import { PlusCircle, FileText } from "lucide-react";
+import { PlusCircle, ImageIcon, Package, FileText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -27,102 +20,93 @@ export default async function ProductsPage() {
     <>
       <PageHeader
         title="Productos"
-        description="Jabones y productos individuales del catálogo."
+        description={
+          products.length > 0
+            ? `${products.length} productos en el catálogo`
+            : "Catálogo vacío"
+        }
         actions={
-          <Button asChild>
+          <Button asChild size="lg" className="h-11">
             <Link href="/productos/nuevo">
-              <PlusCircle className="size-4" /> Nuevo producto
+              <PlusCircle className="size-4" /> Nuevo
             </Link>
           </Button>
         }
       />
 
       {products.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed p-12 text-center">
+        <div className="rounded-2xl border-2 border-dashed p-10 text-center">
+          <Package className="size-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground mb-4">
             Aún no tienes productos registrados.
           </p>
-          <Button asChild>
+          <Button asChild size="lg">
             <Link href="/productos/nuevo">Crear el primero</Link>
           </Button>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60px]"></TableHead>
-                <TableHead>Producto</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead className="text-right">Precio</TableHead>
-                <TableHead className="text-right">Costo</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Etiqueta</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>
-                    {p.imageUrl ? (
-                      <Image
-                        src={p.imageUrl}
-                        alt={p.name}
-                        width={40}
-                        height={40}
-                        className="rounded object-cover size-10"
-                      />
-                    ) : (
-                      <div className="size-10 rounded bg-muted" />
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {products.map((p) => (
+            <Link key={p.id} href={`/productos/${p.id}`} className="group">
+              <Card className="overflow-hidden h-full transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/50 active:scale-[0.98]">
+                <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/60 -mt-6 -mx-6 mb-0">
+                  {p.imageUrl ? (
+                    <Image
+                      src={p.imageUrl}
+                      alt={p.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <ImageIcon className="size-10 text-muted-foreground/40" />
+                    </div>
+                  )}
+
+                  {/* Badges flotantes */}
+                  <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                    {!p.isActive && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Inactivo
+                      </Badge>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/productos/${p.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {p.name}
-                    </Link>
-                    {p._count.variants > 0 && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        ({p._count.variants} variantes)
+                    {p.labelPdfUrl && (
+                      <div
+                        className="size-7 rounded-md bg-background/90 backdrop-blur-sm flex items-center justify-center shadow-sm"
+                        title="Tiene etiqueta PDF cargada"
+                      >
+                        <FileText className="size-3.5 text-primary" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <CardContent className="pt-3 pb-4 space-y-1.5">
+                  <p className="text-[10px] font-mono text-muted-foreground">
+                    {p.sku}
+                  </p>
+                  <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                    {p.name}
+                  </h3>
+                  <div className="flex items-end justify-between gap-2 pt-1">
+                    <span className="text-lg font-bold tabular-nums">
+                      {formatCurrency(p.price)}
+                    </span>
+                    {p.stock > 0 ? (
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        Stock: {p.stock}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-600 font-medium">
+                        Sin stock
                       </span>
                     )}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{p.sku}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCurrency(p.price)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">
-                    {formatCurrency(p.productionCost)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {p.stock}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={p.isActive ? "default" : "secondary"}>
-                      {p.isActive ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {p.labelPdfUrl ? (
-                      <a
-                        href={p.labelPdfUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        <FileText className="size-3" /> PDF
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
         </div>
       )}
     </>

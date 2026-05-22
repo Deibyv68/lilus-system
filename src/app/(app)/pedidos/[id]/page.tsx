@@ -2,17 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { PrintCenter } from "./print-center";
 import { StatusSelector } from "./status-selector";
@@ -57,16 +48,17 @@ export default async function OrderDetailPage({
 
   return (
     <>
+      <div className="mb-4">
+        <Link
+          href="/pedidos"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" /> Pedidos
+        </Link>
+      </div>
       <PageHeader
         title={`Pedido ${order.orderNumber}`}
         description={`${order.customer.name} · ${formatDateTime(order.createdAt)}`}
-        actions={
-          <Button variant="outline" asChild>
-            <Link href="/pedidos">
-              <ArrowLeft className="size-4" /> Volver
-            </Link>
-          </Button>
-        }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -74,48 +66,38 @@ export default async function OrderDetailPage({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                Productos
+                <span>Productos</span>
                 <Badge variant="outline">{order.status}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ítem</TableHead>
-                    <TableHead className="text-right">Cant.</TableHead>
-                    <TableHead className="text-right">P. Unit.</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {order.items.map((it) => (
-                    <TableRow key={it.id}>
-                      <TableCell>
-                        <p className="font-medium">{it.itemName}</p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {it.itemSku}
-                          {it.packId && " · Pack"}
-                        </p>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {it.quantity}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatCurrency(it.unitPrice)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatCurrency(it.lineTotal)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ul className="divide-y -mx-2">
+                {order.items.map((it) => (
+                  <li
+                    key={it.id}
+                    className="px-2 py-3 flex items-start justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium leading-tight">{it.itemName}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        {it.itemSku}
+                        {it.packId && " · Pack"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 tabular-nums">
+                        {it.quantity} × {formatCurrency(it.unitPrice)}
+                      </p>
+                    </div>
+                    <span className="font-semibold tabular-nums shrink-0">
+                      {formatCurrency(it.lineTotal)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
 
-              <div className="border-t mt-4 pt-4 space-y-1.5 text-sm max-w-xs ml-auto">
+              <div className="border-t mt-3 pt-3 space-y-1.5 text-sm">
                 <Row label="Subtotal" value={formatCurrency(order.subtotal)} />
                 <Row
-                  label={`Envío (${order.carrier?.name ?? "—"})`}
+                  label={`Envío${order.carrier ? ` · ${order.carrier.name}` : ""}`}
                   value={formatCurrency(order.shippingCost)}
                 />
                 <Row label="Total" value={formatCurrency(order.total)} strong />
