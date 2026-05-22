@@ -9,6 +9,9 @@ const ALLOWED_KEYS = new Set([
   "sender_phone",
   "sender_address",
   "order_prefix",
+  "print_agent_enabled",
+  "print_agent_token",
+  "print_agent_printer",
 ]);
 
 export async function saveSettingsAction(formData: FormData) {
@@ -20,6 +23,30 @@ export async function saveSettingsAction(formData: FormData) {
       create: { key: k, value: v },
     });
   }
+  revalidatePath("/configuracion");
+  return { ok: true as const };
+}
+
+export async function savePrintAgentSettingsAction(args: {
+  enabled: boolean;
+  token: string;
+  printer: string;
+}) {
+  await prisma.setting.upsert({
+    where: { key: "print_agent_enabled" },
+    update: { value: args.enabled ? "true" : "false" },
+    create: { key: "print_agent_enabled", value: args.enabled ? "true" : "false" },
+  });
+  await prisma.setting.upsert({
+    where: { key: "print_agent_token" },
+    update: { value: args.token.trim() },
+    create: { key: "print_agent_token", value: args.token.trim() },
+  });
+  await prisma.setting.upsert({
+    where: { key: "print_agent_printer" },
+    update: { value: args.printer.trim() },
+    create: { key: "print_agent_printer", value: args.printer.trim() },
+  });
   revalidatePath("/configuracion");
   return { ok: true as const };
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "./settings-form";
+import { PrintAgentSettings } from "./print-agent-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -13,24 +14,41 @@ export default async function SettingsPage() {
     <>
       <PageHeader
         title="Configuración"
-        description="Datos del remitente que aparecen en la etiqueta de envío."
+        description="Datos del remitente y agente de impresión."
       />
-      <Card>
-        <CardHeader>
-          <CardTitle>Remitente</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SettingsForm
-            initial={{
-              brand_name: map.brand_name ?? "LILUS",
-              sender_name: map.sender_name ?? "LILUS Jabones Artesanales",
-              sender_phone: map.sender_phone ?? "",
-              sender_address: map.sender_address ?? "Quito, Ecuador",
-              order_prefix: map.order_prefix ?? "LILUS",
-            }}
-          />
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Remitente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SettingsForm
+              initial={{
+                brand_name: map.brand_name ?? "LILUS",
+                sender_name: map.sender_name ?? "LILUS Jabones Artesanales",
+                sender_phone: map.sender_phone ?? "",
+                sender_address: map.sender_address ?? "Quito, Ecuador",
+                order_prefix: map.order_prefix ?? "LILUS",
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Agente de impresión</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PrintAgentSettings
+              initial={{
+                enabled: map.print_agent_enabled === "true",
+                token: map.print_agent_token ?? "",
+                printer: map.print_agent_printer ?? "",
+              }}
+            />
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

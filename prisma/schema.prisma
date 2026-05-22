@@ -227,3 +227,28 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// ---------- Cola de impresión ----------
+// Pattern: el agente de impresión (en la PC del 1er piso) hace polling.
+// LILUS crea PrintJob → agente lo recoge → imprime → marca como done/failed.
+
+model PrintJob {
+  id          String         @id @default(cuid())
+  orderId     String?        // pedido del que viene (puede ser null para pruebas)
+  kind        String         // "shipping" | "product-labels" | "expiry-labels" | "box-logo"
+  printerName String         // nombre de la impresora destino en Windows
+  copies      Int            @default(1)
+  pdfBase64   String         // PDF a imprimir, encodeado
+  status      PrintJobStatus @default(PENDING)
+  error       String?
+  createdAt   DateTime       @default(now())
+  pickedAt    DateTime?      // cuando el agente lo agarró
+  finishedAt  DateTime?      // cuando reportó done/failed
+}
+
+enum PrintJobStatus {
+  PENDING
+  PICKED_UP
+  DONE
+  FAILED
+}

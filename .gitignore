@@ -48,3 +48,9 @@ next-env.d.ts
 # SQLite local
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# Print agent — secretos y logs
+/print-agent/.env
+/print-agent/agent.log
+/print-agent/node_modules
+/print-agent/nssm.exe

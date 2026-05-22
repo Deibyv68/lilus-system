@@ -1,0 +1,13 @@
+{
+  "name": "lilus-print-agent",
+  "version": "1.0.0",
+  "description": "Agente local que recoge trabajos de impresión de LILUS y los envía a la MUNBYN por USB",
+  "private": true,
+  "main": "agent.js",
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "dependencies": {
+    "pdf-to-printer": "^5.6.0"
+  }
+}

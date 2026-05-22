@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 import {
   Printer,
   FileText,
@@ -17,9 +18,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Sticker,
+  Check,
+  Loader2,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 
 type Missing = { id: string; name: string; sku: string };
+type PrintKind = "shipping" | "product-labels" | "expiry-labels" | "box-logo";
 
 const OFFSET_STORAGE_KEY = "lilus.productLabelOffset";
 const STEP_MM = 0.5;
@@ -29,17 +35,28 @@ export function PrintCenter({
   orderId,
   missingLabels,
   packCount,
+  agentEnabled,
 }: {
   orderId: string;
   missingLabels: Missing[];
   packCount: number;
+  agentEnabled: boolean;
 }) {
   const [openedAny, setOpenedAny] = useState(false);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const [boxLogoCopies, setBoxLogoCopies] = useState(Math.max(1, packCount));
 
-  // Cargar último offset usado (por navegador)
+  // Estado por tipo de impresión: idle | sending | printing | done | failed
+  const [printStatus, setPrintStatus] = useState<
+    Record<PrintKind, "idle" | "sending" | "printing" | "done" | "failed">
+  >({
+    shipping: "idle",
+    "product-labels": "idle",
+    "expiry-labels": "idle",
+    "box-logo": "idle",
+  });
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(OFFSET_STORAGE_KEY);
@@ -51,7 +68,6 @@ export function PrintCenter({
     } catch {}
   }, []);
 
-  // Persistir cuando cambie
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -65,43 +81,93 @@ export function PrintCenter({
     return Math.max(-MAX_MM, Math.min(MAX_MM, v));
   }
 
-  function openShipping() {
-    setOpenedAny(true);
-    window.open(`/api/orders/${orderId}/shipping-label`, "_blank", "noopener");
+  // ───────── Impresión directa via agente ─────────
+  async function printViaAgent(
+    kind: PrintKind,
+    extras: { copies?: number; offsetX?: number; offsetY?: number } = {}
+  ) {
+    setPrintStatus((s) => ({ ...s, [kind]: "sending" }));
+    try {
+      const res = await fetch(`/api/orders/${orderId}/print`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, ...extras }),
+      });
+      const data = (await res.json()) as { jobId?: string; error?: string };
+      if (!res.ok || !data.jobId) {
+        throw new Error(data.error ?? "Error encolando trabajo");
+      }
+      setPrintStatus((s) => ({ ...s, [kind]: "printing" }));
+      // Polling estado del trabajo
+      await pollJobStatus(data.jobId, kind);
+    } catch (e) {
+      setPrintStatus((s) => ({ ...s, [kind]: "failed" }));
+      toast.error((e as Error).message);
+    }
   }
 
-  function openExpiry() {
-    setOpenedAny(true);
-    window.open(`/api/orders/${orderId}/expiry-labels`, "_blank", "noopener");
-  }
-
-  function openBoxLogo() {
-    setOpenedAny(true);
-    const params = new URLSearchParams();
-    params.set("copies", String(boxLogoCopies));
-    window.open(
-      `/api/orders/${orderId}/box-logo?${params.toString()}`,
-      "_blank",
-      "noopener"
+  async function pollJobStatus(jobId: string, kind: PrintKind) {
+    const maxAttempts = 30; // 30 * 1s = 30 seg
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      try {
+        const res = await fetch(`/api/print-queue/${jobId}/status`);
+        if (!res.ok) continue;
+        const job = (await res.json()) as {
+          status: "PENDING" | "PICKED_UP" | "DONE" | "FAILED";
+          error?: string | null;
+        };
+        if (job.status === "DONE") {
+          setPrintStatus((s) => ({ ...s, [kind]: "done" }));
+          toast.success("Impreso ✓");
+          setTimeout(() => setPrintStatus((s) => ({ ...s, [kind]: "idle" })), 2500);
+          return;
+        }
+        if (job.status === "FAILED") {
+          setPrintStatus((s) => ({ ...s, [kind]: "failed" }));
+          toast.error(job.error ?? "El agente reportó error");
+          return;
+        }
+      } catch {}
+    }
+    // Timeout
+    setPrintStatus((s) => ({ ...s, [kind]: "failed" }));
+    toast.error(
+      "No hay respuesta del agente. Verifica que esté corriendo en la PC."
     );
   }
 
-  function openProductLabels() {
+  // ───────── Fallback: abrir PDF en pestaña ─────────
+  function openPdf(path: string) {
     setOpenedAny(true);
-    const params = new URLSearchParams();
-    if (offsetX !== 0) params.set("offsetX", String(offsetX));
-    if (offsetY !== 0) params.set("offsetY", String(offsetY));
-    const qs = params.toString();
-    window.open(
-      `/api/orders/${orderId}/product-labels${qs ? `?${qs}` : ""}`,
-      "_blank",
-      "noopener"
-    );
+    window.open(`/api/orders/${orderId}/${path}`, "_blank", "noopener");
   }
 
-  function resetOffset() {
-    setOffsetX(0);
-    setOffsetY(0);
+  // ───────── Acciones por tipo ─────────
+  function handlePrint(kind: PrintKind) {
+    if (kind === "shipping") {
+      if (agentEnabled) return printViaAgent("shipping");
+      return openPdf("shipping-label");
+    }
+    if (kind === "product-labels") {
+      if (agentEnabled)
+        return printViaAgent("product-labels", { offsetX, offsetY });
+      const params = new URLSearchParams();
+      if (offsetX !== 0) params.set("offsetX", String(offsetX));
+      if (offsetY !== 0) params.set("offsetY", String(offsetY));
+      return openPdf(`product-labels${params.toString() ? `?${params}` : ""}`);
+    }
+    if (kind === "expiry-labels") {
+      if (agentEnabled) return printViaAgent("expiry-labels");
+      return openPdf("expiry-labels");
+    }
+    if (kind === "box-logo") {
+      if (agentEnabled)
+        return printViaAgent("box-logo", { copies: boxLogoCopies });
+      const params = new URLSearchParams();
+      params.set("copies", String(boxLogoCopies));
+      return openPdf(`box-logo?${params}`);
+    }
   }
 
   const isAdjusted = offsetX !== 0 || offsetY !== 0;
@@ -115,27 +181,37 @@ export function PrintCenter({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-xs text-muted-foreground">
-          Cada botón abre el PDF en una nueva pestaña. Usa Ctrl+P y selecciona
-          la impresora MUNBYN configurada en Windows.
-        </p>
+        {/* Estado del agente */}
+        <div
+          className={`flex items-center gap-2 text-xs p-2 rounded-md border ${
+            agentEnabled
+              ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900 text-green-800 dark:text-green-300"
+              : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300"
+          }`}
+        >
+          {agentEnabled ? (
+            <Wifi className="size-4 shrink-0" />
+          ) : (
+            <WifiOff className="size-4 shrink-0" />
+          )}
+          <span>
+            {agentEnabled
+              ? "Impresión directa activa · sale por la MUNBYN"
+              : "Agente desactivado · abrirá el PDF para imprimir manualmente"}
+          </span>
+        </div>
 
         {/* Etiqueta de envío */}
-        <Button
-          type="button"
-          className="w-full justify-start h-auto py-3"
-          onClick={openShipping}
-        >
-          <Printer className="size-4 shrink-0" />
-          <span className="flex-1 text-left">
-            <span className="block text-sm font-medium">Etiqueta de envío</span>
-            <span className="block text-[11px] font-normal opacity-75">
-              4×6 pulgadas · MUNBYN
-            </span>
-          </span>
-        </Button>
+        <PrintButton
+          icon={Printer}
+          title="Etiqueta de envío"
+          subtitle="4×6 pulgadas · una"
+          status={printStatus.shipping}
+          primary
+          onClick={() => handlePrint("shipping")}
+        />
 
-        {/* Logo de caja — solo si el pedido tiene packs */}
+        {/* Logo de caja — solo si hay packs */}
         {packCount > 0 && (
           <div className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-3 space-y-3">
             <div className="flex items-start gap-2">
@@ -143,17 +219,15 @@ export function PrintCenter({
               <div className="flex-1">
                 <p className="text-sm font-semibold">Logo para caja de envío</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Este pedido lleva {packCount} pack{packCount > 1 ? "s" : ""}.
-                  Imprime el sello LILUS para pegar en la caja.
+                  Este pedido lleva {packCount} pack
+                  {packCount > 1 ? "s" : ""}. Imprime el sello LILUS para la
+                  caja.
                 </p>
               </div>
             </div>
-
             <div className="flex items-end gap-2">
               <div className="flex-1">
-                <Label className="text-[11px] font-medium">
-                  Cantidad de copias
-                </Label>
+                <Label className="text-[11px] font-medium">Copias</Label>
                 <Input
                   type="number"
                   min={1}
@@ -161,40 +235,36 @@ export function PrintCenter({
                   value={boxLogoCopies}
                   onChange={(e) =>
                     setBoxLogoCopies(
-                      Math.max(1, Math.min(20, parseInt(e.target.value || "1", 10)))
+                      Math.max(1, Math.min(20, parseInt(e.target.value || "1")))
                     )
                   }
-                  className="h-8 mt-1 tabular-nums"
+                  className="h-9 mt-1 tabular-nums"
                 />
               </div>
-              <Button
-                type="button"
-                onClick={openBoxLogo}
-                className="h-8"
-              >
-                <Sticker className="size-4" /> Generar logo
-              </Button>
+              <PrintButton
+                icon={Sticker}
+                title="Imprimir"
+                status={printStatus["box-logo"]}
+                compact
+                onClick={() => handlePrint("box-logo")}
+              />
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              Formato 4×4 pulgadas (sticker cuadrado). Por defecto se imprime
-              una por cada pack en el pedido.
-            </p>
           </div>
         )}
 
-        {/* Etiquetas de producto + ajuste de offset */}
+        {/* Etiquetas de producto con ajuste */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
           <div className="flex items-center gap-2">
             <FileText className="size-4 shrink-0" />
-            <div className="flex-1 min-w-0">
+            <div className="flex-1">
               <p className="text-sm font-medium">Etiquetas de producto</p>
               <p className="text-[11px] text-muted-foreground">
-                PDFs subidos por cada producto · una etiqueta por unidad
+                Una por unidad · PDFs subidos por producto
               </p>
             </div>
           </div>
 
-          {/* Panel de ajuste de posición */}
+          {/* Ajuste de offset */}
           <div className="rounded-md bg-background border p-3 space-y-3">
             <div className="flex items-start gap-2">
               <Move className="size-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -203,19 +273,14 @@ export function PrintCenter({
                   Ajustar posición (mm)
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                  Si la etiqueta sale ligeramente descuadrada en la impresora,
-                  mueve el diseño antes de imprimir.
+                  Si la etiqueta queda descuadrada en la impresora, mueve el
+                  diseño antes de imprimir.
                   <br />
-                  <strong>Horizontal (X):</strong> + derecha, − izquierda.
-                  <br />
-                  <strong>Vertical (Y):</strong> + arriba, − abajo.
-                  <br />
-                  El ajuste se recuerda en este navegador para los próximos
-                  pedidos.
+                  <strong>X</strong>: + derecha, − izquierda ·{" "}
+                  <strong>Y</strong>: + arriba, − abajo
                 </p>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <OffsetInput
                 label="X (horizontal)"
@@ -232,86 +297,77 @@ export function PrintCenter({
                 onChange={(v) => setOffsetY(clamp(v))}
               />
             </div>
-
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">
                 {isAdjusted ? (
                   <>
-                    Ajuste actual:{" "}
+                    Ajuste:{" "}
                     <strong className="text-foreground tabular-nums">
                       X {offsetX > 0 ? "+" : ""}
-                      {offsetX} mm · Y {offsetY > 0 ? "+" : ""}
+                      {offsetX} · Y {offsetY > 0 ? "+" : ""}
                       {offsetY} mm
                     </strong>
                   </>
                 ) : (
-                  "Sin ajuste (imprime tal cual el PDF original)"
+                  "Sin ajuste"
                 )}
               </span>
               {isAdjusted && (
                 <button
                   type="button"
-                  onClick={resetOffset}
+                  onClick={() => {
+                    setOffsetX(0);
+                    setOffsetY(0);
+                  }}
                   className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                 >
-                  <RotateCcw className="size-3" /> Restablecer
+                  <RotateCcw className="size-3" /> Reset
                 </button>
               )}
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={openProductLabels}
-          >
-            <FileText className="size-4" />
-            {isAdjusted ? "Generar e imprimir con ajuste" : "Generar e imprimir"}
-          </Button>
+          <PrintButton
+            icon={FileText}
+            title={
+              isAdjusted ? "Imprimir con ajuste" : "Imprimir etiquetas"
+            }
+            status={printStatus["product-labels"]}
+            onClick={() => handlePrint("product-labels")}
+          />
         </div>
 
         {/* Etiquetas 2x1 */}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full justify-start h-auto py-3"
-          onClick={openExpiry}
-        >
-          <FileText className="size-4 shrink-0" />
-          <span className="flex-1 text-left">
-            <span className="block text-sm font-medium">
-              Etiquetas 2×1 (caducidad)
-            </span>
-            <span className="block text-[11px] font-normal opacity-75">
-              Lote y fecha de caducidad · una por unidad física
-            </span>
-          </span>
-        </Button>
+        <PrintButton
+          icon={FileText}
+          title="Etiquetas 2×1 (caducidad)"
+          subtitle="Lote y fecha de caducidad · una por unidad"
+          status={printStatus["expiry-labels"]}
+          onClick={() => handlePrint("expiry-labels")}
+        />
 
+        {/* Faltantes */}
         {missingLabels.length > 0 && (
           <Alert>
             <AlertTriangle className="size-4" />
-            <AlertTitle>Faltan etiquetas PDF de algunos productos</AlertTitle>
+            <AlertTitle>Productos sin PDF de etiqueta</AlertTitle>
             <AlertDescription>
               <ul className="text-xs mt-1 list-disc pl-4">
                 {missingLabels.map((m) => (
                   <li key={m.id}>
-                    {m.name} <span className="font-mono">({m.sku})</span>
+                    {m.name}{" "}
+                    <span className="font-mono">({m.sku})</span>
                   </li>
                 ))}
               </ul>
-              <p className="text-xs mt-2">
-                Súbelos desde la ficha de cada producto.
-              </p>
             </AlertDescription>
           </Alert>
         )}
 
-        {openedAny && (
+        {openedAny && !agentEnabled && (
           <p className="text-[11px] text-muted-foreground border-t pt-2">
-            Si tu navegador bloqueó las pestañas, permite popups para este
-            sitio.
+            Los PDFs se abren en nueva pestaña. Si tu navegador los bloquea,
+            permite popups para este sitio.
           </p>
         )}
       </CardContent>
@@ -319,6 +375,78 @@ export function PrintCenter({
   );
 }
 
+// ──────────────────────────────────────────────────────────
+// Botón con estado
+// ──────────────────────────────────────────────────────────
+function PrintButton({
+  icon: Icon,
+  title,
+  subtitle,
+  status,
+  onClick,
+  primary,
+  compact,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  subtitle?: string;
+  status: "idle" | "sending" | "printing" | "done" | "failed";
+  onClick: () => void;
+  primary?: boolean;
+  compact?: boolean;
+}) {
+  const isBusy = status === "sending" || status === "printing";
+  const isDone = status === "done";
+  const isFailed = status === "failed";
+
+  let DisplayIcon: React.ComponentType<{ className?: string }> = Icon;
+  let statusText: string | null = null;
+  if (isBusy) {
+    DisplayIcon = Loader2;
+    statusText =
+      status === "sending" ? "Enviando…" : "Imprimiendo…";
+  } else if (isDone) {
+    DisplayIcon = Check;
+    statusText = "Impreso";
+  } else if (isFailed) {
+    DisplayIcon = AlertTriangle;
+    statusText = "Error";
+  }
+
+  return (
+    <Button
+      type="button"
+      variant={primary ? "default" : "outline"}
+      className={`${compact ? "h-9" : "w-full justify-start h-auto py-3"} ${
+        isDone ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""
+      } ${isFailed ? "border-destructive text-destructive" : ""}`}
+      onClick={onClick}
+      disabled={isBusy}
+    >
+      <DisplayIcon
+        className={`size-4 shrink-0 ${isBusy ? "animate-spin" : ""}`}
+      />
+      {compact ? (
+        statusText ?? title
+      ) : (
+        <span className="flex-1 text-left">
+          <span className="block text-sm font-medium">
+            {statusText ?? title}
+          </span>
+          {subtitle && (
+            <span className="block text-[11px] font-normal opacity-75">
+              {subtitle}
+            </span>
+          )}
+        </span>
+      )}
+    </Button>
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+// Input de offset
+// ──────────────────────────────────────────────────────────
 function OffsetInput({
   label,
   iconMinus,

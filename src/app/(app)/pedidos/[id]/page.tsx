@@ -46,6 +46,12 @@ export default async function OrderDetailPage({
     .filter((i) => i.packId)
     .reduce((sum, i) => sum + i.quantity, 0);
 
+  // ¿Está activo el agente de impresión?
+  const agentEnabledSetting = await prisma.setting.findUnique({
+    where: { key: "print_agent_enabled" },
+  });
+  const agentEnabled = agentEnabledSetting?.value === "true";
+
   return (
     <>
       <div className="mb-4">
@@ -239,6 +245,7 @@ export default async function OrderDetailPage({
             orderId={order.id}
             missingLabels={missingLabels}
             packCount={packCount}
+            agentEnabled={agentEnabled}
           />
         </div>
       </div>
