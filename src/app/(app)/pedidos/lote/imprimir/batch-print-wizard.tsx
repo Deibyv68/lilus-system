@@ -36,6 +36,11 @@ import {
   Boxes,
   RefreshCw,
 } from "lucide-react";
+import {
+  CircularPreview,
+  ShippingPreview,
+  ExpiryPreview,
+} from "@/components/label-previews";
 
 type PrintKind = "shipping" | "product-labels" | "expiry-labels" | "box-logo";
 
@@ -479,6 +484,27 @@ function BatchPrintCore({
       </div>
 
       <SlideProgress slides={slides} currentIdx={subIdx} />
+
+      {/* Preview de la etiqueta */}
+      {currentStep.isCircular ? (
+        <CircularPreview
+          offsetX={offsetX}
+          offsetY={offsetY}
+          kind={currentStep.kind}
+        />
+      ) : currentStep.kind === "shipping" ? (
+        <ShippingPreview sampleName={items[0]?.customerName} />
+      ) : currentStep.kind === "expiry-labels" ? (
+        (() => {
+          const sampleLabel = items[0]?.label.split(" · ");
+          return (
+            <ExpiryPreview
+              productName={sampleLabel?.[1]}
+              batchCode={sampleLabel?.[2]}
+            />
+          );
+        })()
+      ) : null}
 
       {/* Resumen de qué se va a imprimir */}
       <div className="rounded-lg border bg-muted/30 p-3">
