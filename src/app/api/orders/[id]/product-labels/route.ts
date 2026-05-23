@@ -16,17 +16,29 @@ export async function GET(
   const { id } = await params;
   const offsetXmm = parseFloat(req.nextUrl.searchParams.get("offsetX") ?? "0") || 0;
   const offsetYmm = parseFloat(req.nextUrl.searchParams.get("offsetY") ?? "0") || 0;
+  const unitIndexParam = req.nextUrl.searchParams.get("unitIndex");
+  const unitIndex =
+    unitIndexParam !== null ? parseInt(unitIndexParam, 10) : null;
   // Clamp para evitar valores absurdos
   const xPt = Math.max(-50, Math.min(50, offsetXmm)) * MM_TO_PT;
   const yPt = Math.max(-50, Math.min(50, offsetYmm)) * MM_TO_PT;
-  const units = await prisma.productionUnit.findMany({
+  const allUnits = await prisma.productionUnit.findMany({
     where: { orderId: id },
     include: { product: true },
     orderBy: { batchCode: "asc" },
   });
 
-  if (units.length === 0) {
+  if (allUnits.length === 0) {
     return new NextResponse("Sin unidades", { status: 404 });
+  }
+
+  // Modo "una a una": filtrar a la unidad específica
+  const units =
+    unitIndex !== null && !isNaN(unitIndex)
+      ? allUnits.slice(unitIndex, unitIndex + 1)
+      : allUnits;
+  if (units.length === 0) {
+    return new NextResponse("Índice fuera de rango", { status: 400 });
   }
 
   // Cache de páginas por productId (no re-leemos el mismo PDF varias veces)

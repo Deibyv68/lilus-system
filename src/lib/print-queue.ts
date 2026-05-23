@@ -104,12 +104,20 @@ export async function buildPdfForJob(
   }
 
   if (kind === "product-labels") {
-    const units = await prisma.productionUnit.findMany({
+    const allUnits = await prisma.productionUnit.findMany({
       where: { orderId },
       include: { product: true },
       orderBy: { batchCode: "asc" },
     });
-    if (units.length === 0) throw new Error("Sin unidades");
+    if (allUnits.length === 0) throw new Error("Sin unidades");
+
+    // Modo "una a una": filtrar a la unidad específica
+    const units =
+      typeof options.unitIndex === "number"
+        ? allUnits.slice(options.unitIndex, options.unitIndex + 1)
+        : allUnits;
+    if (units.length === 0)
+      throw new Error("Índice de unidad fuera de rango");
 
     const MM_TO_PT = 2.83464567;
     const xPt = (options.offsetX ?? 0) * MM_TO_PT;

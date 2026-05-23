@@ -62,12 +62,22 @@ export function PrintCenter({
   const [offsetY, setOffsetY] = useState(0);
   const [boxLogoCopies, setBoxLogoCopies] = useState(Math.max(1, packCount));
 
-  // Estado del modo "una a una" para etiquetas 2×1
+  // Estado del modo "una a una" (sirve para expiry-labels y product-labels)
   const [oneByOneOpen, setOneByOneOpen] = useState(false);
+  const [oneByOneKind, setOneByOneKind] = useState<
+    "expiry-labels" | "product-labels"
+  >("expiry-labels");
   const [oneByOneIndex, setOneByOneIndex] = useState(0);
   const [oneByOneStatus, setOneByOneStatus] = useState<
     "idle" | "sending" | "printing" | "done" | "failed"
   >("idle");
+
+  function openOneByOne(kind: "expiry-labels" | "product-labels") {
+    setOneByOneKind(kind);
+    setOneByOneIndex(0);
+    setOneByOneStatus("idle");
+    setOneByOneOpen(true);
+  }
 
   // Estado por tipo de impresión: idle | sending | printing | done | failed
   const [printStatus, setPrintStatus] = useState<
@@ -174,7 +184,7 @@ export function PrintCenter({
         const res = await fetch(`/api/orders/${orderId}/print`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind: "expiry-labels", unitIndex }),
+          body: JSON.stringify({ kind: oneByOneKind, unitIndex }),
         });
         const data = (await res.json()) as { jobId?: string; error?: string };
         if (!res.ok || !data.jobId) {
@@ -204,8 +214,16 @@ export function PrintCenter({
         toast.error("Timeout esperando al agente");
       } else {
         // Fallback: abrir PDF en pestaña con solo esa unidad
+        const endpoint =
+          oneByOneKind === "expiry-labels" ? "expiry-labels" : "product-labels";
+        const params = new URLSearchParams();
+        params.set("unitIndex", String(unitIndex));
+        if (oneByOneKind === "product-labels") {
+          if (offsetX !== 0) params.set("offsetX", String(offsetX));
+          if (offsetY !== 0) params.set("offsetY", String(offsetY));
+        }
         window.open(
-          `/api/orders/${orderId}/expiry-labels?unitIndex=${unitIndex}`,
+          `/api/orders/${orderId}/${endpoint}?${params}`,
           "_blank",
           "noopener"
         );
@@ -411,14 +429,25 @@ export function PrintCenter({
             </div>
           </div>
 
-          <PrintButton
-            icon={FileText}
-            title={
-              isAdjusted ? "Imprimir con ajuste" : "Imprimir etiquetas"
-            }
-            status={printStatus["product-labels"]}
-            onClick={() => handlePrint("product-labels")}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <PrintButton
+              icon={Layers}
+              title={isAdjusted ? "Todas (con ajuste)" : "Todas a la vez"}
+              status={printStatus["product-labels"]}
+              compact
+              onClick={() => handlePrint("product-labels")}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9"
+              disabled={productionUnits.length === 0}
+              onClick={() => openOneByOne("product-labels")}
+            >
+              <ListChecks className="size-4" />
+              Una a una
+            </Button>
+          </div>
         </div>
 
         {/* Etiquetas 2x1 (caducidad) — con dos modos */}
@@ -449,11 +478,7 @@ export function PrintCenter({
               variant="outline"
               className="h-9"
               disabled={productionUnits.length === 0}
-              onClick={() => {
-                setOneByOneIndex(0);
-                setOneByOneStatus("idle");
-                setOneByOneOpen(true);
-              }}
+              onClick={() => openOneByOne("expiry-labels")}
             >
               <ListChecks className="size-4" />
               Una a una
@@ -487,7 +512,7 @@ export function PrintCenter({
         )}
       </CardContent>
 
-      {/* Dialog modo "una a una" */}
+      {/* Dialog modo "una a una" (sirve para 2×1 y etiquetas de producto) */}
       <Dialog
         open={oneByOneOpen}
         onOpenChange={(open) => {
@@ -498,7 +523,9 @@ export function PrintCenter({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ListChecks className="size-5" />
-              Etiquetas 2×1 una a una
+              {oneByOneKind === "expiry-labels"
+                ? "Etiquetas 2×1 una a una"
+                : "Etiquetas de producto una a una"}
             </DialogTitle>
             <DialogDescription>
               Imprime una etiqueta, confirma que salió bien, y pasa a la
