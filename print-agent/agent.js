@@ -77,9 +77,9 @@ const PRINT_OPTIONS_BY_KIND = {
     paperSize: '3"*3"(76mm*76mm)',
   },
   "product-labels": {
-    // Varía según el PDF subido por producto — no forzamos
-    orientation: null,
-    paperSize: null,
+    // Etiquetas circulares de jabón impresas en label cuadrado 2"x2" (51mm)
+    orientation: "portrait",
+    paperSize: '2"*2"(51mm*51mm)',
   },
 };
 
