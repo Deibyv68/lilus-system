@@ -5,16 +5,27 @@ import { buildExpiryLabelPdf } from "@/lib/pdf-expiry-label";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const units = await prisma.productionUnit.findMany({
+  const unitIndexParam = req.nextUrl.searchParams.get("unitIndex");
+  const unitIndex = unitIndexParam !== null ? parseInt(unitIndexParam, 10) : null;
+
+  const allUnits = await prisma.productionUnit.findMany({
     where: { orderId: id },
     orderBy: { batchCode: "asc" },
   });
-  if (units.length === 0) {
+  if (allUnits.length === 0) {
     return new NextResponse("Sin unidades para imprimir", { status: 404 });
+  }
+
+  const units =
+    unitIndex !== null && !isNaN(unitIndex)
+      ? allUnits.slice(unitIndex, unitIndex + 1)
+      : allUnits;
+  if (units.length === 0) {
+    return new NextResponse("Índice fuera de rango", { status: 400 });
   }
 
   const pdfBytes = await buildExpiryLabelPdf(

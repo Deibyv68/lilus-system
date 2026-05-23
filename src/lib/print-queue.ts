@@ -31,7 +31,12 @@ async function getAgentSettings() {
 export async function buildPdfForJob(
   orderId: string,
   kind: PrintKind,
-  options: { offsetX?: number; offsetY?: number; copies?: number } = {}
+  options: {
+    offsetX?: number;
+    offsetY?: number;
+    copies?: number;
+    unitIndex?: number; // si se pasa, solo construir esa unidad (0-based)
+  } = {}
 ): Promise<Buffer> {
   if (kind === "shipping") {
     const order = await prisma.order.findUnique({
@@ -79,8 +84,15 @@ export async function buildPdfForJob(
       orderBy: { batchCode: "asc" },
     });
     if (units.length === 0) throw new Error("Sin unidades para imprimir");
+    // Modo "una a una": si viene unitIndex, filtramos a solo esa
+    const selectedUnits =
+      typeof options.unitIndex === "number"
+        ? units.slice(options.unitIndex, options.unitIndex + 1)
+        : units;
+    if (selectedUnits.length === 0)
+      throw new Error("Índice de unidad fuera de rango");
     const bytes = await buildExpiryLabelPdf(
-      units.map((u) => ({
+      selectedUnits.map((u) => ({
         productName: u.productName,
         sku: u.productSku,
         batchCode: u.batchCode,
@@ -179,7 +191,7 @@ export async function enqueuePrintJob(args: {
   orderId: string;
   kind: PrintKind;
   copies?: number;
-  options?: { offsetX?: number; offsetY?: number };
+  options?: { offsetX?: number; offsetY?: number; unitIndex?: number };
 }) {
   const { printerName, enabled } = await getAgentSettings();
   if (!enabled) throw new Error("El agente de impresión no está habilitado");

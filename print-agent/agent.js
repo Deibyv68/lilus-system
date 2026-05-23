@@ -52,6 +52,18 @@ try {
 }
 
 // ──────────────────────────────────────────────────────────
+// Orientación por tipo de etiqueta — fuerza al driver de Windows
+// a respetar la orientación correcta, sin importar la configuración default
+// del driver.
+// ──────────────────────────────────────────────────────────
+const ORIENTATION_BY_KIND = {
+  "shipping": "portrait",       // 4×6
+  "expiry-labels": "landscape", // 2×1
+  "box-logo": "portrait",       // 4×4 cuadrado
+  "product-labels": null,       // depende del PDF subido — no forzar
+};
+
+// ──────────────────────────────────────────────────────────
 // Helper: imprime el PDF
 // ──────────────────────────────────────────────────────────
 async function printJob(job) {
@@ -60,14 +72,24 @@ async function printJob(job) {
   const tmpFile = path.join(tmpDir, `${job.id}.pdf`);
   fs.writeFileSync(tmpFile, Buffer.from(job.pdfBase64, "base64"));
 
+  const orientation = ORIENTATION_BY_KIND[job.kind];
+
   try {
-    await printPdf(tmpFile, {
+    const options = {
       printer: job.printerName,
       copies: Math.max(1, job.copies || 1),
       // Sin escalado: que respete el tamaño del PDF (importante para etiquetas)
       scale: "noscale",
-    });
-    console.log(`  ✓ Impreso (job ${job.id}, ${job.kind}, ${job.copies} copia${job.copies > 1 ? "s" : ""})`);
+    };
+    if (orientation) {
+      options.orientation = orientation;
+    }
+    await printPdf(tmpFile, options);
+    console.log(
+      `  ✓ Impreso (job ${job.id}, ${job.kind}${
+        orientation ? ` ${orientation}` : ""
+      }, ${job.copies} copia${job.copies > 1 ? "s" : ""})`
+    );
   } finally {
     fs.unlink(tmpFile, () => {});
   }

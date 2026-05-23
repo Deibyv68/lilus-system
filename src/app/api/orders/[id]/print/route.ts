@@ -13,6 +13,7 @@ export async function POST(
     copies?: number;
     offsetX?: number;
     offsetY?: number;
+    unitIndex?: number;
   } = {};
   try {
     body = await req.json();
@@ -27,7 +28,11 @@ export async function POST(
       orderId: id,
       kind: body.kind,
       copies: body.copies,
-      options: { offsetX: body.offsetX, offsetY: body.offsetY },
+      options: {
+        offsetX: body.offsetX,
+        offsetY: body.offsetY,
+        unitIndex: body.unitIndex,
+      },
     });
     return NextResponse.json({ ok: true, jobId: job.id });
   } catch (e) {

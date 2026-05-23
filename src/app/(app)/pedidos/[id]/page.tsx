@@ -246,6 +246,11 @@ export default async function OrderDetailPage({
             missingLabels={missingLabels}
             packCount={packCount}
             agentEnabled={agentEnabled}
+            productionUnits={order.productionUnits.map((u) => ({
+              id: u.id,
+              productName: u.productName,
+              batchCode: u.batchCode,
+            }))}
           />
         </div>
       </div>

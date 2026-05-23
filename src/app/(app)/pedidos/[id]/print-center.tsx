@@ -8,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Printer,
   FileText,
   AlertTriangle,
@@ -22,10 +30,15 @@ import {
   Loader2,
   Wifi,
   WifiOff,
+  ListChecks,
+  Layers,
+  ArrowRightCircle,
+  X,
 } from "lucide-react";
 
 type Missing = { id: string; name: string; sku: string };
 type PrintKind = "shipping" | "product-labels" | "expiry-labels" | "box-logo";
+type ProductionUnit = { id: string; productName: string; batchCode: string };
 
 const OFFSET_STORAGE_KEY = "lilus.productLabelOffset";
 const STEP_MM = 0.5;
@@ -36,16 +49,25 @@ export function PrintCenter({
   missingLabels,
   packCount,
   agentEnabled,
+  productionUnits,
 }: {
   orderId: string;
   missingLabels: Missing[];
   packCount: number;
   agentEnabled: boolean;
+  productionUnits: ProductionUnit[];
 }) {
   const [openedAny, setOpenedAny] = useState(false);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const [boxLogoCopies, setBoxLogoCopies] = useState(Math.max(1, packCount));
+
+  // Estado del modo "una a una" para etiquetas 2×1
+  const [oneByOneOpen, setOneByOneOpen] = useState(false);
+  const [oneByOneIndex, setOneByOneIndex] = useState(0);
+  const [oneByOneStatus, setOneByOneStatus] = useState<
+    "idle" | "sending" | "printing" | "done" | "failed"
+  >("idle");
 
   // Estado por tipo de impresión: idle | sending | printing | done | failed
   const [printStatus, setPrintStatus] = useState<
@@ -141,6 +163,68 @@ export function PrintCenter({
   function openPdf(path: string) {
     setOpenedAny(true);
     window.open(`/api/orders/${orderId}/${path}`, "_blank", "noopener");
+  }
+
+  // ───────── Modo "una a una": imprime UNA unidad ─────────
+  async function printSingleUnit(unitIndex: number) {
+    setOneByOneStatus("sending");
+    try {
+      if (agentEnabled) {
+        // Vía agente
+        const res = await fetch(`/api/orders/${orderId}/print`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "expiry-labels", unitIndex }),
+        });
+        const data = (await res.json()) as { jobId?: string; error?: string };
+        if (!res.ok || !data.jobId) {
+          throw new Error(data.error ?? "Error encolando trabajo");
+        }
+        setOneByOneStatus("printing");
+        // Polling
+        for (let i = 0; i < 30; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
+          const sres = await fetch(`/api/print-queue/${data.jobId}/status`);
+          if (!sres.ok) continue;
+          const sjob = (await sres.json()) as {
+            status: "PENDING" | "PICKED_UP" | "DONE" | "FAILED";
+            error?: string | null;
+          };
+          if (sjob.status === "DONE") {
+            setOneByOneStatus("done");
+            return;
+          }
+          if (sjob.status === "FAILED") {
+            setOneByOneStatus("failed");
+            toast.error(sjob.error ?? "El agente reportó error");
+            return;
+          }
+        }
+        setOneByOneStatus("failed");
+        toast.error("Timeout esperando al agente");
+      } else {
+        // Fallback: abrir PDF en pestaña con solo esa unidad
+        window.open(
+          `/api/orders/${orderId}/expiry-labels?unitIndex=${unitIndex}`,
+          "_blank",
+          "noopener"
+        );
+        setOneByOneStatus("done");
+      }
+    } catch (e) {
+      setOneByOneStatus("failed");
+      toast.error((e as Error).message);
+    }
+  }
+
+  function advanceOneByOne() {
+    if (oneByOneIndex + 1 >= productionUnits.length) {
+      setOneByOneOpen(false);
+      toast.success("Listo, todas las etiquetas impresas");
+      return;
+    }
+    setOneByOneIndex(oneByOneIndex + 1);
+    setOneByOneStatus("idle");
   }
 
   // ───────── Acciones por tipo ─────────
@@ -337,14 +421,45 @@ export function PrintCenter({
           />
         </div>
 
-        {/* Etiquetas 2x1 */}
-        <PrintButton
-          icon={FileText}
-          title="Etiquetas 2×1 (caducidad)"
-          subtitle="Lote y fecha de caducidad · una por unidad"
-          status={printStatus["expiry-labels"]}
-          onClick={() => handlePrint("expiry-labels")}
-        />
+        {/* Etiquetas 2x1 (caducidad) — con dos modos */}
+        <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <FileText className="size-4 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                Etiquetas 2×1 (caducidad)
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {productionUnits.length} unidad
+                {productionUnits.length === 1 ? "" : "es"} · lote + caducidad
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <PrintButton
+              icon={Layers}
+              title="Todas a la vez"
+              status={printStatus["expiry-labels"]}
+              compact
+              onClick={() => handlePrint("expiry-labels")}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9"
+              disabled={productionUnits.length === 0}
+              onClick={() => {
+                setOneByOneIndex(0);
+                setOneByOneStatus("idle");
+                setOneByOneOpen(true);
+              }}
+            >
+              <ListChecks className="size-4" />
+              Una a una
+            </Button>
+          </div>
+        </div>
 
         {/* Faltantes */}
         {missingLabels.length > 0 && (
@@ -371,6 +486,129 @@ export function PrintCenter({
           </p>
         )}
       </CardContent>
+
+      {/* Dialog modo "una a una" */}
+      <Dialog
+        open={oneByOneOpen}
+        onOpenChange={(open) => {
+          if (!open) setOneByOneOpen(false);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="size-5" />
+              Etiquetas 2×1 una a una
+            </DialogTitle>
+            <DialogDescription>
+              Imprime una etiqueta, confirma que salió bien, y pasa a la
+              siguiente. Útil cuando se traba el rollo o quieres revisar antes
+              de seguir.
+            </DialogDescription>
+          </DialogHeader>
+
+          {productionUnits.length > 0 && (
+            <div className="space-y-3">
+              {/* Indicador */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Etiqueta{" "}
+                  <strong className="text-foreground tabular-nums">
+                    {oneByOneIndex + 1}
+                  </strong>{" "}
+                  de{" "}
+                  <strong className="text-foreground tabular-nums">
+                    {productionUnits.length}
+                  </strong>
+                </span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {Math.round(((oneByOneIndex + 1) / productionUnits.length) * 100)}%
+                </span>
+              </div>
+
+              {/* Barra de progreso */}
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${
+                      ((oneByOneIndex + (oneByOneStatus === "done" ? 1 : 0)) /
+                        productionUnits.length) *
+                      100
+                    }%`,
+                  }}
+                />
+              </div>
+
+              {/* Detalle de la unidad */}
+              <div className="rounded-lg border p-3 bg-card">
+                <p className="font-medium leading-tight">
+                  {productionUnits[oneByOneIndex]?.productName}
+                </p>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                  Lote: {productionUnits[oneByOneIndex]?.batchCode}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setOneByOneOpen(false)}
+              disabled={
+                oneByOneStatus === "sending" || oneByOneStatus === "printing"
+              }
+            >
+              <X className="size-4" />
+              Cerrar
+            </Button>
+
+            {oneByOneStatus === "idle" && (
+              <Button onClick={() => printSingleUnit(oneByOneIndex)}>
+                <Printer className="size-4" />
+                Imprimir
+              </Button>
+            )}
+
+            {(oneByOneStatus === "sending" || oneByOneStatus === "printing") && (
+              <Button disabled>
+                <Loader2 className="size-4 animate-spin" />
+                {oneByOneStatus === "sending" ? "Enviando…" : "Imprimiendo…"}
+              </Button>
+            )}
+
+            {oneByOneStatus === "done" && (
+              <Button
+                onClick={advanceOneByOne}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {oneByOneIndex + 1 >= productionUnits.length ? (
+                  <>
+                    <Check className="size-4" />
+                    Terminar
+                  </>
+                ) : (
+                  <>
+                    <ArrowRightCircle className="size-4" />
+                    Siguiente
+                  </>
+                )}
+              </Button>
+            )}
+
+            {oneByOneStatus === "failed" && (
+              <Button
+                variant="destructive"
+                onClick={() => printSingleUnit(oneByOneIndex)}
+              >
+                <RotateCcw className="size-4" />
+                Reintentar
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
