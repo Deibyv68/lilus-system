@@ -20,8 +20,15 @@ async function main() {
   // Transportadora inicial
   const servientrega = await prisma.carrier.upsert({
     where: { name: "Servientrega" },
-    update: {},
-    create: { name: "Servientrega" },
+    update: {
+      trackingUrlTemplate:
+        "https://www.servientrega.com.ec/Tracking/?guia={tracking}&tipo=GUIA",
+    },
+    create: {
+      name: "Servientrega",
+      trackingUrlTemplate:
+        "https://www.servientrega.com.ec/Tracking/?guia={tracking}&tipo=GUIA",
+    },
   });
 
   // Tarifas por defecto (editables luego en /envios)
