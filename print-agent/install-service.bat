@@ -56,7 +56,7 @@ nssm remove LILUS-PrintAgent confirm >nul 2>nul
 
 REM Instalar usando la ruta dinámica de node
 nssm install LILUS-PrintAgent "%NODE_EXE%" "%~dp0agent.js"
-nssm set LILUS-PrintAgent AppDirectory "%~dp0"
+nssm set LILUS-PrintAgent AppDirectory "%CD%"
 nssm set LILUS-PrintAgent DisplayName "LILUS Print Agent"
 nssm set LILUS-PrintAgent Description "Agente local que imprime trabajos de LILUS en la MUNBYN."
 nssm set LILUS-PrintAgent Start SERVICE_AUTO_START
