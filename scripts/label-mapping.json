@@ -1,0 +1,58 @@
+[
+  {
+    "sku": "LIL-JAB-ARR",
+    "labelPdfUrl": "/uploads/product-labels/e0b428f2-b396-4119-a703-79f67f90be31.pdf"
+  },
+  {
+    "sku": "LIL-JAB-CUR",
+    "labelPdfUrl": "/uploads/product-labels/20705135-af71-47e0-b3b4-b6fde0b26329.pdf"
+  },
+  {
+    "sku": "LIL-JAB-CAR",
+    "labelPdfUrl": "/uploads/product-labels/ae585e11-b731-4f11-8450-5db25d8fd609.pdf"
+  },
+  {
+    "sku": "LIL-JAB-CAF",
+    "labelPdfUrl": "/uploads/product-labels/7cc73f00-a0f6-4d91-a5b1-2cd303c8474b.pdf"
+  },
+  {
+    "sku": "LIL-JAB-NAR",
+    "labelPdfUrl": "/uploads/product-labels/6993d49e-1b9a-4ff4-8932-10fa0298a306.pdf"
+  },
+  {
+    "sku": "LIL-JAB-ROM",
+    "labelPdfUrl": "/uploads/product-labels/edfa936c-27dc-4ab9-b757-1c093a20cf27.pdf"
+  },
+  {
+    "sku": "LIL-JAB-LAV",
+    "labelPdfUrl": "/uploads/product-labels/c499fe95-d909-4dbf-a175-2d0a46816c60.pdf"
+  },
+  {
+    "sku": "LIL-JAB-ROS",
+    "labelPdfUrl": "/uploads/product-labels/fc26ad33-4cec-4f7f-94c7-c58a0a0b71ee.pdf"
+  },
+  {
+    "sku": "LIL-JAB-SAB",
+    "labelPdfUrl": "/uploads/product-labels/be9b7674-ddde-46a0-9ad3-505412b5e430.pdf"
+  },
+  {
+    "sku": "LIL-JAB-ALU",
+    "labelPdfUrl": "/uploads/product-labels/4d488ca8-85e0-4152-9161-5675f00b28b6.pdf"
+  },
+  {
+    "sku": "LIL-JAB-PEP",
+    "labelPdfUrl": "/uploads/product-labels/0a622200-fd8b-44c4-9c46-2b3bb65f8d5c.pdf"
+  },
+  {
+    "sku": "LIL-JAB-MAR",
+    "labelPdfUrl": "/uploads/product-labels/e4dc3dcc-6693-4794-b6cb-fa7d3eaab943.pdf"
+  },
+  {
+    "sku": "LIL-EXT-CCN",
+    "labelPdfUrl": "/uploads/product-labels/bb6e55cd-b4e0-4639-97df-856a1c865fde.pdf"
+  },
+  {
+    "sku": "LIL-JAB-MMA",
+    "labelPdfUrl": "/uploads/product-labels/bf8b5791-cd4e-453a-8b4c-01abdb6a806e.pdf"
+  }
+]
