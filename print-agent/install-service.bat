@@ -1,23 +1,25 @@
 @echo off
 REM Instalador del agente LILUS como servicio de Windows.
-REM Requiere: Node.js instalado y nssm.exe en la misma carpeta.
+REM Requiere: Node.js instalado (en PATH) y nssm.exe en la misma carpeta.
 REM
-REM Uso: doble click derecho > "Ejecutar como administrador"
+REM Uso: click derecho > "Ejecutar como administrador"
 
-setlocal
+setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo === Instalador LILUS Print Agent ===
 echo.
 
-REM Verificar Node
-where node >nul 2>nul
-if errorlevel 1 (
-  echo [ERROR] Node.js no esta instalado.
-  echo Descarga e instala Node.js LTS desde https://nodejs.org/
+REM Encontrar la ruta real de node.exe (donde sea que esté instalado)
+for /f "tokens=*" %%i in ('where node 2^>nul') do set NODE_EXE=%%i
+if "%NODE_EXE%"=="" (
+  echo [ERROR] Node.js no se encontro en PATH.
+  echo Instala Node.js desde https://nodejs.org/ y vuelve a intentar.
   pause
   exit /b 1
 )
+echo Node detectado: %NODE_EXE%
+echo.
 
 REM Verificar nssm.exe
 if not exist "nssm.exe" (
@@ -52,8 +54,8 @@ REM Detener si ya existe
 nssm stop LILUS-PrintAgent >nul 2>nul
 nssm remove LILUS-PrintAgent confirm >nul 2>nul
 
-REM Instalar
-nssm install LILUS-PrintAgent "%PROGRAMFILES%\nodejs\node.exe" "%~dp0agent.js"
+REM Instalar usando la ruta dinámica de node
+nssm install LILUS-PrintAgent "%NODE_EXE%" "%~dp0agent.js"
 nssm set LILUS-PrintAgent AppDirectory "%~dp0"
 nssm set LILUS-PrintAgent DisplayName "LILUS Print Agent"
 nssm set LILUS-PrintAgent Description "Agente local que imprime trabajos de LILUS en la MUNBYN."
@@ -62,16 +64,27 @@ nssm set LILUS-PrintAgent AppStdout "%~dp0agent.log"
 nssm set LILUS-PrintAgent AppStderr "%~dp0agent.log"
 nssm set LILUS-PrintAgent AppRotateFiles 1
 nssm set LILUS-PrintAgent AppRotateBytes 1048576
+REM Throttling generoso: NSSM espera 5s entre intentos si crashea
+nssm set LILUS-PrintAgent AppThrottle 5000
+REM Si crashea, esperar 5s y reintentar (sin tope)
+nssm set LILUS-PrintAgent AppRestartDelay 5000
+nssm set LILUS-PrintAgent AppExit Default Restart
 
 REM Arrancar
 nssm start LILUS-PrintAgent
 
+REM Verificar estado real
+timeout /t 3 /nobreak >nul
+echo.
+sc query LILUS-PrintAgent | findstr STATE
+
 echo.
 echo ============================================
-echo  Servicio instalado y corriendo
+echo  Servicio instalado
 echo ============================================
 echo.
 echo  Ver logs:  type "%~dp0agent.log"
+echo  Estado:    Get-Service LILUS-PrintAgent
 echo  Detener:   nssm stop LILUS-PrintAgent
 echo  Arrancar:  nssm start LILUS-PrintAgent
 echo  Desinstalar: uninstall-service.bat
