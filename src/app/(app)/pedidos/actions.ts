@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { orderSchema } from "@/lib/schemas";
 import {
@@ -189,7 +188,10 @@ export async function createOrderAction(payload: CreateOrderPayload) {
 
   revalidatePath("/pedidos");
   revalidatePath("/");
-  redirect(`/pedidos/${order.id}`);
+  // No redirect aquí — el wizard usa el orderId para avanzar al paso 5
+  // (centro de impresión). Si quieres redirigir desde otro lugar, hazlo
+  // a /pedidos/{id} con el id que devolvemos.
+  return { ok: true as const, orderId: order.id };
 }
 
 export async function updateOrderStatusAction(

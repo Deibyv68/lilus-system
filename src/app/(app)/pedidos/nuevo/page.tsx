@@ -8,24 +8,27 @@ import { ArrowLeft } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function NewOrderPage() {
-  const [products, packs, zones, carriers, rates] = await Promise.all([
-    prisma.product.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, sku: true, price: true, imageUrl: true },
-    }),
-    prisma.pack.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, sku: true, price: true, imageUrl: true },
-    }),
-    prisma.shippingZone.findMany({ orderBy: { name: "asc" } }),
-    prisma.carrier.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.shippingRate.findMany(),
-  ]);
+  const [products, packs, zones, carriers, rates, agentEnabledSetting] =
+    await Promise.all([
+      prisma.product.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, sku: true, price: true, imageUrl: true },
+      }),
+      prisma.pack.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, sku: true, price: true, imageUrl: true },
+      }),
+      prisma.shippingZone.findMany({ orderBy: { name: "asc" } }),
+      prisma.carrier.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.shippingRate.findMany(),
+      prisma.setting.findUnique({ where: { key: "print_agent_enabled" } }),
+    ]);
+  const agentEnabled = agentEnabledSetting?.value === "true";
 
   return (
     <>
@@ -60,6 +63,7 @@ export default async function NewOrderPage() {
             carrierId: r.carrierId,
             price: r.price,
           }))}
+          agentEnabled={agentEnabled}
         />
       )}
     </>

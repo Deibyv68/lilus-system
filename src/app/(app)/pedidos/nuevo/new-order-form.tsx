@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
 import { createOrderAction } from "../actions";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -33,8 +34,10 @@ import {
   Truck,
   UserCheck,
   Search,
+  Printer,
 } from "lucide-react";
 import { CustomerSearch, type FoundCustomer } from "./customer-search";
+import { PrintStepWizard } from "./print-step-wizard";
 
 type Item = {
   id: string;
@@ -61,6 +64,7 @@ const STEPS = [
   { id: 2, label: "Cliente", icon: User },
   { id: 3, label: "Envío", icon: Truck },
   { id: 4, label: "Confirmar", icon: Check },
+  { id: 5, label: "Imprimir", icon: Printer },
 ];
 
 export function NewOrderForm({
@@ -69,15 +73,26 @@ export function NewOrderForm({
   zones,
   carriers,
   rates,
+  agentEnabled,
 }: {
   products: Item[];
   packs: Item[];
   zones: Zone[];
   carriers: Carrier[];
   rates: Rate[];
+  agentEnabled: boolean;
 }) {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
+
+  // Una vez creado, guardamos el orden para el paso 5
+  const [createdOrder, setCreatedOrder] = useState<{
+    id: string;
+    orderNumber: string;
+    productionUnits: { id: string; productName: string; batchCode: string }[];
+    packCount: number;
+  } | null>(null);
 
   // ──── State ────
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -247,8 +262,32 @@ export function NewOrderForm({
           quantity: c.quantity,
         })),
       });
-      if (res && !res.ok) {
+      if (!res.ok) {
         toast.error(res.error ?? "Error al crear pedido");
+        return;
+      }
+      // Cargamos los datos del pedido creado para alimentar el paso 5
+      try {
+        const detailRes = await fetch(`/api/orders/${res.orderId}/summary`);
+        if (!detailRes.ok) throw new Error("No se pudo cargar el resumen");
+        const data = (await detailRes.json()) as {
+          orderNumber: string;
+          productionUnits: { id: string; productName: string; batchCode: string }[];
+          packCount: number;
+        };
+        setCreatedOrder({
+          id: res.orderId,
+          orderNumber: data.orderNumber,
+          productionUnits: data.productionUnits,
+          packCount: data.packCount,
+        });
+        setStep(5);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        toast.success("Pedido creado");
+      } catch (e) {
+        // Si falla el resumen, vamos directo al detalle
+        toast.success("Pedido creado");
+        router.push(`/pedidos/${res.orderId}`);
       }
     });
   }
@@ -319,18 +358,32 @@ export function NewOrderForm({
             onJump={setStep}
           />
         )}
+
+        {step === 5 && createdOrder && (
+          <PrintStepWizard
+            orderId={createdOrder.id}
+            orderNumber={createdOrder.orderNumber}
+            productionUnits={createdOrder.productionUnits}
+            packCount={createdOrder.packCount}
+            agentEnabled={agentEnabled}
+            onFinish={() => router.push(`/pedidos/${createdOrder.id}`)}
+          />
+        )}
       </div>
 
-      {/* Barra inferior fija */}
-      <BottomNav
-        step={step}
-        total={total}
-        itemCount={itemCount}
-        isPending={isPending}
-        onPrev={goPrev}
-        onNext={goNext}
-        onSubmit={submit}
-      />
+      {/* Barra inferior fija — solo se muestra durante los pasos 1-4.
+          El paso 5 (centro de impresión) tiene su propia navegación interna. */}
+      {step < 5 && (
+        <BottomNav
+          step={step}
+          total={total}
+          itemCount={itemCount}
+          isPending={isPending}
+          onPrev={goPrev}
+          onNext={goNext}
+          onSubmit={submit}
+        />
+      )}
     </div>
   );
 }

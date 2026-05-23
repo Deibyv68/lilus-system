@@ -6,11 +6,21 @@ export const dynamic = "force-dynamic";
 
 // Agente hace polling cada N segundos.
 // Devuelve UN trabajo pendiente (FIFO) y lo marca como PICKED_UP.
+// Cada llamada también actualiza el "agent_last_seen" para que el frontend
+// pueda saber si el agente está vivo.
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   if (!(await validateAgentToken(token))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // Marca este poll como "vivo"
+  const now = new Date().toISOString();
+  await prisma.setting.upsert({
+    where: { key: "agent_last_seen" },
+    update: { value: now },
+    create: { key: "agent_last_seen", value: now },
+  });
 
   // Atómico: encuentra el más viejo PENDING y márcalo PICKED_UP
   const next = await prisma.printJob.findFirst({
