@@ -102,6 +102,7 @@ export function NewOrderForm({
     name: "",
     cedula: "",
     phone: "",
+    contactPhone: "",
     email: "",
   });
   const [address, setAddress] = useState({
@@ -184,6 +185,7 @@ export function NewOrderForm({
       name: c.name,
       cedula: c.cedula ?? "",
       phone: c.phone ?? "",
+      contactPhone: c.contactPhone ?? "",
       email: c.email ?? "",
     });
     if (c.lastAddress) {
@@ -199,7 +201,7 @@ export function NewOrderForm({
   }
   function clearLinkedCustomer() {
     setLinkedCustomerId(null);
-    setCustomer({ name: "", cedula: "", phone: "", email: "" });
+    setCustomer({ name: "", cedula: "", phone: "", contactPhone: "", email: "" });
   }
 
   // ──── Validación por paso ────
@@ -649,11 +651,18 @@ function StepCustomer({
   onSelectCustomer,
   onClearCustomer,
 }: {
-  customer: { name: string; cedula: string; phone: string; email: string };
+  customer: {
+    name: string;
+    cedula: string;
+    phone: string;
+    contactPhone: string;
+    email: string;
+  };
   setCustomer: (c: {
     name: string;
     cedula: string;
     phone: string;
+    contactPhone: string;
     email: string;
   }) => void;
   linkedCustomerId: string | null;
@@ -696,12 +705,30 @@ function StepCustomer({
             className="h-12 text-base"
           />
         </BigField>
-        <BigField label="Teléfono">
+        <BigField
+          label="Teléfono para envío"
+          hint="Va impreso en la etiqueta de envío para que la transportadora pueda contactar al destinatario."
+        >
           <Input
             type="tel"
             inputMode="numeric"
             value={customer.phone}
             onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+            placeholder="0999999999"
+            className="h-12 text-base"
+          />
+        </BigField>
+        <BigField
+          label="WhatsApp para mensajes"
+          hint="Es el número al que se le enviarán las actualizaciones del pedido. Si lo dejas vacío se usa el de envío."
+        >
+          <Input
+            type="tel"
+            inputMode="numeric"
+            value={customer.contactPhone}
+            onChange={(e) =>
+              setCustomer({ ...customer, contactPhone: e.target.value })
+            }
             placeholder="0999999999"
             className="h-12 text-base"
           />

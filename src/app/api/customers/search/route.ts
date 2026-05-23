@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
       name: c.name,
       cedula: c.cedula,
       phone: c.phone,
+      contactPhone: c.contactPhone,
       email: c.email,
       orderCount: c._count.orders,
       lastAddress: c.addresses[0]

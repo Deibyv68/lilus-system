@@ -152,6 +152,7 @@ export async function createOrderAction(payload: CreateOrderPayload) {
       name: data.customer.name,
       cedula: data.customer.cedula || null,
       phone: data.customer.phone || null,
+      contactPhone: data.customer.contactPhone || null,
       email: data.customer.email || null,
     },
   });

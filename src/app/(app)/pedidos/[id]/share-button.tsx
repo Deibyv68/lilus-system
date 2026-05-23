@@ -12,26 +12,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Copy, Share2, ExternalLink } from "lucide-react";
+import { MessageCircle, Copy, ExternalLink, Share2 } from "lucide-react";
 import {
-  buildShipmentMessage,
+  buildStatusMessage,
   buildTrackingUrl,
   normalizePhoneForWhatsApp,
+  pickWhatsAppPhone,
+  statusShareLabel,
+  type OrderStatus,
   type ShareableOrder,
 } from "@/lib/share-message";
 
 export function ShareButton({
   order,
+  status,
   customerPhone,
+  customerContactPhone,
   carrierTrackingTemplate,
 }: {
   order: ShareableOrder;
+  status: OrderStatus;
   customerPhone: string | null;
+  customerContactPhone: string | null;
   carrierTrackingTemplate: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
-  // Compose message
   const enrichedOrder: ShareableOrder = {
     ...order,
     trackingUrl: buildTrackingUrl(
@@ -39,24 +45,21 @@ export function ShareButton({
       order.trackingNumber
     ),
   };
-  const message = buildShipmentMessage(enrichedOrder);
-  const waPhone = normalizePhoneForWhatsApp(customerPhone);
+  const message = buildStatusMessage(enrichedOrder, status);
+
+  // Elegir el teléfono para WhatsApp: contactPhone > phone
+  const targetPhone = pickWhatsAppPhone(customerContactPhone, customerPhone);
+  const waPhone = normalizePhoneForWhatsApp(targetPhone);
   const waUrl = waPhone
     ? `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`
     : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-  async function shareNative() {
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: `Pedido ${order.orderNumber} — LILUS`,
-          text: message,
-        });
-      } catch {
-        // El usuario canceló o no se pudo; sin error visible
-      }
+  function clickShare() {
+    if (waPhone) {
+      // Tiene teléfono → abre WhatsApp directo al chat
+      window.open(waUrl, "_blank", "noopener");
     } else {
-      // Desktop sin Web Share → abrimos diálogo
+      // Sin teléfono → muestra el dialog con opciones
       setOpen(true);
     }
   }
@@ -78,14 +81,14 @@ export function ShareButton({
     <>
       <Button
         type="button"
-        variant="default"
         className="w-full bg-green-600 hover:bg-green-700 text-white"
-        onClick={shareNative}
+        onClick={clickShare}
       >
         <Share2 className="size-4" />
-        Compartir con el cliente
+        {statusShareLabel(status)}
       </Button>
 
+      {/* Dialog solo aparece si no hay teléfono guardado */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -94,9 +97,8 @@ export function ShareButton({
               Compartir pedido
             </DialogTitle>
             <DialogDescription>
-              {waPhone
-                ? "El mensaje se abrirá en WhatsApp dirigido al teléfono del cliente."
-                : "No hay teléfono del cliente registrado. Puedes copiarlo o abrir WhatsApp Web para pegar manualmente."}
+              No hay teléfono del cliente registrado. Puedes copiar el mensaje
+              o abrir WhatsApp Web para pegarlo manualmente.
             </DialogDescription>
           </DialogHeader>
 

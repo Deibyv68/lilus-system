@@ -118,13 +118,14 @@ model ShippingRate {
 // ---------- Clientes ----------
 
 model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  cedula    String?  // cédula o RUC
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  cedula       String?  // cédula o RUC
+  phone        String?  // teléfono que va en la etiqueta de envío
+  contactPhone String?  // teléfono para WhatsApp / mensajes (puede ser distinto al de envío)
+  email        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   addresses ShippingAddress[]
   orders    Order[]

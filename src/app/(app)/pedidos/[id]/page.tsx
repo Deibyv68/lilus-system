@@ -171,35 +171,35 @@ export default async function OrderDetailPage({
                 </div>
               )}
 
-              {order.status === "SHIPPED" || order.status === "DELIVERED" ? (
-                <ShareButton
-                  order={{
-                    orderNumber: order.orderNumber,
-                    customerName: order.customer.name,
-                    items: order.items.map((it) => ({
-                      quantity: it.quantity,
-                      itemName: it.itemName,
-                    })),
-                    total: order.total,
-                    shippingCost: order.shippingCost,
-                    carrierName: order.carrier?.name ?? null,
-                    trackingNumber: order.trackingNumber,
-                    trackingUrl: null,
-                    address: order.shippingAddress
-                      ? {
-                          address: order.shippingAddress.address,
-                          city: order.shippingAddress.city,
-                          province: order.shippingAddress.province,
-                          reference: order.shippingAddress.reference,
-                        }
-                      : null,
-                  }}
-                  customerPhone={order.customer.phone}
-                  carrierTrackingTemplate={
-                    order.carrier?.trackingUrlTemplate ?? null
-                  }
-                />
-              ) : null}
+              <ShareButton
+                order={{
+                  orderNumber: order.orderNumber,
+                  customerName: order.customer.name,
+                  items: order.items.map((it) => ({
+                    quantity: it.quantity,
+                    itemName: it.itemName,
+                  })),
+                  total: order.total,
+                  shippingCost: order.shippingCost,
+                  carrierName: order.carrier?.name ?? null,
+                  trackingNumber: order.trackingNumber,
+                  trackingUrl: null,
+                  address: order.shippingAddress
+                    ? {
+                        address: order.shippingAddress.address,
+                        city: order.shippingAddress.city,
+                        province: order.shippingAddress.province,
+                        reference: order.shippingAddress.reference,
+                      }
+                    : null,
+                }}
+                status={order.status as never}
+                customerPhone={order.customer.phone}
+                customerContactPhone={order.customer.contactPhone}
+                carrierTrackingTemplate={
+                  order.carrier?.trackingUrlTemplate ?? null
+                }
+              />
             </CardContent>
           </Card>
 

@@ -39,6 +39,7 @@ export const customerSchema = z.object({
   name: z.string().min(1).max(120),
   cedula: z.string().max(20).optional().or(z.literal("")),
   phone: z.string().max(20).optional().or(z.literal("")),
+  contactPhone: z.string().max(20).optional().or(z.literal("")),
   email: z.string().email().optional().or(z.literal("")),
 });
 

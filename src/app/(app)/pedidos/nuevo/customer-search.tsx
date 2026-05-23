@@ -9,6 +9,7 @@ export type FoundCustomer = {
   name: string;
   cedula: string | null;
   phone: string | null;
+  contactPhone: string | null;
   email: string | null;
   orderCount: number;
   lastAddress: {

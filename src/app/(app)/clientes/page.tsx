@@ -37,7 +37,8 @@ export default async function CustomersPage() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>CI/RUC</TableHead>
-                <TableHead>Teléfono</TableHead>
+                <TableHead>Tel. envío</TableHead>
+                <TableHead>WhatsApp</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead className="text-right">Pedidos</TableHead>
               </TableRow>
@@ -48,6 +49,9 @@ export default async function CustomersPage() {
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell className="text-xs">{c.cedula ?? "—"}</TableCell>
                   <TableCell className="text-xs">{c.phone ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {c.contactPhone ?? "—"}
+                  </TableCell>
                   <TableCell className="text-xs">{c.email ?? "—"}</TableCell>
                   <TableCell className="text-right">{c._count.orders}</TableCell>
                 </TableRow>
