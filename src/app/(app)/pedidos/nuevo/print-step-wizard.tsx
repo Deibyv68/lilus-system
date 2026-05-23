@@ -19,7 +19,6 @@ import {
   Printer,
   Truck,
   FileText,
-  Sticker,
   Layers,
   ListChecks,
   ArrowLeft,
@@ -30,13 +29,12 @@ import {
   Loader2,
   AlertTriangle,
   RotateCcw,
-  Wifi,
-  WifiOff,
   Move,
   X,
   TestTube,
   Package2,
   Boxes,
+  RefreshCw,
 } from "lucide-react";
 
 // ───────────────── Tipos ─────────────────
@@ -131,35 +129,34 @@ export function PrintStepWizard({
   agentEnabled: boolean;
   onFinish: () => void;
 }) {
-  // Filtrar sub-pasos según el pedido (logo de caja solo si hay packs)
-  const visibleSteps = useMemo(
-    () => SUB_STEPS.filter((s) => (s.packsOnly ? packCount > 0 : true)),
-    [packCount]
-  );
+  // Construir lista de slides: cada paso de impresión, intercalado con un
+  // slide de "cambio de papel" si el papel difiere del paso anterior.
+  type Slide =
+    | { type: "print"; step: SubStep }
+    | { type: "paper-change"; from: SubStep; to: SubStep };
+
+  const slides = useMemo<Slide[]>(() => {
+    const printSteps = SUB_STEPS.filter((s) =>
+      s.packsOnly ? packCount > 0 : true
+    );
+    const result: Slide[] = [];
+    for (let i = 0; i < printSteps.length; i++) {
+      if (i > 0) {
+        const prev = printSteps[i - 1];
+        const curr = printSteps[i];
+        if (prev.paperLabel !== curr.paperLabel) {
+          result.push({ type: "paper-change", from: prev, to: curr });
+        }
+      }
+      result.push({ type: "print", step: printSteps[i] });
+    }
+    return result;
+  }, [packCount]);
 
   const [subIdx, setSubIdx] = useState(0);
-  const current = visibleSteps[subIdx];
-
-  // Estado del agente (polling cada 3s)
-  const [agentOnline, setAgentOnline] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    async function check() {
-      try {
-        const res = await fetch("/api/agent/status");
-        if (res.ok && !cancelled) {
-          const data = (await res.json()) as { online: boolean };
-          setAgentOnline(data.online);
-        }
-      } catch {}
-    }
-    check();
-    const t = setInterval(check, 3000);
-    return () => {
-      cancelled = true;
-      clearInterval(t);
-    };
-  }, []);
+  const currentSlide = slides[subIdx];
+  const currentStep =
+    currentSlide?.type === "print" ? currentSlide.step : null;
 
   // Offset para circulares (compartido por product-labels y box-logo)
   const [offsetX, setOffsetX] = useState(0);
@@ -264,56 +261,56 @@ export function PrintStepWizard({
   }
 
   async function printAll() {
-    if (!current) return;
+    if (!currentStep) return;
     if (!agentEnabled) {
       // Fallback: abrir PDF
-      openPdf(current.kind);
+      openPdf(currentStep.kind);
       return;
     }
-    setStatusByKind((s) => ({ ...s, [current.kind]: "sending" }));
-    const jobId = await enqueue(current.kind, buildExtras(current.kind));
+    setStatusByKind((s) => ({ ...s, [currentStep.kind]: "sending" }));
+    const jobId = await enqueue(currentStep.kind, buildExtras(currentStep.kind));
     if (!jobId) {
-      setStatusByKind((s) => ({ ...s, [current.kind]: "failed" }));
+      setStatusByKind((s) => ({ ...s, [currentStep.kind]: "failed" }));
       return;
     }
-    setStatusByKind((s) => ({ ...s, [current.kind]: "printing" }));
+    setStatusByKind((s) => ({ ...s, [currentStep.kind]: "printing" }));
     const result = await pollUntilDone(jobId);
-    setStatusByKind((s) => ({ ...s, [current.kind]: result.toLowerCase() as "done" | "failed" }));
+    setStatusByKind((s) => ({ ...s, [currentStep.kind]: result.toLowerCase() as "done" | "failed" }));
     if (result === "DONE") {
       toast.success("Impreso ✓");
       setTimeout(
-        () => setStatusByKind((s) => ({ ...s, [current.kind]: "idle" })),
+        () => setStatusByKind((s) => ({ ...s, [currentStep.kind]: "idle" })),
         2500
       );
     }
   }
 
   async function printTest() {
-    if (!current) return;
+    if (!currentStep) return;
     if (!agentEnabled) {
-      openPdf(current.kind, true);
+      openPdf(currentStep.kind, true);
       return;
     }
-    setStatusByKind((s) => ({ ...s, [current.kind]: "sending" }));
-    const extras = buildExtras(current.kind);
-    if (current.hasMultiple) {
+    setStatusByKind((s) => ({ ...s, [currentStep.kind]: "sending" }));
+    const extras = buildExtras(currentStep.kind);
+    if (currentStep.hasMultiple) {
       extras.unitIndex = 0; // Solo la primera unidad
     }
-    if (current.kind === "box-logo") {
+    if (currentStep.kind === "box-logo") {
       extras.copies = 1; // Solo 1 copia
     }
-    const jobId = await enqueue(current.kind, extras);
+    const jobId = await enqueue(currentStep.kind, extras);
     if (!jobId) {
-      setStatusByKind((s) => ({ ...s, [current.kind]: "failed" }));
+      setStatusByKind((s) => ({ ...s, [currentStep.kind]: "failed" }));
       return;
     }
-    setStatusByKind((s) => ({ ...s, [current.kind]: "printing" }));
+    setStatusByKind((s) => ({ ...s, [currentStep.kind]: "printing" }));
     const result = await pollUntilDone(jobId);
-    setStatusByKind((s) => ({ ...s, [current.kind]: result.toLowerCase() as "done" | "failed" }));
+    setStatusByKind((s) => ({ ...s, [currentStep.kind]: result.toLowerCase() as "done" | "failed" }));
     if (result === "DONE") {
       toast.success("Prueba impresa ✓");
       setTimeout(
-        () => setStatusByKind((s) => ({ ...s, [current.kind]: "idle" })),
+        () => setStatusByKind((s) => ({ ...s, [currentStep.kind]: "idle" })),
         2500
       );
     }
@@ -326,15 +323,15 @@ export function PrintStepWizard({
   }
 
   async function printSingle(idx: number) {
-    if (!current) return;
+    if (!currentStep) return;
     setOneByOneStatus("sending");
     if (!agentEnabled) {
-      openPdf(current.kind, true, idx);
+      openPdf(currentStep.kind, true, idx);
       setOneByOneStatus("done");
       return;
     }
-    const extras = { ...buildExtras(current.kind), unitIndex: idx };
-    const jobId = await enqueue(current.kind, extras);
+    const extras = { ...buildExtras(currentStep.kind), unitIndex: idx };
+    const jobId = await enqueue(currentStep.kind, extras);
     if (!jobId) {
       setOneByOneStatus("failed");
       return;
@@ -391,7 +388,7 @@ export function PrintStepWizard({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function goNext() {
-    if (subIdx + 1 >= visibleSteps.length) {
+    if (subIdx + 1 >= slides.length) {
       onFinish();
       return;
     }
@@ -399,9 +396,25 @@ export function PrintStepWizard({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (!current) return null;
-  const Icon = current.icon;
-  const status = statusByKind[current.kind];
+  if (!currentSlide) return null;
+
+  // Slide intermedio: cambio de papel en la impresora
+  if (currentSlide.type === "paper-change") {
+    return (
+      <PaperChangeSlide
+        from={currentSlide.from}
+        to={currentSlide.to}
+        slides={slides}
+        currentIdx={subIdx}
+        onPrev={goPrev}
+        onNext={goNext}
+      />
+    );
+  }
+
+  if (!currentStep) return null;
+  const Icon = currentStep.icon;
+  const status = statusByKind[currentStep.kind];
 
   return (
     <div className="space-y-5">
@@ -409,44 +422,19 @@ export function PrintStepWizard({
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Icon className="size-5" />
-          {current.title}
+          {currentStep.title}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Paso {subIdx + 1} de {visibleSteps.length} · Pedido {orderNumber}
+          Paso {subIdx + 1} de {slides.length} · Pedido {orderNumber}
         </p>
       </div>
 
       {/* Indicador de progreso del sub-wizard */}
-      <div className="flex items-center gap-1">
-        {visibleSteps.map((s, i) => (
-          <div
-            key={s.kind}
-            className={`h-1.5 rounded-full flex-1 transition-colors ${
-              i < subIdx
-                ? "bg-primary"
-                : i === subIdx
-                  ? "bg-primary"
-                  : "bg-muted"
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Estado del agente */}
-      <AgentStatusIndicator online={agentOnline} enabled={agentEnabled} />
-
-      {/* Aviso de cambio de papel */}
-      <Alert>
-        <AlertTriangle className="size-4" />
-        <AlertTitle>Antes de imprimir</AlertTitle>
-        <AlertDescription className="text-xs">
-          {current.paperWarning}
-        </AlertDescription>
-      </Alert>
+      <SlideProgress slides={slides} currentIdx={subIdx} />
 
       {/* Preview */}
       <LabelPreview
-        step={current}
+        step={currentStep}
         offsetX={offsetX}
         offsetY={offsetY}
         productionUnits={productionUnits}
@@ -455,7 +443,7 @@ export function PrintStepWizard({
       />
 
       {/* Offset solo para circulares */}
-      {current.isCircular && current.kind === "product-labels" && (
+      {currentStep.isCircular && currentStep.kind === "product-labels" && (
         <OffsetControls
           offsetX={offsetX}
           offsetY={offsetY}
@@ -465,7 +453,7 @@ export function PrintStepWizard({
       )}
 
       {/* Copies para box-logo */}
-      {current.kind === "box-logo" && (
+      {currentStep.kind === "box-logo" && (
         <div className="rounded-lg border p-3 space-y-2">
           <Label className="text-sm font-medium">Cantidad de copias</Label>
           <Input
@@ -491,7 +479,7 @@ export function PrintStepWizard({
         <PrintActionButton
           icon={Layers}
           title={
-            current.hasMultiple
+            currentStep.hasMultiple
               ? `Imprimir todas (${productionUnits.length})`
               : "Imprimir"
           }
@@ -500,7 +488,7 @@ export function PrintStepWizard({
           primary
         />
 
-        {current.hasMultiple && (
+        {currentStep.hasMultiple && (
           <PrintActionButton
             icon={ListChecks}
             title="Imprimir una a una"
@@ -532,7 +520,7 @@ export function PrintStepWizard({
         </Button>
 
         <Button type="button" onClick={goNext} className="h-12 flex-1">
-          {subIdx + 1 >= visibleSteps.length ? (
+          {subIdx + 1 >= slides.length ? (
             <>
               <Check className="size-4" />
               Finalizar
@@ -552,7 +540,7 @@ export function PrintStepWizard({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ListChecks className="size-5" />
-              {current.title} — una a una
+              {currentStep.title} — una a una
             </DialogTitle>
             <DialogDescription>
               Imprime, confirma que salió bien, y pasa a la siguiente.
@@ -660,41 +648,126 @@ export function PrintStepWizard({
 
 // ───────────────── Sub-componentes ─────────────────
 
-function AgentStatusIndicator({
-  online,
-  enabled,
+type Slide =
+  | { type: "print"; step: SubStep }
+  | { type: "paper-change"; from: SubStep; to: SubStep };
+
+function SlideProgress({
+  slides,
+  currentIdx,
 }: {
-  online: boolean;
-  enabled: boolean;
+  slides: Slide[];
+  currentIdx: number;
 }) {
-  if (!enabled) {
-    return (
-      <div className="flex items-center gap-2 text-xs p-2.5 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300">
-        <WifiOff className="size-4 shrink-0" />
-        <span>
-          Agente desactivado · se abrirá el PDF para imprimir manualmente
-        </span>
-      </div>
-    );
-  }
   return (
-    <div
-      className={`flex items-center gap-2 text-xs p-2.5 rounded-lg border ${
-        online
-          ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900 text-green-800 dark:text-green-300"
-          : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-800 dark:text-red-300"
-      }`}
-    >
-      {online ? (
-        <Wifi className="size-4 shrink-0" />
-      ) : (
-        <WifiOff className="size-4 shrink-0" />
-      )}
-      <span>
-        {online
-          ? "Conectado a la impresora · listo para imprimir"
-          : "Sin conexión al agente · verifica que la PC del 1er piso esté prendida"}
-      </span>
+    <div className="flex items-center gap-1">
+      {slides.map((s, i) => (
+        <div
+          key={i}
+          className={`h-1.5 rounded-full flex-1 transition-colors ${
+            i < currentIdx
+              ? "bg-primary"
+              : i === currentIdx
+                ? "bg-primary"
+                : "bg-muted"
+          } ${s.type === "paper-change" ? "opacity-50" : ""}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PaperChangeSlide({
+  from,
+  to,
+  slides,
+  currentIdx,
+  onPrev,
+  onNext,
+}: {
+  from: SubStep;
+  to: SubStep;
+  slides: Slide[];
+  currentIdx: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const FromIcon = from.icon;
+  const ToIcon = to.icon;
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <RefreshCw className="size-5 text-amber-600" />
+          Cambia el papel
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Paso {currentIdx + 1} de {slides.length}
+        </p>
+      </div>
+
+      <SlideProgress slides={slides} currentIdx={currentIdx} />
+
+      <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-6 space-y-5">
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center gap-2 opacity-50 grayscale">
+            <div className="size-14 rounded-full border-2 border-foreground/40 flex items-center justify-center">
+              <FromIcon className="size-6" />
+            </div>
+            <span className="text-[11px] font-medium leading-tight text-center max-w-[100px]">
+              {from.paperLabel}
+            </span>
+            <span className="text-[10px] text-muted-foreground">Quita</span>
+          </div>
+          <ArrowRight className="size-6 text-amber-600 shrink-0" />
+          <div className="flex flex-col items-center gap-2">
+            <div className="size-14 rounded-full border-2 border-amber-600 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center">
+              <ToIcon className="size-6" />
+            </div>
+            <span className="text-[11px] font-bold leading-tight text-center max-w-[100px]">
+              {to.paperLabel}
+            </span>
+            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+              Pon
+            </span>
+          </div>
+        </div>
+
+        <div className="text-center space-y-1.5">
+          <p className="text-sm font-semibold">
+            Cambia el rollo en la MUNBYN
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {to.paperWarning}
+          </p>
+        </div>
+      </div>
+
+      <Alert>
+        <AlertTriangle className="size-4" />
+        <AlertTitle>Verifica antes de seguir</AlertTitle>
+        <AlertDescription className="text-xs">
+          Asegúrate de que el rollo nuevo esté bien insertado y el sensor de la
+          impresora lo haya calibrado (luz indicadora fija, sin parpadeos).
+        </AlertDescription>
+      </Alert>
+
+      {/* Footer: Atrás / Listo */}
+      <div className="flex gap-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onPrev}
+          className="h-12"
+        >
+          <ArrowLeft className="size-4" />
+          Atrás
+        </Button>
+        <Button type="button" onClick={onNext} className="h-12 flex-1">
+          <Check className="size-4" />
+          Listo, ya cambié el papel
+        </Button>
+      </div>
     </div>
   );
 }

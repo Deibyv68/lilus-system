@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
 import { PlusCircle, ShoppingCart, Package, Boxes } from "lucide-react";
+import { AgentStatusBadge } from "@/components/agent-status-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,10 @@ export default async function DashboardPage() {
     ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Indicador de estado de la impresora — verifica antes de crear pedido */}
+      <AgentStatusBadge />
+
       {/* CTA principal — visible al entrar */}
       <Link
         href="/pedidos/nuevo"
