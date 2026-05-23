@@ -71,10 +71,8 @@ const PRINT_OPTIONS_BY_KIND = {
   },
   "box-logo": {
     orientation: "portrait",
-    // No hay 4x4 registrado en MUNBYN; usamos 3x3 que es el sticker
-    // cuadrado más grande disponible. Si en el futuro el usuario agrega
-    // un papel custom de 4"x4", cambiar aquí.
-    paperSize: '3"*3"(76mm*76mm)',
+    // Usa el mismo sticker circular 2"×2" que las etiquetas de producto.
+    paperSize: '2"*2"(51mm*51mm)',
   },
   "product-labels": {
     // Etiquetas circulares de jabón impresas en label cuadrado 2"x2" (51mm)

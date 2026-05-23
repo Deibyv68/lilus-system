@@ -176,7 +176,7 @@ export async function buildPdfForJob(
     const out = await PDFDocument.create();
     const [logoPage] = await out.embedPdf(logoDoc, [0]);
 
-    const sizePt = 4 * 72;
+    const sizePt = 2 * 72; // 2"x2" — mismo sticker que las etiquetas de producto
     const origW = logoPage.width;
     const origH = logoPage.height;
     const scale = (sizePt * 0.9) / Math.max(origW, origH);

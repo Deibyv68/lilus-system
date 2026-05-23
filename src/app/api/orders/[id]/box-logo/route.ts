@@ -6,8 +6,10 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// Lámina cuadrada para sticker en caja. Por defecto 4×4 pulgadas.
-const DEFAULT_SIZE_IN = 4;
+// Lámina cuadrada para sticker en caja. Default 2×2 pulgadas (mismo
+// rollo que las etiquetas de producto). Si se requiere otro tamaño,
+// usar ?size=N en la URL.
+const DEFAULT_SIZE_IN = 2;
 const PT_PER_IN = 72;
 
 export async function GET(
