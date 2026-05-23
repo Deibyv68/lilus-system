@@ -64,20 +64,25 @@ const PRINT_OPTIONS_BY_KIND = {
   "shipping": {
     orientation: "portrait",
     paperSize: '4"*6"(102mm*152mm)',
+    scale: "noscale", // PDF generado por nosotros ya es exactamente 4x6
   },
   "expiry-labels": {
     orientation: "landscape",
     paperSize: '2"*1"(51mm*25mm)',
+    scale: "noscale", // PDF generado por nosotros ya es exactamente 2x1
   },
   "box-logo": {
     orientation: "portrait",
-    // Usa el mismo sticker circular 2"×2" que las etiquetas de producto.
     paperSize: '2"*2"(51mm*51mm)',
+    scale: "noscale", // PDF generado por nosotros ya es exactamente 2x2
   },
   "product-labels": {
-    // Etiquetas circulares de jabón impresas en label cuadrado 2"x2" (51mm)
+    // Etiquetas circulares de jabón impresas en label cuadrado 2"x2" (51mm).
+    // Como los PDFs los sube el usuario (pueden ser de tamaño arbitrario),
+    // usamos "fit" para que SumatraPDF los escale a 2x2 automáticamente.
     orientation: "portrait",
     paperSize: '2"*2"(51mm*51mm)',
+    scale: "fit",
   },
 };
 
@@ -96,8 +101,7 @@ async function printJob(job) {
     const options = {
       printer: job.printerName,
       copies: Math.max(1, job.copies || 1),
-      // Sin escalado: que respete el tamaño del PDF (importante para etiquetas)
-      scale: "noscale",
+      scale: printOpts.scale ?? "noscale",
     };
     if (printOpts.orientation) options.orientation = printOpts.orientation;
     if (printOpts.paperSize) options.paperSize = printOpts.paperSize;
@@ -106,9 +110,9 @@ async function printJob(job) {
     console.log(
       `  ✓ Impreso (job ${job.id}, ${job.kind}, ${
         printOpts.paperSize ? `paper=${printOpts.paperSize}, ` : ""
-      }${printOpts.orientation ?? "auto"}, ${job.copies} copia${
-        job.copies > 1 ? "s" : ""
-      })`
+      }${printOpts.orientation ?? "auto"}, scale=${options.scale}, ${
+        job.copies
+      } copia${job.copies > 1 ? "s" : ""})`
     );
   } finally {
     fs.unlink(tmpFile, () => {});
