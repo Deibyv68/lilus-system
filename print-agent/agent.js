@@ -52,15 +52,35 @@ try {
 }
 
 // ──────────────────────────────────────────────────────────
-// Orientación por tipo de etiqueta — fuerza al driver de Windows
-// a respetar la orientación correcta, sin importar la configuración default
-// del driver.
+// Opciones de impresión por tipo de etiqueta.
+// Pasamos paperSize y orientation explícitos al driver para que no
+// dependa de configuración default (que puede estar vacía).
+// Los nombres de paperSize son los EXACTOS que registra el driver
+// MUNBYN — se obtienen con:
+//   $wmi = Get-WmiObject -Query "SELECT * FROM Win32_Printer WHERE Name='Munbyn RW403B-N'"
+//   $wmi.PrinterPaperNames
 // ──────────────────────────────────────────────────────────
-const ORIENTATION_BY_KIND = {
-  "shipping": "portrait",       // 4×6
-  "expiry-labels": "landscape", // 2×1
-  "box-logo": "portrait",       // 4×4 cuadrado
-  "product-labels": null,       // depende del PDF subido — no forzar
+const PRINT_OPTIONS_BY_KIND = {
+  "shipping": {
+    orientation: "portrait",
+    paperSize: '4"*6"(102mm*152mm)',
+  },
+  "expiry-labels": {
+    orientation: "landscape",
+    paperSize: '2"*1"(51mm*25mm)',
+  },
+  "box-logo": {
+    orientation: "portrait",
+    // No hay 4x4 registrado en MUNBYN; usamos 3x3 que es el sticker
+    // cuadrado más grande disponible. Si en el futuro el usuario agrega
+    // un papel custom de 4"x4", cambiar aquí.
+    paperSize: '3"*3"(76mm*76mm)',
+  },
+  "product-labels": {
+    // Varía según el PDF subido por producto — no forzamos
+    orientation: null,
+    paperSize: null,
+  },
 };
 
 // ──────────────────────────────────────────────────────────
@@ -72,7 +92,7 @@ async function printJob(job) {
   const tmpFile = path.join(tmpDir, `${job.id}.pdf`);
   fs.writeFileSync(tmpFile, Buffer.from(job.pdfBase64, "base64"));
 
-  const orientation = ORIENTATION_BY_KIND[job.kind];
+  const printOpts = PRINT_OPTIONS_BY_KIND[job.kind] || {};
 
   try {
     const options = {
@@ -81,14 +101,16 @@ async function printJob(job) {
       // Sin escalado: que respete el tamaño del PDF (importante para etiquetas)
       scale: "noscale",
     };
-    if (orientation) {
-      options.orientation = orientation;
-    }
+    if (printOpts.orientation) options.orientation = printOpts.orientation;
+    if (printOpts.paperSize) options.paperSize = printOpts.paperSize;
+
     await printPdf(tmpFile, options);
     console.log(
-      `  ✓ Impreso (job ${job.id}, ${job.kind}${
-        orientation ? ` ${orientation}` : ""
-      }, ${job.copies} copia${job.copies > 1 ? "s" : ""})`
+      `  ✓ Impreso (job ${job.id}, ${job.kind}, ${
+        printOpts.paperSize ? `paper=${printOpts.paperSize}, ` : ""
+      }${printOpts.orientation ?? "auto"}, ${job.copies} copia${
+        job.copies > 1 ? "s" : ""
+      })`
     );
   } finally {
     fs.unlink(tmpFile, () => {});
