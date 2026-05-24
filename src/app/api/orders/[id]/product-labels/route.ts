@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
+import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const format = req.nextUrl.searchParams.get("format");
   const { id } = await params;
   const offsetXmm = parseFloat(req.nextUrl.searchParams.get("offsetX") ?? "0") || 0;
   const offsetYmm = parseFloat(req.nextUrl.searchParams.get("offsetY") ?? "0") || 0;
@@ -89,11 +91,9 @@ export async function GET(
   }
 
   const bytes = await out.save();
-  const res = new NextResponse(Buffer.from(bytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${id}-productos.pdf"`,
-    },
+  const res = await pdfOrPngResponse(bytes, {
+    format,
+    filename: `${id}-productos.pdf`,
   });
   if (missing.length > 0) {
     res.headers.set("X-Missing-Skus", missing.join(","));

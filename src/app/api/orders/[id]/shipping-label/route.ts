@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildShippingLabelPdf } from "@/lib/pdf-shipping-label";
+import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const format = req.nextUrl.searchParams.get("format");
   const order = await prisma.order.findUnique({
     where: { id },
     include: {
@@ -54,10 +56,8 @@ export async function GET(
     weightGrams: weight,
   });
 
-  return new NextResponse(Buffer.from(pdfBytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${order.orderNumber}-envio.pdf"`,
-    },
+  return pdfOrPngResponse(pdfBytes, {
+    format,
+    filename: `${order.orderNumber}-envio.pdf`,
   });
 }

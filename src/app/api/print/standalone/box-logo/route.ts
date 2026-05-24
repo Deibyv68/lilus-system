@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
+import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
 // Devuelve el PDF del sello LILUS para etiqueta circular 2×2
 // (sin necesidad de un pedido). Acepta: ?copies=N
 export async function GET(req: NextRequest) {
+  const format = req.nextUrl.searchParams.get("format");
   const copies = clamp(
     parseInt(req.nextUrl.searchParams.get("copies") ?? "1", 10) || 1,
     1,
@@ -40,11 +42,9 @@ export async function GET(req: NextRequest) {
   }
 
   const bytes = await out.save();
-  return new NextResponse(Buffer.from(bytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="lilus-logo.pdf"`,
-    },
+  return pdfOrPngResponse(bytes, {
+    format,
+    filename: `lilus-logo.pdf`,
   });
 }
 

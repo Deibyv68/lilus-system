@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
+import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const format = req.nextUrl.searchParams.get("format");
   const sizeIn = clamp(
     parseFloat(req.nextUrl.searchParams.get("size") ?? String(DEFAULT_SIZE_IN)) ||
       DEFAULT_SIZE_IN,
@@ -74,11 +76,9 @@ export async function GET(
   }
 
   const pdfBytes = await out.save();
-  return new NextResponse(Buffer.from(pdfBytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${order.orderNumber}-caja.pdf"`,
-    },
+  return pdfOrPngResponse(pdfBytes, {
+    format,
+    filename: `${order.orderNumber}-caja.pdf`,
   });
 }
 

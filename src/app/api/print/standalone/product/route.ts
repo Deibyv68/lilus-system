@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
+import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ const MM_TO_PT = 2.83464567;
 // (sin necesidad de un pedido). Usado por la sección de etiquetas sueltas.
 // Acepta: ?productId=X&copies=N&offsetX=mm&offsetY=mm
 export async function GET(req: NextRequest) {
+  const format = req.nextUrl.searchParams.get("format");
   const productId = req.nextUrl.searchParams.get("productId");
   if (!productId) {
     return new NextResponse("productId requerido", { status: 400 });
@@ -62,11 +64,9 @@ export async function GET(req: NextRequest) {
   }
 
   const bytes = await out.save();
-  return new NextResponse(Buffer.from(bytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="producto-${productId}.pdf"`,
-    },
+  return pdfOrPngResponse(bytes, {
+    format,
+    filename: `producto-${productId}.pdf`,
   });
 }
 

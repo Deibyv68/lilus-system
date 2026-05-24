@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildExpiryLabelPdf } from "@/lib/pdf-expiry-label";
+import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const format = req.nextUrl.searchParams.get("format");
   const unitIndexParam = req.nextUrl.searchParams.get("unitIndex");
   const unitIndex = unitIndexParam !== null ? parseInt(unitIndexParam, 10) : null;
 
@@ -38,10 +40,8 @@ export async function GET(
     }))
   );
 
-  return new NextResponse(Buffer.from(pdfBytes), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${id}-caducidad.pdf"`,
-    },
+  return pdfOrPngResponse(pdfBytes, {
+    format,
+    filename: `${id}-caducidad.pdf`,
   });
 }

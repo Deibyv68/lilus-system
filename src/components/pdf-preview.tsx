@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, FileWarning, ExternalLink } from "lucide-react";
 
 /**
- * Muestra el PDF real que se va a imprimir embebido en un iframe.
- * No es una "recreación" en HTML — es exactamente el byte que la impresora
- * recibirá.
+ * Muestra el preview de un PDF como imagen PNG. La PNG se genera en el
+ * servidor renderizando el PDF real (con pdf-to-png-converter), por lo
+ * que es una reproducción exacta de lo que va a imprimirse, no una
+ * recreación HTML separada.
  *
- * Notas de compatibilidad:
- * - Chrome (desktop / Android): renderiza inline perfectamente.
- * - iOS Safari: a veces no muestra PDFs en iframes. Para esos casos
- *   mostramos un fallback con un botón para abrir en pestaña nueva.
- * - Cuando la URL cambia (por offset, unitIndex…) el iframe se refresca.
+ * El endpoint del PDF debe soportar `?format=png` para devolver imagen
+ * en lugar de PDF (todos los endpoints de LILUS lo hacen).
+ *
+ * Funciona en cualquier navegador (móvil incluido) porque solo usa <img>.
  */
 export function PdfPreview({
   url,
@@ -27,18 +27,23 @@ export function PdfPreview({
 }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Cache-bust por cambios de URL — agregamos timestamp a la URL para que
-  // el navegador descargue el PDF nuevo cuando cambia el offset, etc.
   const [cacheKey, setCacheKey] = useState(0);
+
+  // Cuando cambia la URL (por offset, etc.) recargamos
   useEffect(() => {
     setLoaded(false);
     setError(false);
     setCacheKey((c) => c + 1);
   }, [url]);
 
-  const fullUrl = `${url}${url.includes("?") ? "&" : "?"}_t=${cacheKey}`;
+  // Construimos la URL PNG agregando format=png + cache-bust
+  const pngUrl = (() => {
+    const sep = url.includes("?") ? "&" : "?";
+    return `${url}${sep}format=png&_t=${cacheKey}`;
+  })();
+
+  // URL del PDF original para "Abrir en pestaña"
+  const pdfUrl = url;
 
   return (
     <div className="rounded-lg border p-4 bg-muted/30">
@@ -50,10 +55,7 @@ export function PdfPreview({
 
       <div
         className="relative mx-auto bg-white dark:bg-zinc-100 shadow-sm rounded-sm overflow-hidden"
-        style={{
-          maxWidth: `${maxWidth}px`,
-          aspectRatio,
-        }}
+        style={{ maxWidth: `${maxWidth}px`, aspectRatio }}
       >
         {!loaded && !error && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
@@ -65,24 +67,24 @@ export function PdfPreview({
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
             <FileWarning className="size-6 text-muted-foreground" />
             <p className="text-[10px] text-muted-foreground leading-tight">
-              Tu navegador no muestra PDFs aquí
+              No se pudo generar el preview
             </p>
             <a
-              href={url}
+              href={pdfUrl}
               target="_blank"
               rel="noreferrer"
               className="text-[10px] text-primary inline-flex items-center gap-1 underline"
             >
-              <ExternalLink className="size-3" /> Abrir en pestaña
+              <ExternalLink className="size-3" /> Abrir PDF
             </a>
           </div>
         ) : (
-          <iframe
-            ref={iframeRef}
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             key={cacheKey}
-            src={fullUrl}
-            title="PDF preview"
-            className="w-full h-full block border-0"
+            src={pngUrl}
+            alt={label ?? "preview"}
+            className="w-full h-full object-contain block"
             onLoad={() => setLoaded(true)}
             onError={() => setError(true)}
           />
