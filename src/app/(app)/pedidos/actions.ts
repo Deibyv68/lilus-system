@@ -195,6 +195,21 @@ export async function createOrderAction(payload: CreateOrderPayload) {
   return { ok: true as const, orderId: order.id };
 }
 
+export async function deleteOrdersAction(orderIds: string[]) {
+  if (!Array.isArray(orderIds) || orderIds.length === 0) {
+    return { ok: false as const, error: "Sin pedidos a eliminar" };
+  }
+  // Cascade delete: PrintJob + OrderItem + ProductionUnit + Address (manuales)
+  await prisma.$transaction(async (tx) => {
+    await tx.printJob.deleteMany({ where: { orderId: { in: orderIds } } });
+    // ProductionUnit y OrderItem caen en cascada por la relación onDelete
+    await tx.order.deleteMany({ where: { id: { in: orderIds } } });
+  });
+  revalidatePath("/pedidos");
+  revalidatePath("/");
+  return { ok: true as const, count: orderIds.length };
+}
+
 export async function updateOrderStatusAction(
   orderId: string,
   status: "PENDING" | "PAID" | "PACKED" | "SHIPPED" | "DELIVERED" | "CANCELLED"

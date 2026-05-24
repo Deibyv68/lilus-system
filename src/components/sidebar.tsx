@@ -13,6 +13,7 @@ import {
   Truck,
   Settings,
   PlusCircle,
+  Printer,
 } from "lucide-react";
 
 const nav = [
@@ -21,6 +22,7 @@ const nav = [
   { href: "/pedidos", label: "Pedidos", icon: ShoppingCart },
   { href: "/productos", label: "Productos", icon: Package },
   { href: "/packs", label: "Packs", icon: Boxes },
+  { href: "/etiquetas", label: "Imprimir etiquetas", icon: Printer },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/envios", label: "Envíos", icon: Truck },
   { href: "/configuracion", label: "Configuración", icon: Settings },

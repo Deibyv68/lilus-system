@@ -1,8 +1,16 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { Users, Truck, Settings, Boxes, ChevronRight } from "lucide-react";
+import {
+  Users,
+  Truck,
+  Settings,
+  Boxes,
+  ChevronRight,
+  Printer,
+} from "lucide-react";
 
 const links = [
+  { href: "/etiquetas", label: "Imprimir etiquetas", icon: Printer, description: "Imprimir etiquetas sueltas sin pedido" },
   { href: "/packs", label: "Packs", icon: Boxes, description: "Paquetes que agrupan productos" },
   { href: "/clientes", label: "Clientes", icon: Users, description: "Historial de personas que han comprado" },
   { href: "/envios", label: "Envíos", icon: Truck, description: "Zonas, transportadoras y tarifas" },

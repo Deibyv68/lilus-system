@@ -2,12 +2,29 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatCurrency, formatDateTime } from "@/lib/format";
-import { ChevronRight, Printer, X, CheckCircle2 } from "lucide-react";
+import {
+  ChevronRight,
+  Printer,
+  X,
+  CheckCircle2,
+  Trash2,
+  AlertTriangle,
+} from "lucide-react";
+import { deleteOrdersAction } from "./actions";
 
 type Order = {
   id: string;
@@ -42,6 +59,8 @@ export function OrderList({ orders }: { orders: Order[] }) {
   const router = useRouter();
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isDeleting, startDelete] = useTransition();
 
   function enterSelection() {
     setSelectionMode(true);
@@ -75,6 +94,25 @@ export function OrderList({ orders }: { orders: Order[] }) {
     router.push(`/pedidos/lote/imprimir?ids=${ids}`);
   }
 
+  function confirmDelete() {
+    if (selectedIds.size === 0) return;
+    startDelete(async () => {
+      const ids = Array.from(selectedIds);
+      const res = await deleteOrdersAction(ids);
+      if (!res.ok) {
+        toast.error(res.error ?? "Error eliminando pedidos");
+        return;
+      }
+      toast.success(
+        `${res.count} pedido${res.count === 1 ? "" : "s"} eliminado${res.count === 1 ? "" : "s"}`
+      );
+      setDeleteOpen(false);
+      setSelectionMode(false);
+      setSelectedIds(new Set());
+      router.refresh();
+    });
+  }
+
   return (
     <>
       {/* Barra de control de selección */}
@@ -95,7 +133,7 @@ export function OrderList({ orders }: { orders: Order[] }) {
           </Button>
         </div>
       ) : (
-        <div className="sticky top-0 z-20 -mx-4 sm:mx-0 mb-3 px-4 sm:px-4 py-3 bg-primary text-primary-foreground rounded-none sm:rounded-xl shadow-lg flex items-center gap-3">
+        <div className="sticky top-0 z-20 -mx-4 sm:mx-0 mb-3 px-4 sm:px-4 py-3 bg-primary text-primary-foreground rounded-none sm:rounded-xl shadow-lg flex items-center gap-2">
           <Button
             type="button"
             size="icon"
@@ -107,10 +145,10 @@ export function OrderList({ orders }: { orders: Order[] }) {
             <X className="size-4" />
           </Button>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold leading-tight">
+            <p className="font-semibold leading-tight text-sm">
               {selectedIds.size === 0
                 ? "Toca pedidos para seleccionarlos"
-                : `${selectedIds.size} pedido${selectedIds.size === 1 ? "" : "s"} seleccionado${selectedIds.size === 1 ? "" : "s"}`}
+                : `${selectedIds.size} seleccionado${selectedIds.size === 1 ? "" : "s"}`}
             </p>
             <button
               type="button"
@@ -126,6 +164,17 @@ export function OrderList({ orders }: { orders: Order[] }) {
           </div>
           <Button
             type="button"
+            variant="ghost"
+            className="h-10 shrink-0 text-primary-foreground hover:bg-white/15"
+            onClick={() => setDeleteOpen(true)}
+            disabled={selectedIds.size === 0}
+            title="Eliminar seleccionados"
+          >
+            <Trash2 className="size-4" />
+            <span className="hidden sm:inline">Eliminar</span>
+          </Button>
+          <Button
+            type="button"
             variant="secondary"
             className="h-10 shrink-0"
             onClick={goBatchPrint}
@@ -136,6 +185,42 @@ export function OrderList({ orders }: { orders: Order[] }) {
           </Button>
         </div>
       )}
+
+      {/* Dialog de confirmación de eliminación */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="size-5" />
+              Eliminar pedidos
+            </DialogTitle>
+            <DialogDescription>
+              Vas a eliminar{" "}
+              <strong className="text-foreground">{selectedIds.size}</strong>{" "}
+              pedido{selectedIds.size === 1 ? "" : "s"}. Esta acción{" "}
+              <strong>no se puede deshacer</strong> y borra también sus ítems,
+              unidades de producción y trabajos de impresión.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+            >
+              <Trash2 className="size-4" />
+              {isDeleting ? "Eliminando…" : "Sí, eliminar todos"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ul className="space-y-3">
         {orders.map((o) => {

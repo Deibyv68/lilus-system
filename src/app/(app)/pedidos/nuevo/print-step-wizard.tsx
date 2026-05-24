@@ -36,11 +36,7 @@ import {
   Boxes,
   RefreshCw,
 } from "lucide-react";
-import {
-  CircularPreview,
-  ShippingPreview,
-  ExpiryPreview,
-} from "@/components/label-previews";
+import { PdfPreview } from "@/components/pdf-preview";
 
 // ───────────────── Tipos ─────────────────
 type PrintKind = "shipping" | "product-labels" | "expiry-labels" | "box-logo";
@@ -445,6 +441,7 @@ export function PrintStepWizard({
         productionUnits={productionUnits}
         packCount={packCount}
         boxLogoCopies={boxLogoCopies}
+        orderId={orderId}
       />
 
       {/* Offset solo para circulares */}
@@ -781,7 +778,7 @@ function LabelPreview({
   step,
   offsetX,
   offsetY,
-  productionUnits,
+  orderId,
 }: {
   step: SubStep;
   offsetX: number;
@@ -789,20 +786,49 @@ function LabelPreview({
   productionUnits: ProductionUnit[];
   packCount: number;
   boxLogoCopies: number;
+  orderId: string;
 }) {
-  if (step.isCircular) {
+  if (step.kind === "shipping") {
     return (
-      <CircularPreview offsetX={offsetX} offsetY={offsetY} kind={step.kind} />
+      <PdfPreview
+        url={`/api/orders/${orderId}/shipping-label`}
+        label="Etiqueta de envío 4×6"
+        aspectRatio="4 / 6"
+        maxWidth={180}
+      />
     );
   }
-  if (step.kind === "shipping") {
-    return <ShippingPreview />;
+  if (step.kind === "product-labels") {
+    const params = new URLSearchParams();
+    params.set("unitIndex", "0");
+    if (offsetX !== 0) params.set("offsetX", String(offsetX));
+    if (offsetY !== 0) params.set("offsetY", String(offsetY));
+    return (
+      <PdfPreview
+        url={`/api/orders/${orderId}/product-labels?${params}`}
+        label="Etiqueta de producto 2×2"
+        aspectRatio="1 / 1"
+        maxWidth={220}
+      />
+    );
   }
   if (step.kind === "expiry-labels") {
     return (
-      <ExpiryPreview
-        productName={productionUnits[0]?.productName}
-        batchCode={productionUnits[0]?.batchCode}
+      <PdfPreview
+        url={`/api/orders/${orderId}/expiry-labels?unitIndex=0`}
+        label="Etiqueta de caducidad 2×1"
+        aspectRatio="2 / 1"
+        maxWidth={260}
+      />
+    );
+  }
+  if (step.kind === "box-logo") {
+    return (
+      <PdfPreview
+        url={`/api/orders/${orderId}/box-logo?copies=1`}
+        label="Logo para caja 2×2"
+        aspectRatio="1 / 1"
+        maxWidth={220}
       />
     );
   }

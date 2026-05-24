@@ -36,11 +36,7 @@ import {
   Boxes,
   RefreshCw,
 } from "lucide-react";
-import {
-  CircularPreview,
-  ShippingPreview,
-  ExpiryPreview,
-} from "@/components/label-previews";
+import { PdfPreview } from "@/components/pdf-preview";
 
 type PrintKind = "shipping" | "product-labels" | "expiry-labels" | "box-logo";
 
@@ -485,26 +481,57 @@ function BatchPrintCore({
 
       <SlideProgress slides={slides} currentIdx={subIdx} />
 
-      {/* Preview de la etiqueta */}
-      {currentStep.isCircular ? (
-        <CircularPreview
-          offsetX={offsetX}
-          offsetY={offsetY}
-          kind={currentStep.kind}
-        />
-      ) : currentStep.kind === "shipping" ? (
-        <ShippingPreview sampleName={items[0]?.customerName} />
-      ) : currentStep.kind === "expiry-labels" ? (
+      {/* Preview del PDF real (de la primera etiqueta del lote) */}
+      {items[0] &&
         (() => {
-          const sampleLabel = items[0]?.label.split(" · ");
-          return (
-            <ExpiryPreview
-              productName={sampleLabel?.[1]}
-              batchCode={sampleLabel?.[2]}
-            />
-          );
-        })()
-      ) : null}
+          const sampleId = items[0].orderId;
+          const sampleUnitIdx = items[0].unitIndex ?? 0;
+          if (currentStep.kind === "shipping") {
+            return (
+              <PdfPreview
+                url={`/api/orders/${sampleId}/shipping-label`}
+                label={`Envío 4×6 · ${items[0].orderNumber}`}
+                aspectRatio="4 / 6"
+                maxWidth={180}
+              />
+            );
+          }
+          if (currentStep.kind === "product-labels") {
+            const params = new URLSearchParams();
+            params.set("unitIndex", String(sampleUnitIdx));
+            if (offsetX !== 0) params.set("offsetX", String(offsetX));
+            if (offsetY !== 0) params.set("offsetY", String(offsetY));
+            return (
+              <PdfPreview
+                url={`/api/orders/${sampleId}/product-labels?${params}`}
+                label={`Producto · ${items[0].orderNumber}`}
+                aspectRatio="1 / 1"
+                maxWidth={220}
+              />
+            );
+          }
+          if (currentStep.kind === "expiry-labels") {
+            return (
+              <PdfPreview
+                url={`/api/orders/${sampleId}/expiry-labels?unitIndex=${sampleUnitIdx}`}
+                label={`Caducidad · ${items[0].orderNumber}`}
+                aspectRatio="2 / 1"
+                maxWidth={260}
+              />
+            );
+          }
+          if (currentStep.kind === "box-logo") {
+            return (
+              <PdfPreview
+                url={`/api/orders/${sampleId}/box-logo?copies=1`}
+                label="Logo para caja 2×2"
+                aspectRatio="1 / 1"
+                maxWidth={220}
+              />
+            );
+          }
+          return null;
+        })()}
 
       {/* Resumen de qué se va a imprimir */}
       <div className="rounded-lg border bg-muted/30 p-3">
