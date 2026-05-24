@@ -22,6 +22,16 @@ export async function GET(req: NextRequest) {
     create: { key: "agent_last_seen", value: now },
   });
 
+  // Captura estado físico de la impresora reportado por el agente
+  const printerStatus = req.nextUrl.searchParams.get("printer");
+  if (printerStatus) {
+    await prisma.setting.upsert({
+      where: { key: "agent_printer_status" },
+      update: { value: printerStatus },
+      create: { key: "agent_printer_status", value: printerStatus },
+    });
+  }
+
   // Atómico: encuentra el más viejo PENDING y márcalo PICKED_UP
   const next = await prisma.printJob.findFirst({
     where: { status: "PENDING" },

@@ -31,7 +31,11 @@ export async function GET(
     carrier: order.carrier?.name ?? "—",
     sender: {
       name: map.sender_name ?? "LILUS",
+      cedula: map.sender_cedula || undefined,
       phone: map.sender_phone || undefined,
+      email: map.sender_email || undefined,
+      city: map.sender_city || undefined,
+      province: map.sender_province || undefined,
       address: map.sender_address ?? "Quito, Ecuador",
     },
     recipient: {

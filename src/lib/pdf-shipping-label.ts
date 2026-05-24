@@ -11,7 +11,11 @@ export type ShippingLabelData = {
   carrier: string;
   sender: {
     name: string;
+    cedula?: string;
     phone?: string;
+    email?: string;
+    city?: string;
+    province?: string;
     address: string;
   };
   recipient: {
@@ -71,11 +75,39 @@ export async function buildShippingLabelPdf(
   y -= 11;
   page.drawText(data.sender.name, { x: MARGIN, y, size: 10, font: bold });
   y -= 11;
-  drawWrapped(page, data.sender.address, MARGIN, y, LABEL_WIDTH - MARGIN * 2, 9, font);
-  y -= 12;
+  if (data.sender.cedula) {
+    page.drawText(`CI/RUC: ${data.sender.cedula}`, {
+      x: MARGIN,
+      y,
+      size: 8,
+      font,
+    });
+    y -= 10;
+  }
+  if (data.sender.city || data.sender.province) {
+    const cityLine = [data.sender.city, data.sender.province]
+      .filter(Boolean)
+      .join(", ");
+    page.drawText(cityLine, { x: MARGIN, y, size: 9, font });
+    y -= 11;
+  }
+  const addrLinesS = drawWrapped(
+    page,
+    data.sender.address,
+    MARGIN,
+    y,
+    LABEL_WIDTH - MARGIN * 2,
+    9,
+    font
+  );
+  y -= addrLinesS * 11;
   if (data.sender.phone) {
     page.drawText(`Tel: ${data.sender.phone}`, { x: MARGIN, y, size: 9, font });
     y -= 11;
+  }
+  if (data.sender.email) {
+    page.drawText(data.sender.email, { x: MARGIN, y, size: 8, font, color: gray });
+    y -= 10;
   }
 
   y -= 6;

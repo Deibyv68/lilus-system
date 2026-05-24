@@ -19,16 +19,20 @@ export default async function SettingsPage() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Remitente</CardTitle>
+            <CardTitle>Marca y remitente</CardTitle>
           </CardHeader>
           <CardContent>
             <SettingsForm
               initial={{
                 brand_name: map.brand_name ?? "LILUS",
-                sender_name: map.sender_name ?? "LILUS Jabones Artesanales",
-                sender_phone: map.sender_phone ?? "",
-                sender_address: map.sender_address ?? "Quito, Ecuador",
                 order_prefix: map.order_prefix ?? "LILUS",
+                sender_name: map.sender_name ?? "LILUS Jabones Artesanales",
+                sender_cedula: map.sender_cedula ?? "",
+                sender_phone: map.sender_phone ?? "",
+                sender_email: map.sender_email ?? "",
+                sender_city: map.sender_city ?? "Quito",
+                sender_province: map.sender_province ?? "Pichincha",
+                sender_address: map.sender_address ?? "",
               }}
             />
           </CardContent>

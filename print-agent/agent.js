@@ -7,6 +7,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
 const crypto = require("node:crypto");
+const { execFile } = require("node:child_process");
 
 // ──────────────────────────────────────────────────────────
 // Config — se lee de .env junto al script
@@ -37,6 +38,46 @@ const POLL_INTERVAL_MS = parseInt(process.env.LILUS_POLL_INTERVAL_MS || "2000", 
 if (!SERVER_URL || !TOKEN) {
   console.error("✗ Falta configuración. Crea .env con LILUS_SERVER_URL y LILUS_AGENT_TOKEN");
   process.exit(1);
+}
+
+// ──────────────────────────────────────────────────────────
+// Verificación de estado físico de la impresora vía PowerShell
+// (lee `Get-Printer` y `Get-CimInstance Win32_Printer` para detectar
+// si la MUNBYN está conectada, encendida, con papel, etc.)
+// ──────────────────────────────────────────────────────────
+function getPrinterStatus(printerName) {
+  return new Promise((resolve) => {
+    // Status codes Win32_Printer.PrinterStatus:
+    // 3=Idle, 4=Printing, 5=Warmup, 6=StoppedPrinting, 7=Offline
+    // WorkOffline = true cuando está físicamente desconectada o apagada
+    const psScript = `
+      $ErrorActionPreference = 'SilentlyContinue';
+      $p = Get-CimInstance -ClassName Win32_Printer -Filter "Name='${printerName.replace(/'/g, "''")}'";
+      if (-not $p) { Write-Output 'not_installed'; exit; }
+      if ($p.WorkOffline -eq $true) { Write-Output 'offline'; exit; }
+      switch ($p.PrinterStatus) {
+        3 { Write-Output 'ok' }
+        4 { Write-Output 'printing' }
+        5 { Write-Output 'ok' }
+        6 { Write-Output 'stopped' }
+        7 { Write-Output 'offline' }
+        default { Write-Output 'unknown' }
+      }
+    `.trim();
+    execFile(
+      "powershell.exe",
+      ["-NoProfile", "-NonInteractive", "-Command", psScript],
+      { timeout: 5000 },
+      (err, stdout) => {
+        if (err) {
+          resolve("error");
+          return;
+        }
+        const out = (stdout || "").trim().toLowerCase();
+        resolve(out || "unknown");
+      }
+    );
+  });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -122,8 +163,52 @@ async function printJob(job) {
 // ──────────────────────────────────────────────────────────
 // API client
 // ──────────────────────────────────────────────────────────
+// El agente le pregunta al server el nombre de la impresora (sin que el
+// usuario tenga que duplicar configuración en .env) y luego verifica
+// periódicamente con Windows que la impresora esté online.
+let cachedPrinterName = null;
+let lastConfigFetch = 0;
+const CONFIG_FETCH_INTERVAL = 60_000;
+
+async function maybeRefreshConfig() {
+  const now = Date.now();
+  if (now - lastConfigFetch < CONFIG_FETCH_INTERVAL && cachedPrinterName) {
+    return;
+  }
+  lastConfigFetch = now;
+  try {
+    const res = await fetch(
+      `${SERVER_URL}/api/agent/config?token=${encodeURIComponent(TOKEN)}`
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data?.printerName) cachedPrinterName = data.printerName;
+  } catch {}
+}
+
+let cachedPrinterStatus = "unknown";
+let lastPrinterCheck = 0;
+const PRINTER_CHECK_INTERVAL = 10_000;
+
+async function maybeCheckPrinter() {
+  const now = Date.now();
+  if (now - lastPrinterCheck < PRINTER_CHECK_INTERVAL) return;
+  lastPrinterCheck = now;
+  if (!cachedPrinterName) return;
+  try {
+    cachedPrinterStatus = await getPrinterStatus(cachedPrinterName);
+  } catch {
+    cachedPrinterStatus = "error";
+  }
+}
+
 async function pollNext() {
-  const res = await fetch(`${SERVER_URL}/api/print-queue?token=${encodeURIComponent(TOKEN)}`);
+  await maybeRefreshConfig();
+  await maybeCheckPrinter();
+  const url = `${SERVER_URL}/api/print-queue?token=${encodeURIComponent(
+    TOKEN
+  )}&printer=${encodeURIComponent(cachedPrinterStatus)}`;
+  const res = await fetch(url);
   if (res.status === 204) return null;
   if (!res.ok) throw new Error(`Poll failed: HTTP ${res.status}`);
   return await res.json();

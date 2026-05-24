@@ -6,7 +6,11 @@ import { prisma } from "@/lib/prisma";
 const ALLOWED_KEYS = new Set([
   "brand_name",
   "sender_name",
+  "sender_cedula",
   "sender_phone",
+  "sender_email",
+  "sender_city",
+  "sender_province",
   "sender_address",
   "order_prefix",
   "print_agent_enabled",

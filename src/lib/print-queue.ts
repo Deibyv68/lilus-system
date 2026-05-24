@@ -57,7 +57,11 @@ export async function buildPdfForJob(
       carrier: order.carrier?.name ?? "—",
       sender: {
         name: m.sender_name ?? "LILUS",
+        cedula: m.sender_cedula || undefined,
         phone: m.sender_phone || undefined,
+        email: m.sender_email || undefined,
+        city: m.sender_city || undefined,
+        province: m.sender_province || undefined,
         address: m.sender_address ?? "Quito, Ecuador",
       },
       recipient: {
