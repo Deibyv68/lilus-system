@@ -41,33 +41,61 @@ if (!SERVER_URL || !TOKEN) {
 }
 
 // ──────────────────────────────────────────────────────────
-// Verificación de estado físico de la impresora vía PowerShell
-// (lee `Get-Printer` y `Get-CimInstance Win32_Printer` para detectar
-// si la MUNBYN está conectada, encendida, con papel, etc.)
+// Verificación de estado físico de la impresora vía PowerShell.
+//
+// Estrategia HÍBRIDA:
+//   1) Get-PnpDevice — consulta el subsistema USB / Plug and Play.
+//      FUNCIONA DESDE LocalSystem SIN NECESIDAD DE LOGIN. Detecta si la
+//      impresora está físicamente conectada y encendida.
+//   2) Get-CimInstance Win32_Printer — consulta el driver de impresión.
+//      Da detalles finos (sin papel, tapa abierta, etc.) pero depende de
+//      sesión activa. Si falla o no devuelve nada, confiamos en PnP.
+//
+// Esto resuelve el problema de que el driver de impresión necesite una
+// sesión interactiva para reportar estado correcto. Con PnP sabemos si
+// está conectada incluso sin login.
 // ──────────────────────────────────────────────────────────
 function getPrinterStatus(printerName) {
   return new Promise((resolve) => {
-    // Status codes Win32_Printer.PrinterStatus:
-    // 3=Idle, 4=Printing, 5=Warmup, 6=StoppedPrinting, 7=Offline
-    // WorkOffline = true cuando está físicamente desconectada o apagada
+    const escapedName = printerName.replace(/'/g, "''");
     const psScript = `
       $ErrorActionPreference = 'SilentlyContinue';
-      $p = Get-CimInstance -ClassName Win32_Printer -Filter "Name='${printerName.replace(/'/g, "''")}'";
-      if (-not $p) { Write-Output 'not_installed'; exit; }
-      if ($p.WorkOffline -eq $true) { Write-Output 'offline'; exit; }
+
+      # ── Paso 1: Detección PnP (siempre funciona sin login) ──
+      $pnp = Get-PnpDevice | Where-Object { $_.FriendlyName -like '*MUNBYN*' -or $_.FriendlyName -like '*Munbyn*' } | Select-Object -First 1;
+      if (-not $pnp) { Write-Output 'offline'; exit; }
+      if ($pnp.Status -eq 'Error') { Write-Output 'error'; exit; }
+      if ($pnp.Status -eq 'Degraded') { Write-Output 'error'; exit; }
+      if ($pnp.Status -ne 'OK') {
+        # 'Unknown', 'Disabled', etc.
+        Write-Output 'offline'; exit;
+      }
+
+      # ── Paso 2: Detalle vía Win32_Printer (puede no funcionar sin login) ──
+      $p = Get-CimInstance -ClassName Win32_Printer -Filter "Name='${escapedName}'";
+      if (-not $p) {
+        # PnP la ve pero el driver no está disponible — probablemente
+        # falta sesión activa. Confiamos en PnP: está físicamente OK.
+        Write-Output 'ok'; exit;
+      }
+
+      # Si Win32 dice offline pero PnP la ve presente: ignoramos el
+      # Win32 (suele ser falso positivo por falta de sesión).
+      if ($p.WorkOffline -eq $true) { Write-Output 'ok'; exit; }
+
       switch ($p.PrinterStatus) {
         3 { Write-Output 'ok' }
         4 { Write-Output 'printing' }
         5 { Write-Output 'ok' }
         6 { Write-Output 'stopped' }
-        7 { Write-Output 'offline' }
-        default { Write-Output 'unknown' }
+        7 { Write-Output 'ok' }
+        default { Write-Output 'ok' }
       }
     `.trim();
     execFile(
       "powershell.exe",
       ["-NoProfile", "-NonInteractive", "-Command", psScript],
-      { timeout: 5000 },
+      { timeout: 8000 },
       (err, stdout) => {
         if (err) {
           resolve("error");
