@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -30,14 +31,23 @@ export function Sidebar() {
 
   return (
     <aside className="w-60 shrink-0 border-r bg-sidebar text-sidebar-foreground flex flex-col">
-      <div className="p-5 border-b">
-        <h1 className="text-3xl font-black tracking-tight leading-none">LILUS</h1>
-        <p className="text-[11px] italic text-muted-foreground mt-0.5">
-          Ilumina tu belleza
-        </p>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mt-2">
-          Cuidado natural · Hecho con amor
-        </p>
+      <div className="p-5 border-b flex items-center gap-3">
+        <Image
+          src="/brand/lilus-logo.png"
+          alt="LILUS"
+          width={48}
+          height={48}
+          priority
+          className="rounded-full shrink-0"
+        />
+        <div className="min-w-0">
+          <h1 className="text-xl font-black tracking-tight leading-none">
+            LILUS
+          </h1>
+          <p className="text-[11px] italic text-muted-foreground mt-1">
+            Ilumina tu belleza
+          </p>
+        </div>
       </div>
       <nav className="p-2 flex-1 space-y-1">
         {nav.map(({ href, label, icon: Icon, accent }) => {

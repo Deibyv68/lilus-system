@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,9 +46,19 @@ export default async function DashboardPage() {
       {/* CTA principal — visible al entrar */}
       <Link
         href="/pedidos/nuevo"
-        className="block rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 shadow-lg active:scale-[0.98] transition-transform"
+        className="block relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 shadow-lg active:scale-[0.98] transition-transform"
       >
-        <div className="flex items-center gap-4">
+        {/* Sello LILUS decorativo de fondo */}
+        <Image
+          src="/brand/lilus-logo.png"
+          alt=""
+          width={200}
+          height={200}
+          aria-hidden
+          className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none invert"
+        />
+
+        <div className="relative flex items-center gap-4">
           <div className="size-14 rounded-full bg-white/15 flex items-center justify-center shrink-0">
             <PlusCircle className="size-8" />
           </div>

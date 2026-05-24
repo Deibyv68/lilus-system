@@ -10,24 +10,20 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",
-    theme_color: "#0a0a0a",
+    theme_color: "#ffffff",
     lang: "es-EC",
     categories: ["business", "productivity", "shopping"],
+    // Usamos el PNG del sello LILUS para todos los tamaños.
+    // Next.js sirve src/app/icon.png en la ruta /icon automáticamente.
     icons: [
       {
-        src: "/icon",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/icon-large",
+        src: "/brand/lilus-logo.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon-maskable",
+        src: "/brand/lilus-logo.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
