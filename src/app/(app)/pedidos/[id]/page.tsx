@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime } from "@/lib/format";
-import { PrintCenter } from "./print-center";
 import { StatusSelector } from "./status-selector";
 import { ShareButton } from "./share-button";
 import { buildTrackingUrl } from "@/lib/share-message";
-import { ArrowLeft, Truck } from "lucide-react";
+import { ArrowLeft, Truck, Printer } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -241,17 +241,52 @@ export default async function OrderDetailPage({
             </CardContent>
           </Card>
 
-          <PrintCenter
-            orderId={order.id}
-            missingLabels={missingLabels}
-            packCount={packCount}
-            agentEnabled={agentEnabled}
-            productionUnits={order.productionUnits.map((u) => ({
-              id: u.id,
-              productName: u.productName,
-              batchCode: u.batchCode,
-            }))}
-          />
+          {/* CTA grande para abrir el wizard de impresión */}
+          <Card className="border-primary/40 bg-primary/5">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="size-10 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Printer className="size-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold leading-tight">
+                    Imprimir etiquetas
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Envío, productos, caducidad
+                    {packCount > 0 ? " y logo de caja" : ""} — paso a paso con
+                    previsualización.
+                  </p>
+                </div>
+              </div>
+
+              {missingLabels.length > 0 && (
+                <div className="text-[11px] rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 text-amber-800 dark:text-amber-300 p-2">
+                  <p className="font-medium">
+                    ⚠ {missingLabels.length} producto
+                    {missingLabels.length === 1 ? "" : "s"} sin PDF de etiqueta
+                  </p>
+                  <ul className="list-disc pl-4 mt-1">
+                    {missingLabels.slice(0, 3).map((m) => (
+                      <li key={m.id} className="font-mono">
+                        {m.sku}
+                      </li>
+                    ))}
+                    {missingLabels.length > 3 && (
+                      <li className="italic">… y más</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              <Button asChild className="w-full h-12">
+                <Link href={`/pedidos/${order.id}/imprimir`}>
+                  <Printer className="size-4" />
+                  Ir a imprimir
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>
