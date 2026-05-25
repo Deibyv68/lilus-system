@@ -1,5 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { generateBarcodePng } from "./barcode";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 // Tamaño 4x6 pulgadas en puntos (1 pt = 1/72 pulgada)
 const LABEL_WIDTH = 4 * 72; // 288
@@ -45,21 +47,52 @@ export async function buildShippingLabelPdf(
 
   let y = LABEL_HEIGHT - MARGIN;
 
-  // Header con marca y transportadora
+  // ── Header con sello LILUS + transportadora ──
+  // Sello (line-art, black on transparent) a la izquierda
+  const LOGO_SIZE = 36; // pt (~13mm)
+  try {
+    const logoPath = path.join(
+      process.cwd(),
+      "public",
+      "brand",
+      "lilus-logo-label.png"
+    );
+    const logoBytes = await readFile(logoPath);
+    const logoImage = await pdf.embedPng(logoBytes);
+    page.drawImage(logoImage, {
+      x: MARGIN,
+      y: y - LOGO_SIZE,
+      width: LOGO_SIZE,
+      height: LOGO_SIZE,
+    });
+  } catch {
+    // si no está el PNG, seguimos sin logo (fallback)
+  }
+
+  // Texto LILUS al lado del sello
   page.drawText("LILUS", {
-    x: MARGIN,
-    y: y - 18,
-    size: 22,
+    x: MARGIN + LOGO_SIZE + 6,
+    y: y - 22,
+    size: 20,
     font: bold,
     color: black,
   });
+  page.drawText("Cuidado natural", {
+    x: MARGIN + LOGO_SIZE + 6,
+    y: y - 32,
+    size: 7,
+    font,
+    color: gray,
+  });
+
+  // Transportadora a la derecha
   page.drawText(data.carrier.toUpperCase(), {
     x: LABEL_WIDTH - MARGIN - bold.widthOfTextAtSize(data.carrier.toUpperCase(), 10),
     y: y - 12,
     size: 10,
     font: bold,
   });
-  y -= 28;
+  y -= Math.max(LOGO_SIZE, 28) + 4;
 
   // Línea separadora
   page.drawLine({

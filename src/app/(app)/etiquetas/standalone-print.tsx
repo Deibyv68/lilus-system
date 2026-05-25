@@ -90,7 +90,12 @@ export function StandalonePrint({
       if (offsetY !== 0) params.set("offsetY", String(offsetY));
       return `/api/print/standalone/product?${params}`;
     }
-    return `/api/print/standalone/box-logo?copies=1`;
+    // box-logo — también usa el offset compartido
+    const params = new URLSearchParams();
+    params.set("copies", "1");
+    if (offsetX !== 0) params.set("offsetX", String(offsetX));
+    if (offsetY !== 0) params.set("offsetY", String(offsetY));
+    return `/api/print/standalone/box-logo?${params}`;
   })();
 
   // ───────── Acciones ─────────
@@ -114,6 +119,8 @@ export function StandalonePrint({
           "noopener"
         );
       } else {
+        if (offsetX !== 0) params.set("offsetX", String(offsetX));
+        if (offsetY !== 0) params.set("offsetY", String(offsetY));
         window.open(
           `/api/print/standalone/box-logo?${params}`,
           "_blank",
@@ -268,8 +275,8 @@ export function StandalonePrint({
         />
       )}
 
-      {/* Offset (solo para producto, que es donde tiene sentido ajustar) */}
-      {kind === "product-labels" && (
+      {/* Offset (para ambos stickers circulares — se comparte el valor) */}
+      {(kind === "product-labels" || kind === "box-logo") && (
         <div className="rounded-lg border p-3 space-y-3">
           <div className="flex items-start gap-2">
             <Move className="size-4 mt-0.5 text-muted-foreground shrink-0" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Wifi, WifiOff, AlertTriangle, PowerOff, Loader2 } from "lucide-react";
 
 type PrinterStatus =
   | "ok"
@@ -14,14 +15,10 @@ type PrinterStatus =
 type State = "loading" | "ok" | "warning" | "down" | "off";
 
 /**
- * Punto pequeño y discreto que muestra el estado de la impresora en tiempo
- * real. Pensado para esquinas de previews y otras zonas donde queremos
- * indicación visual sin ocupar espacio.
- *
- * - Verde + parpadeo suave: impresora conectada y lista
- * - Amarillo: impresora con problema (sin papel, etc.)
- * - Rojo: agente caído o impresora desconectada
- * - Gris: agente desactivado
+ * Chip pequeño con icono de señal + texto que indica si la impresora está
+ * conectada o no. Pensado para esquinas de previews — más visible que un
+ * puntito de color pero igual de discreto, con label que se entiende a
+ * primera vista.
  */
 export function PrinterDot() {
   const [state, setState] = useState<State>("loading");
@@ -58,54 +55,57 @@ export function PrinterDot() {
     switch (state) {
       case "ok":
         return {
-          color: "bg-green-500",
-          ring: "bg-green-500/40",
-          title: "Impresora conectada",
-          pulse: true,
+          Icon: Wifi,
+          label: "Lista",
+          bg: "bg-green-100 dark:bg-green-950/40",
+          text: "text-green-700 dark:text-green-300",
+          border: "border-green-300 dark:border-green-900",
         };
       case "warning":
         return {
-          color: "bg-amber-500",
-          ring: "bg-amber-500/40",
-          title: "Impresora con aviso",
-          pulse: false,
+          Icon: AlertTriangle,
+          label: "Aviso",
+          bg: "bg-amber-100 dark:bg-amber-950/40",
+          text: "text-amber-700 dark:text-amber-300",
+          border: "border-amber-300 dark:border-amber-900",
         };
       case "down":
         return {
-          color: "bg-red-500",
-          ring: "bg-red-500/40",
-          title: "Impresora desconectada",
-          pulse: false,
+          Icon: WifiOff,
+          label: "Sin conexión",
+          bg: "bg-red-100 dark:bg-red-950/40",
+          text: "text-red-700 dark:text-red-300",
+          border: "border-red-300 dark:border-red-900",
         };
       case "off":
         return {
-          color: "bg-zinc-400",
-          ring: "bg-zinc-400/40",
-          title: "Impresora desactivada",
-          pulse: false,
+          Icon: PowerOff,
+          label: "Off",
+          bg: "bg-zinc-100 dark:bg-zinc-900",
+          text: "text-zinc-600 dark:text-zinc-400",
+          border: "border-zinc-300 dark:border-zinc-800",
         };
       default:
         return {
-          color: "bg-zinc-300",
-          ring: "bg-zinc-300/40",
-          title: "Verificando…",
-          pulse: false,
+          Icon: Loader2,
+          label: "…",
+          bg: "bg-muted",
+          text: "text-muted-foreground",
+          border: "border-muted",
         };
     }
   })();
 
+  const { Icon } = cfg;
+  const animate = state === "loading";
+
   return (
     <span
-      title={cfg.title}
-      aria-label={cfg.title}
-      className="relative inline-flex items-center justify-center size-3 shrink-0"
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold leading-none ${cfg.bg} ${cfg.text} ${cfg.border}`}
+      aria-label={`Impresora: ${cfg.label}`}
     >
-      {cfg.pulse && (
-        <span
-          className={`absolute inset-0 rounded-full ${cfg.ring} animate-ping`}
-        />
-      )}
-      <span className={`relative size-2.5 rounded-full ${cfg.color}`} />
+      <Icon className={`size-3 shrink-0 ${animate ? "animate-spin" : ""}`} />
+      <span>{cfg.label}</span>
     </span>
   );
 }

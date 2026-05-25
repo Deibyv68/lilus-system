@@ -62,6 +62,8 @@ type SubStep = {
   packsOnly?: boolean;
 };
 
+// Orden optimizado: agrupados por papel para minimizar cambios de rollo.
+// shipping(4x6) → product-labels(2x2) → box-logo(2x2 mismo papel) → caducidad(2x1)
 const SUB_STEPS: SubStep[] = [
   {
     kind: "shipping",
@@ -86,17 +88,6 @@ const SUB_STEPS: SubStep[] = [
     isCircular: true,
   },
   {
-    kind: "expiry-labels",
-    title: "Etiquetas de caducidad",
-    shortTitle: "Caducidad",
-    paperLabel: "2×1 pulgadas",
-    paperWarning:
-      "Cambia al rollo de etiquetas 2×1 pulgadas (5×2.5 cm) en la impresora.",
-    icon: FileText,
-    hasMultiple: true,
-    isCircular: false,
-  },
-  {
     kind: "box-logo",
     title: "Logo para caja",
     shortTitle: "Caja",
@@ -107,6 +98,17 @@ const SUB_STEPS: SubStep[] = [
     hasMultiple: false,
     isCircular: true,
     packsOnly: true,
+  },
+  {
+    kind: "expiry-labels",
+    title: "Etiquetas de caducidad",
+    shortTitle: "Caducidad",
+    paperLabel: "2×1 pulgadas",
+    paperWarning:
+      "Cambia al rollo de etiquetas 2×1 pulgadas (5×2.5 cm) en la impresora.",
+    icon: FileText,
+    hasMultiple: true,
+    isCircular: false,
   },
 ];
 
@@ -251,7 +253,8 @@ export function PrintStepWizard({
       copies?: number;
       unitIndex?: number;
     } = {};
-    if (kind === "product-labels") {
+    // Offset compartido para todos los stickers circulares
+    if (kind === "product-labels" || kind === "box-logo") {
       if (offsetX !== 0) extras.offsetX = offsetX;
       if (offsetY !== 0) extras.offsetY = offsetY;
     }
@@ -445,7 +448,7 @@ export function PrintStepWizard({
       />
 
       {/* Offset solo para circulares */}
-      {currentStep.isCircular && currentStep.kind === "product-labels" && (
+      {currentStep.isCircular && (
         <OffsetControls
           offsetX={offsetX}
           offsetY={offsetY}
@@ -823,9 +826,13 @@ function LabelPreview({
     );
   }
   if (step.kind === "box-logo") {
+    const params = new URLSearchParams();
+    params.set("copies", "1");
+    if (offsetX !== 0) params.set("offsetX", String(offsetX));
+    if (offsetY !== 0) params.set("offsetY", String(offsetY));
     return (
       <PdfPreview
-        url={`/api/orders/${orderId}/box-logo?copies=1`}
+        url={`/api/orders/${orderId}/box-logo?${params}`}
         label="Logo para caja 2×2"
         aspectRatio="1 / 1"
         maxWidth={220}

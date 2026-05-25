@@ -11,6 +11,8 @@ export type PrintKind =
   | "expiry-labels"
   | "box-logo";
 
+const MM_TO_PT = 2.83464567;
+
 function settingsToMap(settings: { key: string; value: string }[]) {
   return Object.fromEntries(settings.map((s) => [s.key, s.value]));
 }
@@ -123,7 +125,6 @@ export async function buildPdfForJob(
     if (units.length === 0)
       throw new Error("Índice de unidad fuera de rango");
 
-    const MM_TO_PT = 2.83464567;
     const xPt = (options.offsetX ?? 0) * MM_TO_PT;
     const yPt = (options.offsetY ?? 0) * MM_TO_PT;
 
@@ -189,9 +190,18 @@ export async function buildPdfForJob(
     const ox = (sizePt - drawW) / 2;
     const oy = (sizePt - drawH) / 2;
 
+    // Offset compartido con product-labels (mismo sticker físico)
+    const userOffsetXpt = (options.offsetX ?? 0) * MM_TO_PT;
+    const userOffsetYpt = (options.offsetY ?? 0) * MM_TO_PT;
+
     for (let i = 0; i < totalCopies; i++) {
       const page = out.addPage([sizePt, sizePt]);
-      page.drawPage(logoPage, { x: ox, y: oy, width: drawW, height: drawH });
+      page.drawPage(logoPage, {
+        x: ox + userOffsetXpt,
+        y: oy + userOffsetYpt,
+        width: drawW,
+        height: drawH,
+      });
     }
     return Buffer.from(await out.save());
   }

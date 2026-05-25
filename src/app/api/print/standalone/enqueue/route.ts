@@ -102,9 +102,17 @@ export async function POST(req: NextRequest) {
     const drawH = logoPage.height * scale;
     const ox = (sizePt - drawW) / 2;
     const oy = (sizePt - drawH) / 2;
+    // Offset compartido con product-labels
+    const xPt = (body.offsetX ?? 0) * MM_TO_PT;
+    const yPt = (body.offsetY ?? 0) * MM_TO_PT;
     for (let i = 0; i < copies; i++) {
       const page = out.addPage([sizePt, sizePt]);
-      page.drawPage(logoPage, { x: ox, y: oy, width: drawW, height: drawH });
+      page.drawPage(logoPage, {
+        x: ox + xPt,
+        y: oy + yPt,
+        width: drawW,
+        height: drawH,
+      });
     }
     pdfBuffer = Buffer.from(await out.save());
   } else {

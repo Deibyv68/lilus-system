@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 // usar ?size=N en la URL.
 const DEFAULT_SIZE_IN = 2;
 const PT_PER_IN = 72;
+const MM_TO_PT = 2.83464567;
 
 export async function GET(
   req: NextRequest,
@@ -30,6 +31,12 @@ export async function GET(
     0,
     20
   );
+  const userOffsetXmm =
+    parseFloat(req.nextUrl.searchParams.get("offsetX") ?? "0") || 0;
+  const userOffsetYmm =
+    parseFloat(req.nextUrl.searchParams.get("offsetY") ?? "0") || 0;
+  const userOffsetXpt = Math.max(-50, Math.min(50, userOffsetXmm)) * MM_TO_PT;
+  const userOffsetYpt = Math.max(-50, Math.min(50, userOffsetYmm)) * MM_TO_PT;
 
   // Verificar que el pedido exista y cuántos packs contiene
   const order = await prisma.order.findUnique({
@@ -68,8 +75,8 @@ export async function GET(
   for (let i = 0; i < totalCopies; i++) {
     const page = out.addPage([sizePt, sizePt]);
     page.drawPage(logoPage, {
-      x: offsetX,
-      y: offsetY,
+      x: offsetX + userOffsetXpt,
+      y: offsetY + userOffsetYpt,
       width: drawW,
       height: drawH,
     });

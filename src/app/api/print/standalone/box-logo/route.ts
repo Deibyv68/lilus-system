@@ -6,8 +6,10 @@ import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
 
+const MM_TO_PT = 2.83464567;
+
 // Devuelve el PDF del sello LILUS para etiqueta circular 2×2
-// (sin necesidad de un pedido). Acepta: ?copies=N
+// (sin necesidad de un pedido). Acepta: ?copies=N&offsetX=mm&offsetY=mm
 export async function GET(req: NextRequest) {
   const format = req.nextUrl.searchParams.get("format");
   const copies = clamp(
@@ -15,6 +17,12 @@ export async function GET(req: NextRequest) {
     1,
     50
   );
+  const offsetXmm =
+    parseFloat(req.nextUrl.searchParams.get("offsetX") ?? "0") || 0;
+  const offsetYmm =
+    parseFloat(req.nextUrl.searchParams.get("offsetY") ?? "0") || 0;
+  const offsetXpt = Math.max(-50, Math.min(50, offsetXmm)) * MM_TO_PT;
+  const offsetYpt = Math.max(-50, Math.min(50, offsetYmm)) * MM_TO_PT;
 
   const logoPath = path.join(
     process.cwd(),
@@ -38,7 +46,12 @@ export async function GET(req: NextRequest) {
 
   for (let i = 0; i < copies; i++) {
     const page = out.addPage([sizePt, sizePt]);
-    page.drawPage(logoPage, { x: ox, y: oy, width: drawW, height: drawH });
+    page.drawPage(logoPage, {
+      x: ox + offsetXpt,
+      y: oy + offsetYpt,
+      width: drawW,
+      height: drawH,
+    });
   }
 
   const bytes = await out.save();
