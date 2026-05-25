@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -74,6 +75,27 @@ async function main() {
     update: { value: "LILUS" },
     create: { key: "order_prefix", value: "LILUS" },
   });
+
+  // ── Usuario admin por defecto (solo si no existe ninguno) ──
+  const userCount = await prisma.user.count();
+  if (userCount === 0) {
+    const defaultPassword = "lilus2026";
+    await prisma.user.create({
+      data: {
+        username: "admin",
+        name: "Administrador LILUS",
+        passwordHash: await bcrypt.hash(defaultPassword, 10),
+        role: "admin",
+      },
+    });
+    console.log("");
+    console.log("════════════════════════════════════════════════════════");
+    console.log("  Usuario admin creado");
+    console.log("    Usuario:    admin");
+    console.log("    Contraseña: " + defaultPassword);
+    console.log("  ⚠ Cámbiala en cuanto inicies sesión.");
+    console.log("════════════════════════════════════════════════════════");
+  }
 
   console.log("Seed completado.");
 }
