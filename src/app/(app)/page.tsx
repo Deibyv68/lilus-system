@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,14 +47,10 @@ export default async function DashboardPage() {
         href="/pedidos/nuevo"
         className="block relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-6 shadow-lg active:scale-[0.98] transition-transform"
       >
-        {/* Sello LILUS decorativo de fondo */}
-        <Image
-          src="/brand/lilus-logo.png"
-          alt=""
-          width={200}
-          height={200}
+        {/* Efecto decorativo de fondo — círculo con el icono grande y semitransparente */}
+        <PlusCircle
           aria-hidden
-          className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none invert"
+          className="size-48 absolute -right-12 -bottom-12 text-white/10 pointer-events-none"
         />
 
         <div className="relative flex items-center gap-4">

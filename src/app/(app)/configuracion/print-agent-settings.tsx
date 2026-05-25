@@ -50,7 +50,7 @@ export function PrintAgentSettings({
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
         Activa el agente para que los botones de impresión envíen directo a la
-        impresora MUNBYN conectada por USB en la PC del 1er piso (en lugar de
+        impresora conectada por USB en la PC del 1er piso (en lugar de
         abrir el PDF en una pestaña). El agente debe estar instalado y corriendo
         en esa PC.
       </p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, FileWarning, ExternalLink } from "lucide-react";
+import { PrinterDot } from "./printer-dot";
 
 /**
  * Muestra el preview de un PDF como imagen PNG. La PNG se genera en el
@@ -46,9 +47,14 @@ export function PdfPreview({
   const pdfUrl = url;
 
   return (
-    <div className="rounded-lg border p-4 bg-muted/30">
+    <div className="relative rounded-lg border p-4 bg-muted/30">
+      {/* Indicador discreto de estado de la impresora */}
+      <div className="absolute top-3 right-3 z-10">
+        <PrinterDot />
+      </div>
+
       {label && (
-        <p className="text-xs font-medium text-muted-foreground mb-3">
+        <p className="text-xs font-medium text-muted-foreground mb-3 pr-6">
           Vista previa · {label}
         </p>
       )}

@@ -64,7 +64,7 @@ const SUB_STEPS: SubStep[] = [
     title: "Etiquetas de envío",
     paperLabel: "4×6 pulgadas",
     paperWarning:
-      "Carga el rollo de 4×6 pulgadas (10×15 cm) en la MUNBYN antes de imprimir.",
+      "Carga el rollo de 4×6 pulgadas (10×15 cm) en la impresora antes de imprimir.",
     icon: Truck,
     hasMultiple: true,
     isCircular: false,
@@ -825,7 +825,7 @@ function PaperChangeSlide({
 
         <div className="text-center space-y-1.5">
           <p className="text-sm font-semibold">
-            Cambia el rollo en la MUNBYN
+            Cambia el rollo en la impresora
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             {to.paperWarning}

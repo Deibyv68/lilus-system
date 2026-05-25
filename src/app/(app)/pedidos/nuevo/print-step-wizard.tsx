@@ -69,7 +69,7 @@ const SUB_STEPS: SubStep[] = [
     shortTitle: "Envío",
     paperLabel: "4×6 pulgadas",
     paperWarning:
-      "Carga el rollo de 4×6 pulgadas (10×15 cm) en la MUNBYN antes de imprimir.",
+      "Carga el rollo de 4×6 pulgadas (10×15 cm) en la impresora antes de imprimir.",
     icon: Truck,
     hasMultiple: false,
     isCircular: false,
@@ -80,7 +80,7 @@ const SUB_STEPS: SubStep[] = [
     shortTitle: "Productos",
     paperLabel: "2×2 pulgadas circular",
     paperWarning:
-      "Cambia al rollo de stickers circulares 2×2 pulgadas (5.1 cm) en la MUNBYN.",
+      "Cambia al rollo de stickers circulares 2×2 pulgadas (5.1 cm) en la impresora.",
     icon: Package2,
     hasMultiple: true,
     isCircular: true,
@@ -91,7 +91,7 @@ const SUB_STEPS: SubStep[] = [
     shortTitle: "Caducidad",
     paperLabel: "2×1 pulgadas",
     paperWarning:
-      "Cambia al rollo de etiquetas 2×1 pulgadas (5×2.5 cm) en la MUNBYN.",
+      "Cambia al rollo de etiquetas 2×1 pulgadas (5×2.5 cm) en la impresora.",
     icon: FileText,
     hasMultiple: true,
     isCircular: false,
@@ -737,7 +737,7 @@ function PaperChangeSlide({
 
         <div className="text-center space-y-1.5">
           <p className="text-sm font-semibold">
-            Cambia el rollo en la MUNBYN
+            Cambia el rollo en la impresora
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             {to.paperWarning}

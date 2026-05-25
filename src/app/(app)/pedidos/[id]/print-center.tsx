@@ -298,7 +298,7 @@ export function PrintCenter({
           )}
           <span>
             {agentEnabled
-              ? "Impresión directa activa · sale por la MUNBYN"
+              ? "Impresión directa activa · sale por la impresora"
               : "Agente desactivado · abrirá el PDF para imprimir manualmente"}
           </span>
         </div>

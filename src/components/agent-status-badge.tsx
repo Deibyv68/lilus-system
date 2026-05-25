@@ -10,7 +10,6 @@ import {
   Loader2,
 } from "lucide-react";
 
-// Estado fisico de la impresora reportado por el agente
 type PrinterStatus =
   | "ok"
   | "printing"
@@ -78,6 +77,7 @@ export function AgentStatusBadge({
         bg: "bg-muted",
         text: "text-muted-foreground",
         border: "border-muted",
+        dot: "bg-zinc-400",
         Icon: Loader2,
         iconAnimate: true,
         title: "Verificando impresora…",
@@ -87,8 +87,9 @@ export function AgentStatusBadge({
     if (state.kind === "disabled") {
       return {
         bg: "bg-zinc-100 dark:bg-zinc-900",
-        text: "text-zinc-600 dark:text-zinc-400",
-        border: "border-zinc-200 dark:border-zinc-800",
+        text: "text-zinc-700 dark:text-zinc-300",
+        border: "border-zinc-300 dark:border-zinc-800",
+        dot: "bg-zinc-400",
         Icon: PowerOff,
         iconAnimate: false,
         title: "Impresora desactivada",
@@ -99,33 +100,34 @@ export function AgentStatusBadge({
       return {
         bg: "bg-red-50 dark:bg-red-950/30",
         text: "text-red-800 dark:text-red-300",
-        border: "border-red-200 dark:border-red-900",
+        border: "border-red-300 dark:border-red-900",
+        dot: "bg-red-500",
         Icon: WifiOff,
         iconAnimate: false,
-        title: "PC de impresión no responde",
+        title: "Sin conexión",
         sub:
           state.lastSeenAgo !== null
-            ? `Última vez activa hace ${formatAgo(state.lastSeenAgo)} · Verifica que la PC del 1er piso esté prendida`
-            : "Verifica que la PC del 1er piso esté prendida",
+            ? `Verifica que la PC de impresión esté prendida · última conexión hace ${formatAgo(state.lastSeenAgo)}`
+            : "Verifica que la PC de impresión esté prendida",
       };
     }
     if (state.kind === "printer_problem") {
       const labels: Record<PrinterStatus, { title: string; sub: string }> = {
         offline: {
           title: "Impresora desconectada",
-          sub: "La MUNBYN está apagada, sin cable USB o sin papel. Revísala físicamente.",
+          sub: "Está apagada, sin cable USB o sin papel. Revísala físicamente.",
         },
         stopped: {
-          title: "Impresora detenida",
-          sub: "La cola de impresión está pausada. Verifica el estado en Windows.",
+          title: "Cola de impresión detenida",
+          sub: "Verifica el estado de la impresora en Windows.",
         },
         not_installed: {
           title: "Impresora no encontrada",
           sub: "Windows no reconoce la impresora configurada. Verifica el nombre en Configuración.",
         },
         error: {
-          title: "Error revisando impresora",
-          sub: "El agente no pudo consultar el estado. Puede que haya un error de permisos en Windows.",
+          title: "Error con la impresora",
+          sub: "Hay un problema con el driver o los permisos.",
         },
         unknown: {
           title: "Estado de impresora desconocido",
@@ -138,22 +140,23 @@ export function AgentStatusBadge({
       return {
         bg: "bg-amber-50 dark:bg-amber-950/30",
         text: "text-amber-800 dark:text-amber-300",
-        border: "border-amber-200 dark:border-amber-900",
+        border: "border-amber-300 dark:border-amber-900",
+        dot: "bg-amber-500",
         Icon: AlertTriangle,
         iconAnimate: false,
         title: l.title,
         sub: l.sub,
       };
     }
-    // ok
     return {
       bg: "bg-green-50 dark:bg-green-950/30",
       text: "text-green-800 dark:text-green-300",
-      border: "border-green-200 dark:border-green-900",
+      border: "border-green-300 dark:border-green-900",
+      dot: "bg-green-500",
       Icon: Wifi,
       iconAnimate: false,
       title: "Impresora lista",
-      sub: "Las etiquetas saldrán por la MUNBYN automáticamente",
+      sub: "Las etiquetas saldrán por la impresora automáticamente",
     };
   })();
 
@@ -162,9 +165,13 @@ export function AgentStatusBadge({
   if (variant === "compact") {
     return (
       <div
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium ${styles.bg} ${styles.text} ${styles.border}`}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${styles.bg} ${styles.text} ${styles.border}`}
       >
-        <Icon className={`size-3 ${iconAnimate ? "animate-spin" : ""}`} />
+        <span className="relative inline-flex">
+          <span
+            className={`size-2 rounded-full ${styles.dot} ${state.kind === "ok" ? "animate-pulse" : ""}`}
+          />
+        </span>
         {styles.title}
       </div>
     );
@@ -172,15 +179,25 @@ export function AgentStatusBadge({
 
   return (
     <div
-      className={`flex items-center gap-3 p-3 rounded-xl border ${styles.bg} ${styles.text} ${styles.border}`}
+      className={`flex items-center gap-4 p-4 rounded-2xl border-2 ${styles.bg} ${styles.text} ${styles.border}`}
     >
-      <div className="size-9 rounded-full bg-white/40 dark:bg-black/20 flex items-center justify-center shrink-0">
-        <Icon className={`size-4 ${iconAnimate ? "animate-spin" : ""}`} />
+      <div className="relative shrink-0">
+        <div className="size-12 rounded-full bg-white/60 dark:bg-black/30 flex items-center justify-center">
+          <Icon className={`size-6 ${iconAnimate ? "animate-spin" : ""}`} />
+        </div>
+        {/* Punto de status arriba a la derecha del icono */}
+        <span
+          className={`absolute -top-0.5 -right-0.5 size-3.5 rounded-full ring-2 ring-background ${styles.dot} ${
+            state.kind === "ok" ? "animate-pulse" : ""
+          }`}
+        />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold leading-tight">{styles.title}</p>
+        <p className="text-base sm:text-lg font-bold leading-tight">
+          {styles.title}
+        </p>
         {styles.sub && (
-          <p className="text-[11px] opacity-80 mt-0.5 leading-snug">
+          <p className="text-xs sm:text-sm opacity-80 mt-1 leading-snug">
             {styles.sub}
           </p>
         )}
