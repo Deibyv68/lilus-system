@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildShippingLabelPdf } from "@/lib/pdf-shipping-label";
 import { pdfOrPngResponse } from "@/lib/pdf-response";
+import { buildShippingItemsLines } from "@/lib/shipping-items-lines";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,19 @@ export async function GET(
       customer: true,
       shippingAddress: true,
       carrier: true,
-      items: true,
+      items: {
+        include: {
+          pack: {
+            include: {
+              items: {
+                include: {
+                  product: { select: { name: true, shortName: true } },
+                },
+              },
+            },
+          },
+        },
+      },
       productionUnits: true,
     },
   });
@@ -49,9 +62,7 @@ export async function GET(
       province: order.shippingAddress?.province ?? "",
       reference: order.shippingAddress?.reference ?? undefined,
     },
-    itemsSummary: order.items
-      .map((i) => `${i.quantity}× ${i.itemName}`)
-      .join(" · "),
+    itemsLines: buildShippingItemsLines(order.items),
     itemCount: order.items.reduce((s, i) => s + i.quantity, 0),
     weightGrams: weight,
   });

@@ -29,7 +29,10 @@ export type ShippingLabelData = {
     province: string;
     reference?: string;
   };
-  itemsSummary: string; // ej "2× Pack Relax · 1× Jabón Lavanda"
+  // Lista de líneas a mostrar en CONTENIDO. Si un ítem es un pack,
+  // se incluyen líneas adicionales con los sub-productos sangradas.
+  // Cada línea tiene un "level": 0 = línea principal, 1 = sub-ítem.
+  itemsLines: { text: string; level: 0 | 1 }[];
   itemCount: number;
   weightGrams?: number;
 };
@@ -220,16 +223,28 @@ export async function buildShippingLabelPdf(
   // Contenido y peso
   page.drawText("CONTENIDO", { x: MARGIN, y, size: 8, font: bold, color: gray });
   y -= 11;
-  const itemLines = drawWrapped(
-    page,
-    data.itemsSummary,
-    MARGIN,
-    y,
-    LABEL_WIDTH - MARGIN * 2,
-    9,
-    font
-  );
-  y -= itemLines * 11;
+
+  for (const line of data.itemsLines) {
+    const isSub = line.level === 1;
+    const size = isSub ? 8 : 9;
+    const x = MARGIN + (isSub ? 10 : 0);
+    const maxWidth = LABEL_WIDTH - MARGIN * 2 - (isSub ? 10 : 0);
+    const lineFont = isSub ? font : bold;
+    const lineColor = isSub ? gray : black;
+    const prefix = isSub ? "↳ " : "";
+    const wrapped = drawWrapped(
+      page,
+      prefix + line.text,
+      x,
+      y,
+      maxWidth,
+      size,
+      lineFont,
+      lineColor
+    );
+    y -= wrapped * (size + 2);
+  }
+  y -= 3;
 
   page.drawText(
     `Piezas: ${data.itemCount}${
@@ -273,7 +288,8 @@ function drawWrapped(
   y: number,
   maxWidth: number,
   size: number,
-  font: Awaited<ReturnType<PDFDocument["embedFont"]>>
+  font: Awaited<ReturnType<PDFDocument["embedFont"]>>,
+  color?: ReturnType<typeof rgb>
 ): number {
   const words = text.split(/\s+/);
   const lines: string[] = [];
@@ -291,7 +307,7 @@ function drawWrapped(
 
   let cy = y;
   for (const line of lines) {
-    page.drawText(line, { x, y: cy, size, font });
+    page.drawText(line, { x, y: cy, size, font, ...(color ? { color } : {}) });
     cy -= size + 2;
   }
   return lines.length;

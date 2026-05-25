@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { buildShippingLabelPdf } from "./pdf-shipping-label";
 import { buildExpiryLabelPdf } from "./pdf-expiry-label";
+import { buildShippingItemsLines } from "./shipping-items-lines";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -47,7 +48,19 @@ export async function buildPdfForJob(
         customer: true,
         shippingAddress: true,
         carrier: true,
-        items: true,
+        items: {
+          include: {
+            pack: {
+              include: {
+                items: {
+                  include: {
+                    product: { select: { name: true, shortName: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
         productionUnits: true,
       },
     });
@@ -75,9 +88,7 @@ export async function buildPdfForJob(
         province: order.shippingAddress?.province ?? "",
         reference: order.shippingAddress?.reference ?? undefined,
       },
-      itemsSummary: order.items
-        .map((i) => `${i.quantity}× ${i.itemName}`)
-        .join(" · "),
+      itemsLines: buildShippingItemsLines(order.items),
       itemCount: order.items.reduce((s, i) => s + i.quantity, 0),
       weightGrams: order.productionUnits.length * 80,
     });
