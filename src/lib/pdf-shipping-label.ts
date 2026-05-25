@@ -231,7 +231,8 @@ export async function buildShippingLabelPdf(
     const maxWidth = LABEL_WIDTH - MARGIN * 2 - (isSub ? 10 : 0);
     const lineFont = isSub ? font : bold;
     const lineColor = isSub ? gray : black;
-    const prefix = isSub ? "↳ " : "";
+    // Prefijo ASCII puro: Helvetica StandardFont usa WinAnsi y no incluye "↳"
+    const prefix = isSub ? "+ " : "";
     const wrapped = drawWrapped(
       page,
       prefix + line.text,
