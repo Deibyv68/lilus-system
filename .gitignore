@@ -45,9 +45,15 @@ next-env.d.ts
 # Uploads de usuario (imágenes y PDFs de etiquetas)
 /public/uploads
 
-# SQLite local
-/prisma/dev.db
-/prisma/dev.db-journal
+# SQLite — NUNCA versionar la base de datos.
+# En produccion vive fuera del repo (ver DATABASE_URL en .env), pero
+# cubrimos todos los patrones para que un `git add -A` no la arrastre.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
 # Print agent — secretos y logs
 /print-agent/.env
