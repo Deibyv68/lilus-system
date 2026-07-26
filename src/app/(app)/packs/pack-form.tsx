@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { NumberField } from "@/components/number-field";
 import { createPackAction, updatePackAction } from "./actions";
 import { ImageIcon, Plus, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
@@ -26,6 +27,7 @@ type ProductOption = {
   name: string;
   sku: string;
   price: number;
+  packPrice: number | null;
 };
 
 type PackItem = { productId: string; quantity: number };
@@ -57,10 +59,17 @@ export function PackForm({
 
   const isEdit = !!initial?.id;
 
-  const sumComponents = items.reduce((acc, it) => {
+  // Dos sumas: lo que costarían sueltos vs. lo que suman a precio de pack.
+  // El precio de pack de cada producto cae al suelto si no está definido.
+  const sumLoose = items.reduce((acc, it) => {
     const p = productOptions.find((p) => p.id === it.productId);
     return acc + (p?.price ?? 0) * it.quantity;
   }, 0);
+  const sumPack = items.reduce((acc, it) => {
+    const p = productOptions.find((p) => p.id === it.productId);
+    return acc + (p?.packPrice ?? p?.price ?? 0) * it.quantity;
+  }, 0);
+  const savings = Math.max(0, sumLoose - sumPack);
 
   function addItem() {
     setItems((prev) => [...prev, { productId: "", quantity: 1 }]);
@@ -188,16 +197,11 @@ export function PackForm({
                   </Select>
                 </Field>
                 <Field label="Cantidad">
-                  <Input
-                    type="number"
-                    min="1"
-                    step="1"
+                  <NumberField
+                    min={1}
+                    fallback={1}
                     value={item.quantity}
-                    onChange={(e) =>
-                      updateItem(idx, {
-                        quantity: Math.max(1, parseInt(e.target.value || "1")),
-                      })
-                    }
+                    onChange={(v) => updateItem(idx, { quantity: v })}
                   />
                 </Field>
                 <Button
@@ -212,19 +216,36 @@ export function PackForm({
             ))}
 
             {items.length > 0 && (
-              <div className="text-xs text-muted-foreground border-t pt-3 mt-3">
-                Suma de precios individuales:{" "}
-                <strong className="text-foreground">
-                  {formatCurrency(sumComponents)}
-                </strong>
-                {initial?.price && sumComponents > 0 && (
-                  <span className="ml-2">
-                    · Descuento implícito:{" "}
-                    <strong className="text-foreground">
-                      {formatCurrency(Math.max(0, sumComponents - (initial?.price ?? 0)))}
-                    </strong>
+              <div className="border-t pt-3 mt-3 space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Si se vendieran sueltos
                   </span>
+                  <span className="tabular-nums">
+                    {formatCurrency(sumLoose)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Suma a precio de pack
+                  </span>
+                  <span className="tabular-nums font-semibold">
+                    {formatCurrency(sumPack)}
+                  </span>
+                </div>
+                {savings > 0 && (
+                  <div className="flex justify-between text-green-700 dark:text-green-400">
+                    <span>Ahorro para el cliente</span>
+                    <span className="tabular-nums font-semibold">
+                      −{formatCurrency(savings)}
+                    </span>
+                  </div>
                 )}
+                <p className="text-[11px] text-muted-foreground pt-1">
+                  El precio de venta del pack lo defines arriba; esto es solo
+                  referencia. Cada producto puede tener su propio precio de pack
+                  en su ficha.
+                </p>
               </div>
             )}
           </CardContent>

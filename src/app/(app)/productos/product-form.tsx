@@ -20,6 +20,7 @@ type ProductFormValues = {
   shortName?: string | null;
   description?: string | null;
   price?: number;
+  packPrice?: number | null;
   productionCost?: number;
   weightGrams?: number | null;
   ingredients?: string | null;
@@ -119,7 +120,7 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
             <CardTitle>Precio y costos</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Precio venta (USD)" required>
+            <Field label="Precio suelto (USD)" required>
               <Input
                 name="price"
                 type="number"
@@ -128,6 +129,22 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
                 required
                 defaultValue={initial?.price ?? ""}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Cuando se vende por unidad.
+              </p>
+            </Field>
+            <Field label="Precio dentro de pack (USD)">
+              <Input
+                name="packPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Igual al suelto"
+                defaultValue={initial?.packPrice ?? ""}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Vacío = usa el precio suelto.
+              </p>
             </Field>
             <Field label="Costo producción (USD)">
               <Input

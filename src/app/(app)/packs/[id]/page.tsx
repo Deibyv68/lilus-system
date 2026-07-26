@@ -23,7 +23,7 @@ export default async function EditPackPage({
     prisma.product.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, sku: true, price: true },
+      select: { id: true, name: true, sku: true, price: true, packPrice: true },
     }),
   ]);
   if (!pack) notFound();

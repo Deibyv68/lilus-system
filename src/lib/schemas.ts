@@ -6,6 +6,11 @@ export const productSchema = z.object({
   shortName: z.string().max(40).optional().or(z.literal("")),
   description: z.string().max(2000).optional().or(z.literal("")),
   price: z.coerce.number().min(0, "Precio inválido"),
+  // Vacío en el formulario = null = hereda el precio suelto
+  packPrice: z
+    .union([z.literal(""), z.coerce.number().min(0)])
+    .optional()
+    .transform((v) => (v === "" || v === undefined ? null : v)),
   productionCost: z.coerce.number().min(0).default(0),
   weightGrams: z.coerce.number().min(0).optional(),
   ingredients: z.string().max(2000).optional().or(z.literal("")),

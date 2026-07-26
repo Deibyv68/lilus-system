@@ -19,7 +19,8 @@ model Product {
   shortName       String?  // nombre corto para etiqueta 2x1
   imageUrl        String?  // /uploads/products/xxx.jpg
   labelPdfUrl     String?  // PDF de etiqueta de producto (la que el usuario sube)
-  price           Float    // precio de venta unitario
+  price           Float    // precio de venta unitario (suelto)
+  packPrice       Float?   // precio cuando va dentro de un pack; si null, usa price
   productionCost  Float    @default(0)
   weightGrams     Float?   // gramos, para envíos
   ingredients     String?  // texto libre, va en la etiqueta 2x1

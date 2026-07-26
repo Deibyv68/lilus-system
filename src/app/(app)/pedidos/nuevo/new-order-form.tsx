@@ -35,6 +35,7 @@ import {
   UserCheck,
   Search,
   Printer,
+  Copy,
 } from "lucide-react";
 import { CustomerSearch, type FoundCustomer } from "./customer-search";
 import { PrintStepWizard } from "./print-step-wizard";
@@ -732,6 +733,27 @@ function StepCustomer({
             placeholder="0999999999"
             className="h-12 text-base"
           />
+          {/* Atajo: en la mayoría de casos es el mismo número que el de envío */}
+          {customer.phone.trim() &&
+            customer.contactPhone.trim() !== customer.phone.trim() && (
+              <button
+                type="button"
+                onClick={() =>
+                  setCustomer({ ...customer, contactPhone: customer.phone })
+                }
+                className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <Copy className="size-3.5" />
+                Usar el mismo de envío ({customer.phone})
+              </button>
+            )}
+          {customer.phone.trim() &&
+            customer.contactPhone.trim() === customer.phone.trim() && (
+              <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Check className="size-3.5 text-green-600" />
+                Mismo número que el de envío
+              </p>
+            )}
         </BigField>
         <BigField label="Cédula / RUC">
           <Input

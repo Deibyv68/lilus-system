@@ -37,6 +37,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { PdfPreview } from "@/components/pdf-preview";
+import { NumberField } from "@/components/number-field";
 
 // ───────────────── Tipos ─────────────────
 type PrintKind = "shipping" | "product-labels" | "expiry-labels" | "box-logo";
@@ -461,16 +462,12 @@ export function PrintStepWizard({
       {currentStep.kind === "box-logo" && (
         <div className="rounded-lg border p-3 space-y-2">
           <Label className="text-sm font-medium">Cantidad de copias</Label>
-          <Input
-            type="number"
+          <NumberField
             min={1}
             max={20}
+            fallback={1}
             value={boxLogoCopies}
-            onChange={(e) =>
-              setBoxLogoCopies(
-                Math.max(1, Math.min(20, parseInt(e.target.value || "1")))
-              )
-            }
+            onChange={setBoxLogoCopies}
             className="h-11 tabular-nums"
           />
           <p className="text-[11px] text-muted-foreground">
@@ -882,11 +879,13 @@ function OffsetControls({
             >
               <ArrowLeft className="size-3.5" />
             </Button>
-            <Input
-              type="number"
+            <NumberField
               step={STEP_MM}
+              min={-MAX_MM}
+              max={MAX_MM}
+              fallback={0}
               value={offsetX}
-              onChange={(e) => onChangeX(parseFloat(e.target.value || "0"))}
+              onChange={onChangeX}
               className="h-8 text-center tabular-nums px-1"
             />
             <Button
@@ -912,11 +911,13 @@ function OffsetControls({
             >
               <ArrowDown className="size-3.5" />
             </Button>
-            <Input
-              type="number"
+            <NumberField
               step={STEP_MM}
+              min={-MAX_MM}
+              max={MAX_MM}
+              fallback={0}
               value={offsetY}
-              onChange={(e) => onChangeY(parseFloat(e.target.value || "0"))}
+              onChange={onChangeY}
               className="h-8 text-center tabular-nums px-1"
             />
             <Button

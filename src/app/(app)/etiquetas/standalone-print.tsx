@@ -28,8 +28,10 @@ import {
   Loader2,
   AlertTriangle,
   WifiOff,
+  TestTube,
 } from "lucide-react";
 import { PdfPreview } from "@/components/pdf-preview";
+import { NumberField } from "@/components/number-field";
 
 type Product = { id: string; sku: string; name: string };
 type Kind = "product-labels" | "box-logo";
@@ -79,6 +81,8 @@ export function StandalonePrint({
     return Math.max(-MAX_MM, Math.min(MAX_MM, v));
   }
 
+  const busy = status === "sending" || status === "printing";
+
   // ───────── URL del preview ─────────
   const previewUrl = (() => {
     if (kind === "product-labels") {
@@ -99,16 +103,18 @@ export function StandalonePrint({
   })();
 
   // ───────── Acciones ─────────
-  async function printNow() {
+  // isTest fuerza una sola copia, para calibrar sin gastar rollo.
+  async function printNow(isTest = false) {
     if (kind === "product-labels" && !productId) {
       toast.error("Selecciona un producto");
       return;
     }
+    const nCopies = isTest ? 1 : copies;
 
     if (!agentEnabled) {
       // Fallback: abrir PDF
       const params = new URLSearchParams();
-      params.set("copies", String(copies));
+      params.set("copies", String(nCopies));
       if (kind === "product-labels") {
         params.set("productId", productId);
         if (offsetX !== 0) params.set("offsetX", String(offsetX));
@@ -138,7 +144,7 @@ export function StandalonePrint({
         body: JSON.stringify({
           kind,
           productId: kind === "product-labels" ? productId : undefined,
-          copies,
+          copies: nCopies,
           offsetX: offsetX !== 0 ? offsetX : undefined,
           offsetY: offsetY !== 0 ? offsetY : undefined,
         }),
@@ -161,7 +167,9 @@ export function StandalonePrint({
         if (sjob.status === "DONE") {
           setStatus("done");
           toast.success(
-            `${copies} etiqueta${copies === 1 ? "" : "s"} impresa${copies === 1 ? "" : "s"} ✓`
+            isTest
+              ? "Prueba impresa ✓"
+              : `${nCopies} etiqueta${nCopies === 1 ? "" : "s"} impresa${nCopies === 1 ? "" : "s"} ✓`
           );
           setTimeout(() => setStatus("idle"), 2500);
           return;
@@ -325,53 +333,65 @@ export function StandalonePrint({
       {/* Copias */}
       <div className="space-y-1.5">
         <Label className="text-sm font-medium">Cantidad de copias</Label>
-        <Input
-          type="number"
+        <NumberField
           min={1}
           max={50}
+          fallback={1}
           value={copies}
-          onChange={(e) =>
-            setCopies(Math.max(1, Math.min(50, parseInt(e.target.value || "1"))))
-          }
+          onChange={setCopies}
           className="h-11 tabular-nums"
         />
       </div>
 
-      {/* Botón imprimir */}
-      <Button
-        type="button"
-        className={`w-full h-12 ${
-          status === "done"
-            ? "bg-green-600 hover:bg-green-700 text-white"
-            : status === "failed"
-              ? "bg-destructive text-destructive-foreground"
-              : ""
-        }`}
-        onClick={printNow}
-        disabled={status === "sending" || status === "printing"}
-      >
-        {status === "sending" || status === "printing" ? (
-          <>
-            <Loader2 className="size-4 animate-spin" />
-            {status === "sending" ? "Enviando…" : "Imprimiendo…"}
-          </>
-        ) : status === "done" ? (
-          <>
-            <Check className="size-4" />
-            Impreso ✓
-          </>
-        ) : status === "failed" ? (
-          <>
-            <RotateCcw className="size-4" />
-            Reintentar
-          </>
-        ) : (
-          <>
-            <Printer className="size-4" />
-            Imprimir {copies} {copies === 1 ? "copia" : "copias"}
-          </>
-        )}
-      </Button>
+      {/* Botones imprimir */}
+      <div className="space-y-2">
+        <Button
+          type="button"
+          className={`w-full h-12 ${
+            status === "done"
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : status === "failed"
+                ? "bg-destructive text-destructive-foreground"
+                : ""
+          }`}
+          onClick={() => printNow()}
+          disabled={busy}
+        >
+          {status === "sending" || status === "printing" ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              {status === "sending" ? "Enviando…" : "Imprimiendo…"}
+            </>
+          ) : status === "done" ? (
+            <>
+              <Check className="size-4" />
+              Impreso ✓
+            </>
+          ) : status === "failed" ? (
+            <>
+              <RotateCcw className="size-4" />
+              Reintentar
+            </>
+          ) : (
+            <>
+              <Printer className="size-4" />
+              Imprimir {copies} {copies === 1 ? "copia" : "copias"}
+            </>
+          )}
+        </Button>
+
+        {/* Prueba: siempre 1 sola, para calibrar antes de gastar rollo */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12"
+          onClick={() => printNow(true)}
+          disabled={busy}
+        >
+          <TestTube className="size-4" />
+          Imprimir prueba (solo una)
+        </Button>
+      </div>
     </div>
   );
 }
@@ -402,11 +422,13 @@ function OffsetField({
         >
           {iconMinus}
         </Button>
-        <Input
-          type="number"
+        <NumberField
           step={STEP_MM}
+          min={-MAX_MM}
+          max={MAX_MM}
+          fallback={0}
           value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value || "0"))}
+          onChange={onChange}
           className="h-8 text-center tabular-nums px-1"
         />
         <Button
