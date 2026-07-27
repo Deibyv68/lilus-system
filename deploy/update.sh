@@ -35,7 +35,15 @@ fi
 DB_URL=$(grep -E '^DATABASE_URL=' "$APP_DIR/.env" | head -1 | cut -d= -f2- | tr -d '"'"'")
 DB_PATH="${DB_URL#file:}"
 [[ "$DB_PATH" != /* ]] && DB_PATH="$APP_DIR/prisma/${DB_PATH#./}"
-DB_ROWS_BEFORE=$(sudo -u "$APP_USER" sqlite3 "$DB_PATH" 'SELECT COUNT(*) FROM "Order";' 2>/dev/null || echo "0")
+# Cuenta los pedidos esperando si la base está ocupada. Sin el timeout,
+# una consulta contra la base bloqueada devuelve vacío y la comprobación de
+# integridad de más abajo dispara una falsa alarma de pérdida de datos.
+count_orders() {
+  sudo -u "$APP_USER" sqlite3 "$DB_PATH" '.timeout 15000' \
+    'SELECT COUNT(*) FROM "Order";' 2>/dev/null
+}
+
+DB_ROWS_BEFORE=$(count_orders)
 echo "  Base: $DB_PATH ($DB_ROWS_BEFORE pedidos)"
 
 echo ""
@@ -52,15 +60,22 @@ sudo -u "$APP_USER" npx prisma migrate deploy
 sudo -u "$APP_USER" npx prisma generate
 
 # Comprobación post-migración: si la base perdió pedidos, algo salió mal
-DB_ROWS_AFTER=$(sudo -u "$APP_USER" sqlite3 "$DB_PATH" 'SELECT COUNT(*) FROM "Order";' 2>/dev/null || echo "0")
-if [[ "$DB_ROWS_AFTER" -lt "$DB_ROWS_BEFORE" ]]; then
+DB_ROWS_AFTER=$(count_orders)
+
+# Si no pudimos leer, avisamos pero no damos por perdidos los datos: un
+# conteo vacío significa que no se pudo consultar, no que haya cero pedidos.
+if [[ -z "$DB_ROWS_BEFORE" || -z "$DB_ROWS_AFTER" ]]; then
+  echo "  ⚠ No se pudo verificar la integridad (base ocupada)."
+  echo "    Revisa a mano:  sqlite3 $DB_PATH 'SELECT COUNT(*) FROM \"Order\";'"
+elif [[ "$DB_ROWS_AFTER" -lt "$DB_ROWS_BEFORE" ]]; then
   echo ""
   echo "✗ ALERTA: los pedidos bajaron de $DB_ROWS_BEFORE a $DB_ROWS_AFTER."
   echo "  La migración pudo haber recreado la base. Deploy DETENIDO."
   echo "  Restaura con:  ls -t ~/lilus-backups/pre-deploy/ | head -1"
   exit 1
+else
+  echo "  ✓ Integridad OK ($DB_ROWS_AFTER pedidos)"
 fi
-echo "  ✓ Integridad OK ($DB_ROWS_AFTER pedidos)"
 
 echo ""
 echo "─── 4) Rebuild ───"
