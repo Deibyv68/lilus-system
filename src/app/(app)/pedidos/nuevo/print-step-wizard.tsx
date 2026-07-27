@@ -61,9 +61,9 @@ type SubStep = {
   isCircular: boolean;
   // Solo se muestra si hay packs en el pedido
   packsOnly?: boolean;
-  // Cada etiqueta física lleva DOS unidades (se corta por la mitad).
+  // Cuántas unidades entran en una etiqueta física (se corta con tijera).
   // Afecta cuántas etiquetas salen y qué significa el índice al imprimir.
-  pairsUnits?: boolean;
+  unitsPerLabel?: number;
 };
 
 // Orden optimizado: agrupados por papel para minimizar cambios de rollo.
@@ -113,7 +113,7 @@ const SUB_STEPS: SubStep[] = [
     icon: FileText,
     hasMultiple: true,
     isCircular: false,
-    pairsUnits: true,
+    unitsPerLabel: 3,
   },
 ];
 
@@ -216,10 +216,11 @@ export function PrintStepWizard({
   // cada una. En caducidad van dos jabones por etiqueta; en el resto, una.
   const labelGroups = useMemo<ProductionUnit[][]>(() => {
     if (!currentStep?.hasMultiple) return [];
-    if (!currentStep.pairsUnits) return productionUnits.map((u) => [u]);
+    const per = currentStep.unitsPerLabel ?? 1;
+    if (per <= 1) return productionUnits.map((u) => [u]);
     const groups: ProductionUnit[][] = [];
-    for (let i = 0; i < productionUnits.length; i += 2) {
-      groups.push(productionUnits.slice(i, i + 2));
+    for (let i = 0; i < productionUnits.length; i += per) {
+      groups.push(productionUnits.slice(i, i + per));
     }
     return groups;
   }, [currentStep, productionUnits]);
@@ -594,9 +595,9 @@ export function PrintStepWizard({
               <div className="rounded-lg border bg-card divide-y">
                 {labelGroups[oneByOneIndex]?.map((u, i) => (
                   <div key={u.id} className="p-3">
-                    {currentStep.pairsUnits && (
+                    {(currentStep.unitsPerLabel ?? 1) > 1 && (
                       <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">
-                        {i === 0 ? "Mitad izquierda" : "Mitad derecha"}
+                        Tira {i + 1}
                       </p>
                     )}
                     <p className="font-medium leading-tight">{u.productName}</p>
@@ -606,11 +607,15 @@ export function PrintStepWizard({
                   </div>
                 ))}
               </div>
-              {currentStep.pairsUnits &&
-                labelGroups[oneByOneIndex]?.length === 1 && (
+              {(currentStep.unitsPerLabel ?? 1) > 1 &&
+                (labelGroups[oneByOneIndex]?.length ?? 0) <
+                  (currentStep.unitsPerLabel ?? 1) && (
                   <p className="text-[11px] text-muted-foreground">
-                    Esta etiqueta lleva un solo jabón: la mitad derecha sale en
-                    blanco.
+                    Esta etiqueta lleva{" "}
+                    {labelGroups[oneByOneIndex]?.length === 1
+                      ? "un solo jabón"
+                      : `${labelGroups[oneByOneIndex]?.length} jabones`}
+                    : las tiras sobrantes salen en blanco.
                   </p>
                 )}
             </div>
@@ -846,7 +851,7 @@ function LabelPreview({
     return (
       <PdfPreview
         url={`/api/orders/${orderId}/expiry-labels?unitIndex=0`}
-        label="Caducidad 2×1 — dos jabones, se corta al medio"
+        label="Caducidad 2×1 — tres jabones, se corta en tiras"
         aspectRatio="2 / 1"
         maxWidth={280}
       />

@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { buildShippingLabelPdf } from "./pdf-shipping-label";
-import { buildExpiryLabelPdf } from "./pdf-expiry-label";
+import { buildExpiryLabelPdf, UNITS_PER_LABEL } from "./pdf-expiry-label";
 import { buildShippingItemsLines } from "./shipping-items-lines";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
@@ -101,11 +101,14 @@ export async function buildPdfForJob(
       orderBy: { batchCode: "asc" },
     });
     if (units.length === 0) throw new Error("Sin unidades para imprimir");
-    // Cada etiqueta 2x1 lleva dos jabones, así que unitIndex identifica una
-    // etiqueta (un par de unidades), no una unidad suelta.
+    // Cada etiqueta 2x1 lleva varios jabones, así que unitIndex identifica
+    // una etiqueta (un grupo de unidades), no una unidad suelta.
     const selectedUnits =
       typeof options.unitIndex === "number"
-        ? units.slice(options.unitIndex * 2, options.unitIndex * 2 + 2)
+        ? units.slice(
+            options.unitIndex * UNITS_PER_LABEL,
+            options.unitIndex * UNITS_PER_LABEL + UNITS_PER_LABEL
+          )
         : units;
     if (selectedUnits.length === 0)
       throw new Error("Índice de unidad fuera de rango");

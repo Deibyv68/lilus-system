@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { buildExpiryLabelPdf } from "@/lib/pdf-expiry-label";
+import { buildExpiryLabelPdf, UNITS_PER_LABEL } from "@/lib/pdf-expiry-label";
 import { pdfOrPngResponse } from "@/lib/pdf-response";
 
 export const dynamic = "force-dynamic";
@@ -22,11 +22,14 @@ export async function GET(
     return new NextResponse("Sin unidades para imprimir", { status: 404 });
   }
 
-  // Cada etiqueta 2x1 lleva DOS jabones, así que aquí unitIndex identifica
-  // una etiqueta (un par), no una unidad suelta.
+  // Cada etiqueta 2x1 lleva varios jabones, así que aquí unitIndex identifica
+  // una etiqueta (un grupo), no una unidad suelta.
   const units =
     unitIndex !== null && !isNaN(unitIndex)
-      ? allUnits.slice(unitIndex * 2, unitIndex * 2 + 2)
+      ? allUnits.slice(
+          unitIndex * UNITS_PER_LABEL,
+          unitIndex * UNITS_PER_LABEL + UNITS_PER_LABEL
+        )
       : allUnits;
   if (units.length === 0) {
     return new NextResponse("Índice fuera de rango", { status: 400 });

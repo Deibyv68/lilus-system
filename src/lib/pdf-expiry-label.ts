@@ -6,12 +6,15 @@ import { format } from "date-fns";
 const LABEL_WIDTH = 2 * 72; // 144
 const LABEL_HEIGHT = 1 * 72; // 72
 
-// Cada etiqueta lleva DOS jabones: se corta por la mitad con tijera y queda
-// una etiqueta cuadrada de 1x1 para cada uno. Las dos mitades van giradas
-// 180° una respecto de la otra, tal como se pidió.
-const PANEL = 72; // lado de cada mitad, en puntos (1 pulgada)
-const MARGIN = 4;
-const INNER = PANEL - MARGIN * 2; // ancho útil dentro de cada mitad
+// Cada etiqueta lleva TRES jabones: se corta con tijera por las dos líneas
+// punteadas y quedan tres tiras. Sin el nombre del producto sobra espacio,
+// y lo que importa para trazabilidad es el lote y las fechas.
+export const UNITS_PER_LABEL = 3;
+
+const PANEL_DEPTH = LABEL_WIDTH / UNITS_PER_LABEL; // 48 — ancho de cada tira
+const PANEL_ACROSS = LABEL_HEIGHT; // 72 — largo de la tira, ya girada
+const MARGIN = 3;
+const INNER = PANEL_ACROSS - MARGIN * 2;
 
 const GRAY = rgb(0.35, 0.35, 0.35);
 const CUT_GRAY = rgb(0.55, 0.55, 0.55);
@@ -28,24 +31,30 @@ type Font = Awaited<ReturnType<PDFDocument["embedFont"]>>;
 type Page = ReturnType<PDFDocument["addPage"]>;
 
 /**
- * Cada mitad se dibuja en su propio sistema de coordenadas "de lectura":
- * el origen es la esquina superior izquierda de esa mitad vista ya girada,
- * `u` avanza hacia la derecha y `v` hacia abajo. Esta función traduce ese
- * punto a la página real y dice con qué ángulo hay que escribir.
+ * Cada tira se dibuja en su propio sistema de coordenadas "de lectura": el
+ * origen es su esquina superior izquierda vista ya girada, `u` avanza hacia
+ * la derecha y `v` hacia abajo. Esta función traduce ese punto a la página
+ * real y dice con qué ángulo hay que escribir.
  *
- * La mitad izquierda se lee girando el papel 90° en sentido horario; la
- * derecha, 90° antihorario. Por eso una va a 90° y la otra a 270°.
+ * Las tiras alternan orientación (normal, invertida, normal) para conservar
+ * el efecto espejo del diseño original.
  */
-function place(side: "left" | "right", u: number, v: number) {
-  if (side === "left") {
-    return { x: v, y: u, rot: degrees(90) };
+function place(panel: number, u: number, v: number) {
+  const x0 = panel * PANEL_DEPTH;
+  const flipped = panel % 2 === 1;
+  if (!flipped) {
+    return { x: x0 + v, y: u, rot: degrees(90) };
   }
-  return { x: LABEL_WIDTH - v, y: PANEL - u, rot: degrees(270) };
+  return {
+    x: x0 + PANEL_DEPTH - v,
+    y: PANEL_ACROSS - u,
+    rot: degrees(270),
+  };
 }
 
 function drawPanelText(
   page: Page,
-  side: "left" | "right",
+  panel: number,
   text: string,
   u: number,
   v: number,
@@ -53,14 +62,14 @@ function drawPanelText(
   font: Font,
   color = rgb(0, 0, 0)
 ) {
-  const { x, y, rot } = place(side, u, v);
+  const { x, y, rot } = place(panel, u, v);
   page.drawText(text, { x, y, size, font, color, rotate: rot });
 }
 
 /** Igual que drawPanelText pero alineando el final del texto a `uEnd`. */
 function drawPanelTextRight(
   page: Page,
-  side: "left" | "right",
+  panel: number,
   text: string,
   uEnd: number,
   v: number,
@@ -69,87 +78,61 @@ function drawPanelTextRight(
   color = rgb(0, 0, 0)
 ) {
   const w = font.widthOfTextAtSize(text, size);
-  drawPanelText(page, side, text, uEnd - w, v, size, font, color);
+  drawPanelText(page, panel, text, uEnd - w, v, size, font, color);
 }
 
-function drawPanelLine(
-  page: Page,
-  side: "left" | "right",
-  u1: number,
-  u2: number,
-  v: number,
-  color = rgb(0.6, 0.6, 0.6)
-) {
-  const a = place(side, u1, v);
-  const b = place(side, u2, v);
+function drawPanelLine(page: Page, panel: number, u1: number, u2: number, v: number) {
+  const a = place(panel, u1, v);
+  const b = place(panel, u2, v);
   page.drawLine({
     start: { x: a.x, y: a.y },
     end: { x: b.x, y: b.y },
     thickness: 0.3,
-    color,
+    color: rgb(0.6, 0.6, 0.6),
   });
 }
 
-/** Dibuja el contenido de un jabón dentro de una de las dos mitades. */
+/** Dibuja el contenido de un jabón dentro de una de las tres tiras. */
 function drawUnit(
   page: Page,
-  side: "left" | "right",
+  panel: number,
   u: ExpiryLabelData,
   font: Font,
   bold: Font
 ) {
-  // ── Bloque de arriba: nombre, SKU y lote ──
-  // SKU y lote van en líneas separadas: juntos no caben en una pulgada
-  // y se solapaban.
-  const nameSize = 7;
-  const nameLines = wrap(u.productName, bold, nameSize, INNER, 2);
-
-  let v = MARGIN + nameSize;
-  for (const line of nameLines) {
-    drawPanelText(page, side, line, MARGIN, v, nameSize, bold);
-    v += nameSize + 1;
-  }
-
-  v += 4;
-  drawPanelText(page, side, u.sku, MARGIN, v, 5.5, font, GRAY);
-  v += 7;
+  // El lote va primero y en grande: es el dato de trazabilidad.
   drawPanelText(
     page,
-    side,
-    truncate(`Lote ${u.batchCode}`, font, 5.5, INNER),
+    panel,
+    truncate(u.batchCode, bold, 7.5, INNER),
     MARGIN,
-    v,
-    5.5,
-    font,
-    GRAY
-  );
-
-  // ── Bloque de abajo: fechas, ancladas al pie de la mitad ──
-  // Anclarlas abajo mantiene todas las etiquetas iguales aunque el nombre
-  // ocupe una o dos líneas.
-  const venceV = PANEL - MARGIN - 2;
-  const elabV = venceV - 11;
-
-  drawPanelLine(page, side, MARGIN, PANEL - MARGIN, elabV - 9);
-
-  drawPanelText(page, side, "ELAB", MARGIN, elabV, 5.5, bold, GRAY);
-  drawPanelTextRight(
-    page,
-    side,
-    format(u.manufactureDate, "dd/MM/yyyy"),
-    PANEL - MARGIN,
-    elabV,
+    11,
     7.5,
     bold
   );
 
-  drawPanelText(page, side, "VENCE", MARGIN, venceV, 5.5, bold, GRAY);
+  drawPanelText(page, panel, truncate(u.sku, font, 5.5, INNER), MARGIN, 19, 5.5, font, GRAY);
+
+  drawPanelLine(page, panel, MARGIN, PANEL_ACROSS - MARGIN, 22.5);
+
+  drawPanelText(page, panel, "ELAB", MARGIN, 32, 5.5, bold, GRAY);
   drawPanelTextRight(
     page,
-    side,
+    panel,
+    format(u.manufactureDate, "dd/MM/yyyy"),
+    PANEL_ACROSS - MARGIN,
+    32,
+    7.5,
+    bold
+  );
+
+  drawPanelText(page, panel, "VENCE", MARGIN, 43, 5.5, bold, GRAY);
+  drawPanelTextRight(
+    page,
+    panel,
     format(u.expiryDate, "dd/MM/yyyy"),
-    PANEL - MARGIN,
-    venceV,
+    PANEL_ACROSS - MARGIN,
+    43,
     7.5,
     bold
   );
@@ -162,61 +145,29 @@ export async function buildExpiryLabelPdf(
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-  // De dos en dos. Si el total es impar, la última etiqueta lleva solo
-  // la mitad izquierda ocupada.
-  for (let i = 0; i < units.length; i += 2) {
+  // De tres en tres. Si el total no es múltiplo de 3, la última etiqueta
+  // deja las tiras sobrantes en blanco.
+  for (let i = 0; i < units.length; i += UNITS_PER_LABEL) {
     const page = pdf.addPage([LABEL_WIDTH, LABEL_HEIGHT]);
 
-    // Línea de corte punteada al medio
-    page.drawLine({
-      start: { x: PANEL, y: 2 },
-      end: { x: PANEL, y: LABEL_HEIGHT - 2 },
-      thickness: 0.5,
-      color: CUT_GRAY,
-      dashArray: [2.5, 2],
-    });
+    // Líneas de corte punteadas entre tiras
+    for (let c = 1; c < UNITS_PER_LABEL; c++) {
+      page.drawLine({
+        start: { x: c * PANEL_DEPTH, y: 2 },
+        end: { x: c * PANEL_DEPTH, y: LABEL_HEIGHT - 2 },
+        thickness: 0.5,
+        color: CUT_GRAY,
+        dashArray: [2.5, 2],
+      });
+    }
 
-    const left = units[i];
-    if (left) drawUnit(page, "left", left, font, bold);
-
-    const right = units[i + 1];
-    if (right) drawUnit(page, "right", right, font, bold);
+    for (let p = 0; p < UNITS_PER_LABEL; p++) {
+      const unit = units[i + p];
+      if (unit) drawUnit(page, p, unit, font, bold);
+    }
   }
 
   return pdf.save();
-}
-
-/** Parte el texto en como mucho `maxLines` líneas que quepan en `maxWidth`. */
-function wrap(
-  text: string,
-  font: Font,
-  size: number,
-  maxWidth: number,
-  maxLines: number
-): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-
-  for (const w of words) {
-    const test = current ? `${current} ${w}` : w;
-    if (font.widthOfTextAtSize(test, size) <= maxWidth) {
-      current = test;
-    } else {
-      if (current) lines.push(current);
-      current = w;
-      if (lines.length === maxLines) break;
-    }
-  }
-  if (current && lines.length < maxLines) lines.push(current);
-
-  // Si sobró texto, recortamos la última línea con puntos suspensivos
-  const used = lines.join(" ");
-  if (used.length < text.length && lines.length > 0) {
-    const last = lines.length - 1;
-    lines[last] = truncate(lines[last] + "…", font, size, maxWidth);
-  }
-  return lines.length > 0 ? lines : [truncate(text, font, size, maxWidth)];
 }
 
 function truncate(
