@@ -51,7 +51,26 @@ fi
 mkdir -p "$DEST"
 OUT="$DEST/lilus-$STAMP.db"
 
-sqlite3 "$DB_PATH" ".backup '$OUT'"
+# .backup falla con "database is locked" si la app está escribiendo justo en
+# ese instante. Con .timeout sqlite espera en vez de rendirse, y aun así
+# reintentamos por si la escritura se alarga: un respaldo que falla en
+# silencio es peor que uno que tarda unos segundos.
+BACKED_UP=0
+for attempt in 1 2 3; do
+  if sqlite3 "$DB_PATH" ".timeout 10000" ".backup '$OUT'" 2>/tmp/lilus-backup-err; then
+    BACKED_UP=1
+    break
+  fi
+  echo "  intento $attempt fallo: $(cat /tmp/lilus-backup-err)" >&2
+  sleep 3
+done
+
+if [[ "$BACKED_UP" -ne 1 ]]; then
+  echo "✗ No se pudo respaldar $DB_PATH tras 3 intentos" >&2
+  rm -f "$OUT"
+  exit 1
+fi
+
 gzip -f "$OUT"
 OUT="$OUT.gz"
 
