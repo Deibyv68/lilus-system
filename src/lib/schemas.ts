@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_SHELF_LIFE_MONTHS } from "./constants";
 
 export const productSchema = z.object({
   sku: z.string().min(1, "SKU requerido").max(40),
@@ -14,7 +15,12 @@ export const productSchema = z.object({
   productionCost: z.coerce.number().min(0).default(0),
   weightGrams: z.coerce.number().min(0).optional(),
   ingredients: z.string().max(2000).optional().or(z.literal("")),
-  shelfLifeMonths: z.coerce.number().int().min(1).max(120).default(12),
+  shelfLifeMonths: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(120)
+    .default(DEFAULT_SHELF_LIFE_MONTHS),
   stock: z.coerce.number().int().min(0).default(0),
   isActive: z.coerce.boolean().default(true),
 });

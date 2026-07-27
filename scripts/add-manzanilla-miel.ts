@@ -18,7 +18,7 @@ async function main() {
       ingredients:
         "Manzanilla, miel de abejas, aceites vegetales saponificados. Calmante y nutritivo.",
       price: 4.0,
-      shelfLifeMonths: 12,
+      shelfLifeMonths: 6,
       isActive: true,
     },
   });

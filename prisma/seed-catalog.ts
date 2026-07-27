@@ -21,13 +21,13 @@ const products = [
   { sku: "LIL-JAB-MAR", name: "Jabón de Maracuyá", shortName: "Jabón Maracuyá", ingredients: "Esencia de maracuyá, aceites vegetales. Exótico y fresco.", price: 4.5 },
 
   // Extras
-  { sku: "LIL-EXT-AMI", name: "Agua Micelar", shortName: "Agua Micelar", ingredients: "Agua micelar artesanal para limpieza facial.", price: 7.0, shelfLifeMonths: 12 },
-  { sku: "LIL-EXT-CCN", name: "Crema de Concha de Nácar", shortName: "Crema Nácar", ingredients: "Concha de nácar, regeneradora cutánea.", price: 9.0, shelfLifeMonths: 12 },
-  { sku: "LIL-EXT-SHA", name: "Shampoo Artesanal", shortName: "Shampoo", ingredients: "Shampoo artesanal de línea herbal.", price: 8.0, shelfLifeMonths: 10 },
-  { sku: "LIL-EXT-PAC", name: "Perfume en Aceite", shortName: "Perfume Aceite", ingredients: "Perfume artesanal en base aceite (notas cítricas/herbales).", price: 10.0, shelfLifeMonths: 24 },
-  { sku: "LIL-EXT-ACO", name: "Acondicionador Artesanal", shortName: "Acondicionador", ingredients: "Acondicionador artesanal complementario al shampoo.", price: 8.0, shelfLifeMonths: 10 },
-  { sku: "LIL-EXT-PVA", name: "Perfume Vaselinado", shortName: "Perfume Vaselina", ingredients: "Perfume en base vaselinada, ideal para viaje.", price: 7.0, shelfLifeMonths: 24 },
-  { sku: "LIL-EXT-CRB", name: "Crema Blanqueadora", shortName: "Crema Blanq.", ingredients: "Crema aclarante de uso facial/corporal.", price: 9.0, shelfLifeMonths: 12 },
+  { sku: "LIL-EXT-AMI", name: "Agua Micelar", shortName: "Agua Micelar", ingredients: "Agua micelar artesanal para limpieza facial.", price: 7.0, shelfLifeMonths: 6 },
+  { sku: "LIL-EXT-CCN", name: "Crema de Concha de Nácar", shortName: "Crema Nácar", ingredients: "Concha de nácar, regeneradora cutánea.", price: 9.0, shelfLifeMonths: 6 },
+  { sku: "LIL-EXT-SHA", name: "Shampoo Artesanal", shortName: "Shampoo", ingredients: "Shampoo artesanal de línea herbal.", price: 8.0, shelfLifeMonths: 6 },
+  { sku: "LIL-EXT-PAC", name: "Perfume en Aceite", shortName: "Perfume Aceite", ingredients: "Perfume artesanal en base aceite (notas cítricas/herbales).", price: 10.0, shelfLifeMonths: 6 },
+  { sku: "LIL-EXT-ACO", name: "Acondicionador Artesanal", shortName: "Acondicionador", ingredients: "Acondicionador artesanal complementario al shampoo.", price: 8.0, shelfLifeMonths: 6 },
+  { sku: "LIL-EXT-PVA", name: "Perfume Vaselinado", shortName: "Perfume Vaselina", ingredients: "Perfume en base vaselinada, ideal para viaje.", price: 7.0, shelfLifeMonths: 6 },
+  { sku: "LIL-EXT-CRB", name: "Crema Blanqueadora", shortName: "Crema Blanq.", ingredients: "Crema aclarante de uso facial/corporal.", price: 9.0, shelfLifeMonths: 6 },
 ];
 
 const packs = [
@@ -83,7 +83,7 @@ async function main() {
         shortName: p.shortName,
         ingredients: p.ingredients,
         price: p.price,
-        shelfLifeMonths: p.shelfLifeMonths ?? 12,
+        shelfLifeMonths: p.shelfLifeMonths ?? 6,
       },
       create: {
         sku: p.sku,
@@ -91,7 +91,7 @@ async function main() {
         shortName: p.shortName,
         ingredients: p.ingredients,
         price: p.price,
-        shelfLifeMonths: p.shelfLifeMonths ?? 12,
+        shelfLifeMonths: p.shelfLifeMonths ?? 6,
         isActive: true,
       },
     });

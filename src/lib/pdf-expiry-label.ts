@@ -36,12 +36,13 @@ type Page = ReturnType<PDFDocument["addPage"]>;
  * la derecha y `v` hacia abajo. Esta función traduce ese punto a la página
  * real y dice con qué ángulo hay que escribir.
  *
- * Las tiras alternan orientación (normal, invertida, normal) para conservar
- * el efecto espejo del diseño original.
+ * Solo la última tira va invertida, de modo que las dos de los extremos
+ * queden en espejo una de la otra. Las del medio siguen la orientación de
+ * la primera: al cortarlas da igual hacia dónde miren.
  */
 function place(panel: number, u: number, v: number) {
   const x0 = panel * PANEL_DEPTH;
-  const flipped = panel % 2 === 1;
+  const flipped = panel === UNITS_PER_LABEL - 1;
   if (!flipped) {
     return { x: x0 + v, y: u, rot: degrees(90) };
   }

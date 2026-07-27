@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createProductAction, updateProductAction } from "./actions";
+import { DEFAULT_SHELF_LIFE_MONTHS } from "@/lib/constants";
 import { FileText, ImageIcon } from "lucide-react";
 
 type ProductFormValues = {
@@ -181,7 +182,9 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
                 type="number"
                 min="1"
                 step="1"
-                defaultValue={initial?.shelfLifeMonths ?? 12}
+                defaultValue={
+                  initial?.shelfLifeMonths ?? DEFAULT_SHELF_LIFE_MONTHS
+                }
               />
             </Field>
             <Field label="Peso (gramos)">

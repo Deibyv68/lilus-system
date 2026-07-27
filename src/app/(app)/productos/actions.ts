@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { productSchema } from "@/lib/schemas";
+import { DEFAULT_SHELF_LIFE_MONTHS } from "@/lib/constants";
 import { saveUpload } from "@/lib/uploads";
 
 function pickString(v: FormDataEntryValue | null): string | undefined {
@@ -23,7 +24,8 @@ export async function createProductAction(formData: FormData) {
     productionCost: formData.get("productionCost") ?? 0,
     weightGrams: formData.get("weightGrams") || undefined,
     ingredients: formData.get("ingredients") ?? "",
-    shelfLifeMonths: formData.get("shelfLifeMonths") ?? 12,
+    shelfLifeMonths:
+      formData.get("shelfLifeMonths") ?? DEFAULT_SHELF_LIFE_MONTHS,
     stock: formData.get("stock") ?? 0,
     isActive: formData.get("isActive") === "on",
   });
@@ -95,7 +97,8 @@ export async function updateProductAction(id: string, formData: FormData) {
     productionCost: formData.get("productionCost") ?? 0,
     weightGrams: formData.get("weightGrams") || undefined,
     ingredients: formData.get("ingredients") ?? "",
-    shelfLifeMonths: formData.get("shelfLifeMonths") ?? 12,
+    shelfLifeMonths:
+      formData.get("shelfLifeMonths") ?? DEFAULT_SHELF_LIFE_MONTHS,
     stock: formData.get("stock") ?? 0,
     isActive: formData.get("isActive") === "on",
   });

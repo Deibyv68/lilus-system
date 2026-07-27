@@ -8,6 +8,7 @@ import {
   generateBatchCode,
   calcExpiry,
 } from "@/lib/order-utils";
+import { DEFAULT_SHELF_LIFE_MONTHS } from "@/lib/constants";
 
 type CreateOrderPayload = {
   customer: {
@@ -119,7 +120,10 @@ export async function createOrderAction(payload: CreateOrderPayload) {
           productSku: p.sku,
           batchCode: generateBatchCode(now, seq),
           manufactureDate: now,
-          expiryDate: calcExpiry(now, p.shelfLifeMonths ?? 12),
+          expiryDate: calcExpiry(
+            now,
+            p.shelfLifeMonths ?? DEFAULT_SHELF_LIFE_MONTHS
+          ),
           ingredients: p.ingredients,
         });
       }
@@ -135,7 +139,10 @@ export async function createOrderAction(payload: CreateOrderPayload) {
               productSku: ci.product.sku,
               batchCode: generateBatchCode(now, seq),
               manufactureDate: now,
-              expiryDate: calcExpiry(now, ci.product.shelfLifeMonths ?? 12),
+              expiryDate: calcExpiry(
+                now,
+                ci.product.shelfLifeMonths ?? DEFAULT_SHELF_LIFE_MONTHS
+              ),
               ingredients: ci.product.ingredients,
             });
           }

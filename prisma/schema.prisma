@@ -24,7 +24,7 @@ model Product {
   productionCost  Float    @default(0)
   weightGrams     Float?   // gramos, para envíos
   ingredients     String?  // texto libre, va en la etiqueta 2x1
-  shelfLifeMonths Int?     @default(12) // meses de vida útil por defecto
+  shelfLifeMonths Int?     @default(6) // meses de vida útil por defecto
   stock           Int      @default(0)  // stock manual (no se descuenta de packs)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
