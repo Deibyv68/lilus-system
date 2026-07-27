@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
+import { EmailField } from "@/components/email-field";
 import { createOrderAction } from "../actions";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -765,12 +766,9 @@ function StepCustomer({
           />
         </BigField>
         <BigField label="Email">
-          <Input
-            type="email"
-            inputMode="email"
+          <EmailField
             value={customer.email}
-            onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
-            placeholder="cliente@email.com"
+            onChange={(v) => setCustomer({ ...customer, email: v })}
             className="h-12 text-base"
           />
         </BigField>
