@@ -22,9 +22,11 @@ export async function GET(
     return new NextResponse("Sin unidades para imprimir", { status: 404 });
   }
 
+  // Cada etiqueta 2x1 lleva DOS jabones, así que aquí unitIndex identifica
+  // una etiqueta (un par), no una unidad suelta.
   const units =
     unitIndex !== null && !isNaN(unitIndex)
-      ? allUnits.slice(unitIndex, unitIndex + 1)
+      ? allUnits.slice(unitIndex * 2, unitIndex * 2 + 2)
       : allUnits;
   if (units.length === 0) {
     return new NextResponse("Índice fuera de rango", { status: 400 });

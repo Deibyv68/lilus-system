@@ -61,6 +61,9 @@ type SubStep = {
   isCircular: boolean;
   // Solo se muestra si hay packs en el pedido
   packsOnly?: boolean;
+  // Cada etiqueta física lleva DOS unidades (se corta por la mitad).
+  // Afecta cuántas etiquetas salen y qué significa el índice al imprimir.
+  pairsUnits?: boolean;
 };
 
 // Orden optimizado: agrupados por papel para minimizar cambios de rollo.
@@ -110,6 +113,7 @@ const SUB_STEPS: SubStep[] = [
     icon: FileText,
     hasMultiple: true,
     isCircular: false,
+    pairsUnits: true,
   },
 ];
 
@@ -207,6 +211,18 @@ export function PrintStepWizard({
 
   // Copies para box-logo
   const [boxLogoCopies, setBoxLogoCopies] = useState(Math.max(1, packCount));
+
+  // Cuántas etiquetas físicas salen en el paso actual y qué unidades lleva
+  // cada una. En caducidad van dos jabones por etiqueta; en el resto, una.
+  const labelGroups = useMemo<ProductionUnit[][]>(() => {
+    if (!currentStep?.hasMultiple) return [];
+    if (!currentStep.pairsUnits) return productionUnits.map((u) => [u]);
+    const groups: ProductionUnit[][] = [];
+    for (let i = 0; i < productionUnits.length; i += 2) {
+      groups.push(productionUnits.slice(i, i + 2));
+    }
+    return groups;
+  }, [currentStep, productionUnits]);
 
   // ───────── Acciones ─────────
   async function pollUntilDone(jobId: string): Promise<"DONE" | "FAILED"> {
@@ -347,7 +363,7 @@ export function PrintStepWizard({
   }
 
   function nextOneByOne() {
-    if (oneByOneIndex + 1 >= productionUnits.length) {
+    if (oneByOneIndex + 1 >= labelGroups.length) {
       setOneByOneOpen(false);
       toast.success("Todas las etiquetas impresas");
       return;
@@ -482,7 +498,7 @@ export function PrintStepWizard({
           icon={Layers}
           title={
             currentStep.hasMultiple
-              ? `Imprimir todas (${productionUnits.length})`
+              ? `Imprimir todas (${labelGroups.length})`
               : "Imprimir"
           }
           status={status}
@@ -549,7 +565,7 @@ export function PrintStepWizard({
             </DialogDescription>
           </DialogHeader>
 
-          {productionUnits.length > 0 && (
+          {labelGroups.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
@@ -559,7 +575,7 @@ export function PrintStepWizard({
                   </strong>{" "}
                   de{" "}
                   <strong className="text-foreground">
-                    {productionUnits.length}
+                    {labelGroups.length}
                   </strong>
                 </span>
               </div>
@@ -569,20 +585,34 @@ export function PrintStepWizard({
                   style={{
                     width: `${
                       ((oneByOneIndex + (oneByOneStatus === "done" ? 1 : 0)) /
-                        productionUnits.length) *
+                        labelGroups.length) *
                       100
                     }%`,
                   }}
                 />
               </div>
-              <div className="rounded-lg border p-3 bg-card">
-                <p className="font-medium leading-tight">
-                  {productionUnits[oneByOneIndex]?.productName}
-                </p>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                  Lote: {productionUnits[oneByOneIndex]?.batchCode}
-                </p>
+              <div className="rounded-lg border bg-card divide-y">
+                {labelGroups[oneByOneIndex]?.map((u, i) => (
+                  <div key={u.id} className="p-3">
+                    {currentStep.pairsUnits && (
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">
+                        {i === 0 ? "Mitad izquierda" : "Mitad derecha"}
+                      </p>
+                    )}
+                    <p className="font-medium leading-tight">{u.productName}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      Lote: {u.batchCode}
+                    </p>
+                  </div>
+                ))}
               </div>
+              {currentStep.pairsUnits &&
+                labelGroups[oneByOneIndex]?.length === 1 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Esta etiqueta lleva un solo jabón: la mitad derecha sale en
+                    blanco.
+                  </p>
+                )}
             </div>
           )}
 
@@ -816,9 +846,9 @@ function LabelPreview({
     return (
       <PdfPreview
         url={`/api/orders/${orderId}/expiry-labels?unitIndex=0`}
-        label="Etiqueta de caducidad 2×1"
+        label="Caducidad 2×1 — dos jabones, se corta al medio"
         aspectRatio="2 / 1"
-        maxWidth={260}
+        maxWidth={280}
       />
     );
   }

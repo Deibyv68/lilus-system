@@ -101,10 +101,11 @@ export async function buildPdfForJob(
       orderBy: { batchCode: "asc" },
     });
     if (units.length === 0) throw new Error("Sin unidades para imprimir");
-    // Modo "una a una": si viene unitIndex, filtramos a solo esa
+    // Cada etiqueta 2x1 lleva dos jabones, así que unitIndex identifica una
+    // etiqueta (un par de unidades), no una unidad suelta.
     const selectedUnits =
       typeof options.unitIndex === "number"
-        ? units.slice(options.unitIndex, options.unitIndex + 1)
+        ? units.slice(options.unitIndex * 2, options.unitIndex * 2 + 2)
         : units;
     if (selectedUnits.length === 0)
       throw new Error("Índice de unidad fuera de rango");
