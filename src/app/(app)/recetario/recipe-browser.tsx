@@ -29,7 +29,7 @@ export function RecipeBrowser({ recipes }: { recipes: RecipeCard[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<RecipeCategoryKey | "todas">("todas");
 
-  // Solo mostramos pestañas de categorías que tienen recetas
+  // Solo mostramos categorías que tienen recetas
   const presentCategories = useMemo(
     () => CATEGORY_ORDER.filter((c) => recipes.some((r) => r.category === c)),
     [recipes]
@@ -48,7 +48,7 @@ export function RecipeBrowser({ recipes }: { recipes: RecipeCard[] }) {
     });
   }, [recipes, query, category]);
 
-  // Agrupadas por categoría, para que el listado no sea una lista plana
+  // Agrupadas por categoría para que no sea una lista plana de 23
   const grouped = useMemo(() => {
     const map = new Map<string, RecipeCard[]>();
     for (const r of filtered) {
@@ -70,50 +70,46 @@ export function RecipeBrowser({ recipes }: { recipes: RecipeCard[] }) {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar receta o ingrediente…"
-          className="h-12 pl-9 pr-9 text-base"
+          placeholder="Buscar receta…"
+          className="h-12 pl-9 pr-10 text-base"
         />
         {query && (
           <button
             type="button"
             onClick={() => setQuery("")}
-            aria-label="Limpiar"
-            className="absolute right-2 top-1/2 -translate-y-1/2 size-7 rounded-full hover:bg-accent flex items-center justify-center"
+            aria-label="Limpiar búsqueda"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 size-9 rounded-full hover:bg-accent flex items-center justify-center"
           >
             <X className="size-4 text-muted-foreground" />
           </button>
         )}
       </div>
 
-      {/* Filtro por categoría — scroll horizontal en móvil */}
-      <div className="-mx-4 px-4 overflow-x-auto scrollbar-none">
-        <div className="flex gap-2 w-max pb-1">
+      {/* Categorías: se acomodan en varias líneas, sin scroll horizontal */}
+      <div className="flex flex-wrap gap-2">
+        <CategoryChip
+          active={category === "todas"}
+          onClick={() => setCategory("todas")}
+          label="Todas"
+          count={recipes.length}
+        />
+        {presentCategories.map((c) => (
           <CategoryChip
-            active={category === "todas"}
-            onClick={() => setCategory("todas")}
-            label="Todas"
-            count={recipes.length}
+            key={c}
+            active={category === c}
+            onClick={() => setCategory(c)}
+            label={RECIPE_CATEGORIES[c].short}
+            count={recipes.filter((r) => r.category === c).length}
           />
-          {presentCategories.map((c) => {
-            const meta = RECIPE_CATEGORIES[c];
-            return (
-              <CategoryChip
-                key={c}
-                active={category === c}
-                onClick={() => setCategory(c)}
-                label={meta.short}
-                count={recipes.filter((r) => r.category === c).length}
-              />
-            );
-          })}
-        </div>
+        ))}
       </div>
 
       {/* Resultados */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border-2 border-dashed p-10 text-center">
+        <div className="rounded-2xl border-2 border-dashed p-10 text-center">
+          <Search className="size-10 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">
-            No hay recetas que coincidan con «{query}».
+            Ninguna receta coincide con la búsqueda.
           </p>
         </div>
       ) : (
@@ -124,13 +120,15 @@ export function RecipeBrowser({ recipes }: { recipes: RecipeCard[] }) {
             return (
               <section key={key}>
                 <div className="flex items-center gap-2 mb-2">
-                  <Icon className={`size-4 ${meta.accent}`} />
+                  <Icon className={`size-4 shrink-0 ${meta.accent}`} />
                   <h2 className="text-sm font-semibold">{meta.label}</h2>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground tabular-nums">
                     {list.length}
                   </span>
                 </div>
-                <ul className="space-y-2">
+
+                {/* Una columna en móvil, dos desde tablet */}
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {list.map((r) => (
                     <li key={r.id}>
                       <RecipeRow recipe={r} />
@@ -161,14 +159,18 @@ function CategoryChip({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 h-9 px-3.5 rounded-full text-sm font-medium border transition-colors active:scale-95 ${
+      className={`h-10 px-3.5 rounded-full text-sm font-medium border transition-colors active:scale-95 ${
         active
           ? "bg-primary text-primary-foreground border-primary"
           : "bg-card hover:bg-accent"
       }`}
     >
       {label}
-      <span className={active ? "opacity-70 ml-1.5" : "text-muted-foreground ml-1.5"}>
+      <span
+        className={`ml-1.5 tabular-nums ${
+          active ? "opacity-70" : "text-muted-foreground"
+        }`}
+      >
         {count}
       </span>
     </button>
@@ -182,18 +184,11 @@ function RecipeRow({ recipe: r }: { recipe: RecipeCard }) {
   return (
     <Link
       href={`/recetario/${r.slug}`}
-      className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent transition-colors active:scale-[0.99]"
+      className="h-full flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-accent hover:border-primary/40 transition-colors active:scale-[0.99]"
     >
-      {/* Miniatura o icono de la categoría */}
       {r.imageUrl ? (
         <div className="relative size-14 rounded-lg overflow-hidden bg-muted shrink-0">
-          <Image
-            src={r.imageUrl}
-            alt=""
-            fill
-            sizes="56px"
-            className="object-cover"
-          />
+          <Image src={r.imageUrl} alt="" fill sizes="56px" className="object-cover" />
         </div>
       ) : (
         <div
@@ -206,19 +201,19 @@ function RecipeRow({ recipe: r }: { recipe: RecipeCard }) {
       <div className="flex-1 min-w-0">
         <p className="font-semibold leading-tight">{r.name}</p>
         {r.summary && (
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
             {r.summary}
           </p>
         )}
-        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground">
           <span className="tabular-nums">{r.ingredientCount} ingredientes</span>
           <span aria-hidden>·</span>
           <span className="tabular-nums">{r.stepCount} pasos</span>
           {r.usedInCount > 0 && (
             <>
               <span aria-hidden>·</span>
-              <span className="inline-flex items-center gap-0.5">
-                <Link2 className="size-3" />
+              <span className="inline-flex items-center gap-0.5 tabular-nums">
+                <Link2 className="size-3 shrink-0" />
                 {r.usedInCount}
               </span>
             </>

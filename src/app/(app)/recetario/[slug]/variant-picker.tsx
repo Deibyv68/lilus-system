@@ -71,13 +71,13 @@ export function VariantPicker({
       {/* Selector de variante */}
       {variants.length > 0 && (
         <div>
-          <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 pb-1">
+          <div className="flex flex-wrap gap-2">
             {variants.map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setActive(v)}
-                className={`shrink-0 h-10 px-4 rounded-full text-sm font-medium border transition-colors active:scale-95 ${
+                className={`h-10 px-4 rounded-full text-sm font-medium border transition-colors active:scale-95 ${
                   active === v
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card hover:bg-accent"
