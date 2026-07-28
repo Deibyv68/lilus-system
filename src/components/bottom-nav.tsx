@@ -34,6 +34,8 @@ const navItems = [
       p.startsWith("/clientes") ||
       p.startsWith("/envios") ||
       p.startsWith("/configuracion") ||
+      p.startsWith("/recetario") ||
+      p.startsWith("/etiquetas") ||
       p.startsWith("/mas"),
   },
 ];

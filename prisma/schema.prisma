@@ -34,6 +34,7 @@ model Product {
   packItems       PackItem[]
   orderItems      OrderItem[]
   productionUnits ProductionUnit[]
+  recipes         Recipe[]
 }
 
 model ProductVariant {
@@ -220,6 +221,93 @@ model ProductionUnit {
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
+}
+
+// ---------- Recetario ----------
+
+model Recipe {
+  id       String @id @default(cuid())
+  slug     String @unique
+  name     String
+  // "base" | "jabon" | "crema" | "perfume" | "otro"
+  category String
+  summary  String? // una línea, se muestra en el listado
+  imageUrl String?
+
+  // Ficha técnica
+  yield     String? // "250 g", "un frasco de 60 ml"
+  restTime  String? // "24 horas"
+  container String? // "cajita de metal", "frasco ámbar"
+  usage     String? // modo de uso
+  notes     String? // notas libres, una por línea
+
+  // Producto del catálogo que sale de esta receta, si existe
+  productId String?
+
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product     Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+  benefits    RecipeBenefit[]
+
+  // Recetas que usan ESTA como ingrediente (índice inverso)
+  usedIn RecipeIngredient[] @relation("IngredienteEsReceta")
+
+  @@index([category])
+}
+
+model RecipeIngredient {
+  id       String  @id @default(cuid())
+  recipeId String
+  name     String
+  quantity String? // "250 g", "4 gotas", "1/16 cucharadita"
+  note     String? // "disuelta en 1 cucharada de agua"
+  optional Boolean @default(false)
+  // Agrupa ingredientes cuando la receta tiene variantes
+  // (p. ej. las dos fórmulas de crema base)
+  variant   String?
+  sortOrder Int     @default(0)
+
+  // Si este ingrediente se prepara con otra receta, se enlaza aquí.
+  // Es lo que permite saltar de "glicerado de naranja" a su receta.
+  linkedRecipeId String?
+
+  recipe       Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  linkedRecipe Recipe? @relation("IngredienteEsReceta", fields: [linkedRecipeId], references: [id], onDelete: SetNull)
+
+  @@index([recipeId])
+}
+
+model RecipeStep {
+  id        String  @id @default(cuid())
+  recipeId  String
+  text      String
+  // Agrupa pasos cuando hay métodos alternativos
+  // (p. ej. glicerado a fuego directo o a baño maría)
+  variant   String?
+  sortOrder Int     @default(0)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+}
+
+model RecipeBenefit {
+  id       String  @id @default(cuid())
+  recipeId String
+  // Si viene, el beneficio es de un ingrediente concreto y se muestra
+  // en tabla. Si es null, es un beneficio general de la receta.
+  ingredient String?
+  text       String
+  sortOrder  Int     @default(0)
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
 }
 
 // ---------- Configuración global ----------

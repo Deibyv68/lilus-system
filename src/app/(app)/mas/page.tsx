@@ -12,11 +12,13 @@ import {
   Printer,
   LogOut,
   UserCog,
+  BookOpen,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 const links = [
+  { href: "/recetario", label: "Recetario", icon: BookOpen, description: "Fórmulas y elaboración de cada producto" },
   { href: "/etiquetas", label: "Imprimir etiquetas", icon: Printer, description: "Imprimir etiquetas sueltas sin pedido" },
   { href: "/packs", label: "Packs", icon: Boxes, description: "Paquetes que agrupan productos" },
   { href: "/clientes", label: "Clientes", icon: Users, description: "Historial de personas que han comprado" },

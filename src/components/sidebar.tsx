@@ -15,6 +15,7 @@ import {
   Settings,
   PlusCircle,
   Printer,
+  BookOpen,
   LogOut,
   UserCog,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const nav = [
   { href: "/pedidos", label: "Pedidos", icon: ShoppingCart },
   { href: "/productos", label: "Productos", icon: Package },
   { href: "/packs", label: "Packs", icon: Boxes },
+  { href: "/recetario", label: "Recetario", icon: BookOpen },
   { href: "/etiquetas", label: "Imprimir etiquetas", icon: Printer },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/envios", label: "Envíos", icon: Truck },
