@@ -46,6 +46,8 @@ async function main() {
       container: r.container ?? null,
       usage: r.usage ?? null,
       notes: r.notes?.length ? r.notes.join("\n") : null,
+      phValue: r.phValue ?? null,
+      phKind: r.phKind ?? null,
       productId,
       sortOrder: index,
       isActive: true,
@@ -107,6 +109,10 @@ async function main() {
           note: ing.note ?? null,
           optional: ing.optional ?? false,
           variant: ing.variant ?? null,
+          optionGroup: ing.optionGroup ?? null,
+          optionLabel: ing.optionLabel ?? null,
+          isRecommended: ing.isRecommended ?? false,
+          percentage: ing.percentage ?? null,
           linkedRecipeId,
           sortOrder: i,
         };
@@ -134,6 +140,33 @@ async function main() {
   const totalIng = await prisma.recipeIngredient.count();
   const totalPasos = await prisma.recipeStep.count();
   console.log(`  Ingredientes: ${totalIng} · Pasos: ${totalPasos}`);
+
+  const conOpciones = await prisma.recipeIngredient.groupBy({
+    by: ["recipeId", "optionGroup"],
+    where: { optionGroup: { not: null } },
+  });
+  console.log(`  Grupos de opciones: ${conOpciones.length}`);
+
+  const conPh = await prisma.recipe.count({ where: { phValue: { not: null } } });
+  console.log(`  Recetas con pH definido: ${conPh}`);
+
+  // Recetas que quedaron sin borrar del set anterior
+  const slugs = RECIPES.map((r) => r.slug);
+  const huerfanas = await prisma.recipe.findMany({
+    where: { slug: { notIn: slugs } },
+    select: { slug: true },
+  });
+  if (huerfanas.length > 0) {
+    console.log(
+      `\n  ⚠ ${huerfanas.length} recetas en la base que ya no están en el archivo:`
+    );
+    for (const h of huerfanas) console.log(`     ${h.slug}`);
+    console.log("     Se desactivan para que no aparezcan en el listado.");
+    await prisma.recipe.updateMany({
+      where: { slug: { notIn: slugs } },
+      data: { isActive: false },
+    });
+  }
 }
 
 main()

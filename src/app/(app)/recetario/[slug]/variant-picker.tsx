@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Link2, RotateCcw } from "lucide-react";
+import { Check, Link2, RotateCcw, ChevronDown, Star } from "lucide-react";
 
 type Ingredient = {
   id: string;
@@ -11,6 +11,10 @@ type Ingredient = {
   note: string | null;
   optional: boolean;
   variant: string | null;
+  optionGroup: string | null;
+  optionLabel: string | null;
+  isRecommended: boolean;
+  percentage: number | null;
   linked: { slug: string; name: string } | null;
 };
 
@@ -23,25 +27,73 @@ type Step = {
 /**
  * Ingredientes y pasos de una receta.
  *
- * Si la receta tiene variantes (dos fórmulas de crema base, dos métodos
- * del glicerado) se muestran como pestañas y solo se ve la seleccionada.
- * Lo que no tiene variante se muestra siempre, porque es común a todas.
+ * Dos agrupaciones distintas conviven aquí:
  *
- * Los ingredientes y pasos se pueden ir marcando mientras se elabora. Es
- * estado local a propósito: sirve para la sesión de trabajo actual y se
- * limpia al recargar.
+ * - `variant` son fórmulas o métodos alternativos de la receta entera
+ *   (las tres cremas base, los dos métodos del glicerado). Se muestran
+ *   como pestañas arriba.
+ *
+ * - `optionGroup` son alternativas para UN ingrediente (qué conservante,
+ *   qué arcilla). Se muestran como desplegable en la propia fila, y
+ *   cambian la cantidad y las notas.
+ *
+ * La elección de cada desplegable se recuerda por receta, porque en la
+ * práctica se compra un conservante y se usa ese durante meses. Lo que no
+ * se guarda es el marcado de ingredientes y pasos: eso sirve para la tanda
+ * que se está haciendo ahora y se limpia al recargar.
  */
 export function VariantPicker({
+  recipeSlug,
   variants,
   ingredients,
   steps,
 }: {
+  recipeSlug: string;
   variants: string[];
   ingredients: Ingredient[];
   steps: Step[];
 }) {
   const [active, setActive] = useState(variants[0] ?? null);
   const [done, setDone] = useState<Set<string>>(new Set());
+  const [chosen, setChosen] = useState<Record<string, string>>({});
+
+  const storageKey = `lilus.recetario.opciones.${recipeSlug}`;
+
+  // Elección por defecto: la marcada como recomendada, o la primera
+  const defaults = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const ing of ingredients) {
+      if (!ing.optionGroup) continue;
+      if (out[ing.optionGroup]) continue;
+      const group = ingredients.filter((i) => i.optionGroup === ing.optionGroup);
+      out[ing.optionGroup] = (group.find((g) => g.isRecommended) ?? group[0]).id;
+    }
+    return out;
+  }, [ingredients]);
+
+  useEffect(() => {
+    let saved: Record<string, string> = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey) ?? "{}");
+    } catch {}
+    // Solo respetamos lo guardado si el id todavía existe: las recetas
+    // cambian y un id viejo dejaría el grupo sin selección.
+    const valid: Record<string, string> = {};
+    for (const [group, id] of Object.entries(saved)) {
+      if (ingredients.some((i) => i.id === id && i.optionGroup === group)) {
+        valid[group] = id;
+      }
+    }
+    setChosen({ ...defaults, ...valid });
+  }, [defaults, ingredients, storageKey]);
+
+  function choose(group: string, id: string) {
+    const next = { ...chosen, [group]: id };
+    setChosen(next);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {}
+  }
 
   function toggle(id: string) {
     setDone((prev) => {
@@ -52,10 +104,20 @@ export function VariantPicker({
     });
   }
 
-  const visibleIngredients = useMemo(
-    () => ingredients.filter((i) => !i.variant || i.variant === active),
-    [ingredients, active]
-  );
+  // Ingredientes visibles: los de la variante activa, y de cada grupo de
+  // opciones solo el elegido.
+  const visibleIngredients = useMemo(() => {
+    const seenGroups = new Set<string>();
+    return ingredients.filter((i) => {
+      if (i.variant && i.variant !== active) return false;
+      if (!i.optionGroup) return true;
+      if (chosen[i.optionGroup] !== i.id) return false;
+      if (seenGroups.has(i.optionGroup)) return false;
+      seenGroups.add(i.optionGroup);
+      return true;
+    });
+  }, [ingredients, active, chosen]);
+
   const visibleSteps = useMemo(
     () => steps.filter((s) => !s.variant || s.variant === active),
     [steps, active]
@@ -68,7 +130,7 @@ export function VariantPicker({
 
   return (
     <div className="space-y-6">
-      {/* Selector de variante */}
+      {/* Variantes de la receta */}
       {variants.length > 0 && (
         <div>
           <div className="flex flex-wrap gap-2">
@@ -88,13 +150,13 @@ export function VariantPicker({
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">
-            Esta receta tiene {variants.length} variantes. Estás viendo:{" "}
+            {variants.length} variantes · estás viendo{" "}
             <strong className="text-foreground">{active}</strong>
           </p>
         </div>
       )}
 
-      {/* Progreso, solo cuando ya se marcó algo */}
+      {/* Progreso */}
       {doneCount > 0 && (
         <div className="flex items-center gap-3">
           <div className="h-1.5 bg-muted rounded-full overflow-hidden flex-1">
@@ -127,6 +189,10 @@ export function VariantPicker({
         <ul className="rounded-xl border bg-card divide-y overflow-hidden">
           {visibleIngredients.map((ing) => {
             const checked = done.has(ing.id);
+            const group = ing.optionGroup
+              ? ingredients.filter((i) => i.optionGroup === ing.optionGroup)
+              : null;
+
             return (
               <li key={ing.id}>
                 <div className="flex items-start gap-3 p-3">
@@ -165,17 +231,30 @@ export function VariantPicker({
                           }`}
                         >
                           {ing.quantity}
+                          {ing.percentage != null && (
+                            <span className="text-[11px] font-normal text-muted-foreground ml-1">
+                              ({ing.percentage} %)
+                            </span>
+                          )}
                         </span>
                       )}
                     </div>
 
+                    {/* Desplegable de alternativas */}
+                    {group && group.length > 1 && (
+                      <OptionSelect
+                        options={group}
+                        value={ing.id}
+                        onChange={(id) => choose(ing.optionGroup!, id)}
+                      />
+                    )}
+
                     {ing.note && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                      <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
                         {ing.note}
                       </p>
                     )}
 
-                    {/* Enlace a la receta que prepara este ingrediente */}
                     {ing.linked && (
                       <Link
                         href={`/recetario/${ing.linked.slug}`}
@@ -231,6 +310,44 @@ export function VariantPicker({
           })}
         </ol>
       </section>
+    </div>
+  );
+}
+
+/** Desplegable nativo: en móvil abre la rueda del sistema, que se usa mejor. */
+function OptionSelect({
+  options,
+  value,
+  onChange,
+}: {
+  options: Ingredient[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const current = options.find((o) => o.id === value);
+
+  return (
+    <div className="relative mt-1.5 inline-flex items-center">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="Elegir alternativa"
+        className="appearance-none text-[11px] font-medium rounded-full border bg-muted/60 hover:bg-accent pl-2.5 pr-7 py-1.5 cursor-pointer max-w-[15rem] truncate"
+      >
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.optionLabel ?? o.name}
+            {o.isRecommended ? "  ★" : ""}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="size-3 absolute right-2.5 pointer-events-none text-muted-foreground" />
+      {current?.isRecommended && (
+        <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+          <Star className="size-2.5 fill-current" />
+          recomendado
+        </span>
+      )}
     </div>
   );
 }

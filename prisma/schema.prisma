@@ -241,6 +241,13 @@ model Recipe {
   usage     String? // modo de uso
   notes     String? // notas libres, una por línea
 
+  // pH. Solo tiene sentido en productos con agua: en un perfume oleoso o
+  // en un polvo no existe. Por eso el tipo, además del valor.
+  phValue String? // "5.0 – 5.5"
+  // "objetivo" = ajustar hasta ahí | "esperado" = solo verificar
+  // null = no aplica
+  phKind  String?
+
   // Producto del catálogo que sale de esta receta, si existe
   productId String?
 
@@ -271,6 +278,18 @@ model RecipeIngredient {
   // (p. ej. las dos fórmulas de crema base)
   variant   String?
   sortOrder Int     @default(0)
+
+  // ── Alternativas ──
+  // Los ingredientes que comparten optionGroup son opciones excluyentes
+  // entre sí: se muestran como un desplegable y solo una aplica a la vez.
+  // Sirve para "usa este conservante, o este otro que ya tienes".
+  optionGroup   String?
+  optionLabel   String? // texto corto para el desplegable
+  isRecommended Boolean @default(false)
+
+  // Porcentaje sobre el total, cuando la dosis se define así
+  // (conservantes, activos). Se muestra junto a los gramos.
+  percentage Float?
 
   // Si este ingrediente se prepara con otra receta, se enlaza aquí.
   // Es lo que permite saltar de "glicerado de naranja" a su receta.

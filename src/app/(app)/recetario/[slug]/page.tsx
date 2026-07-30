@@ -146,9 +146,44 @@ export default async function RecipeDetailPage({
         </div>
       )}
 
+      {/* ─── pH ─── */}
+      {recipe.phValue && (
+        <div
+          className={`rounded-xl border p-3 mb-5 flex items-start gap-3 ${
+            recipe.phKind === "objetivo"
+              ? "border-sky-300 bg-sky-50 dark:bg-sky-950/25 dark:border-sky-900"
+              : "bg-card"
+          }`}
+        >
+          <div
+            className={`size-9 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs ${
+              recipe.phKind === "objetivo"
+                ? "bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-300"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            pH
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight">
+              {recipe.phValue}
+              <span className="font-normal text-muted-foreground ml-1.5">
+                {recipe.phKind === "objetivo" ? "· ajustar" : "· solo verificar"}
+              </span>
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+              {recipe.phKind === "objetivo"
+                ? "Medir al final y corregir con ácido láctico hasta entrar en rango. En cremas, diluir 1 parte en 9 de agua destilada: la tira no lee bien sobre crema pura."
+                : "Lo da la base que se compra y no se puede cambiar de forma útil. Solo comprobar que esté en rango."}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
         {/* ─── Ingredientes y pasos ─── */}
         <VariantPicker
+          recipeSlug={recipe.slug}
           variants={variants}
           ingredients={recipe.ingredients.map((i) => ({
             id: i.id,
@@ -157,6 +192,10 @@ export default async function RecipeDetailPage({
             note: i.note,
             optional: i.optional,
             variant: i.variant,
+            optionGroup: i.optionGroup,
+            optionLabel: i.optionLabel,
+            isRecommended: i.isRecommended,
+            percentage: i.percentage,
             linked: i.linkedRecipe
               ? { slug: i.linkedRecipe.slug, name: i.linkedRecipe.name }
               : null,
