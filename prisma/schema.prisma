@@ -329,6 +329,119 @@ model RecipeBenefit {
   @@index([recipeId])
 }
 
+// ---------- Inventario de materias primas ----------
+
+model Material {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String // nombre de uso diario: "Colágeno hidrolizado"
+
+  // "conservante" | "tensioactivo" | "emulsionante" | "activo" | "acido"
+  // | "aceite" | "esencial" | "arcilla" | "vegetal" | "colorante"
+  // | "aroma" | "base" | "auxiliar"
+  category String
+
+  inciName     String? // nombre INCI, el que no depende de la marca
+  tradeName    String? // "Kemidant L"
+  manufacturer String? // "Akema"
+  purpose      String? // para qué sirve en la fórmula
+
+  // ── Datos técnicos, de la ficha del proveedor ──
+  usageMin     Float?  // % mínimo de uso
+  usageMax     Float?  // % máximo de uso
+  phMin        Float?
+  phMax        Float?
+  maxTemp      Float?  // °C máxima a la que se puede agregar
+  solubility   String? // "agua" | "aceite" | "ambas" | "dispersable"
+  leaveOn      Boolean? // apto para producto que se queda en la piel
+  spectrum     String? // conservantes: contra qué protege
+  incompatible String? // con qué no se lleva
+  datasheetUrl String?
+
+  // ── Conservación ──
+  container         String? // envase requerido
+  storage           String? // "ambiente" | "refrigerado"
+  lightSensitive    Boolean @default(false)
+  oxygenSensitive   Boolean @default(false)
+  moistureSensitive Boolean @default(false)
+  openedShelfLife   String? // vida útil una vez abierto
+
+  notes     String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lots          MaterialLot[]
+  shoppingItems ShoppingItem[]
+
+  @@index([category])
+}
+
+/// Cada compra de una materia prima. Es lo que permite responder
+/// "¿desde cuándo tenemos este frasco?" cuando algo sale mal.
+model MaterialLot {
+  id         String @id @default(cuid())
+  materialId String
+
+  supplier    String?
+  purchasedAt DateTime?
+  openedAt    DateTime? // la fecha que más importa para la vida útil
+  expiresAt   DateTime?
+  lotCode     String? // lote del fabricante
+
+  quantity Float? // cantidad comprada
+  unit     String? // "g" | "ml" | "kg" | "unidad"
+  price    Float? // lo pagado, para poder costear después
+
+  container String? // en qué envase llegó o se guardó
+  // "sin-abrir" | "abierto" | "agotado" | "descartado"
+  status    String  @default("sin-abrir")
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+}
+
+// ---------- Listas de compra ----------
+
+model ShoppingList {
+  id        String    @id @default(cuid())
+  name      String
+  notes     String?
+  createdAt DateTime  @default(now())
+  doneAt    DateTime?
+
+  items ShoppingItem[]
+}
+
+model ShoppingItem {
+  id     String @id @default(cuid())
+  listId String
+
+  // O bien apunta a una materia prima del catálogo, o bien es texto
+  // suelto para algo que todavía no está dado de alta.
+  materialId String?
+  freeText   String?
+
+  // Cantidad como texto a propósito: en la tienda se pide "medio kilo"
+  // o "el frasco grande", no 500.00 g.
+  quantity String?
+  note     String?
+  checked  Boolean @default(false)
+
+  sortOrder Int @default(0)
+
+  list     ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  material Material?    @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([listId])
+}
+
 // ---------- Configuración global ----------
 
 model Setting {
