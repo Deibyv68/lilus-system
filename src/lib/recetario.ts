@@ -1,4 +1,12 @@
-import { FlaskConical, Bubbles, Droplets, SprayCan, Sparkles } from "lucide-react";
+import {
+  FlaskConical,
+  Bubbles,
+  Droplets,
+  SprayCan,
+  Sparkles,
+  Wind,
+  Scissors,
+} from "lucide-react";
 
 /**
  * Metadatos de las categorías del recetario: nombre visible, icono y color.
@@ -33,6 +41,24 @@ export const RECIPE_CATEGORIES = {
     accent: "text-sky-600 dark:text-sky-400",
     ring: "bg-sky-500",
   },
+  cabello: {
+    label: "Cabello",
+    short: "Cabello",
+    description: "Champús, acondicionadores y tratamientos",
+    icon: Scissors,
+    chip: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-300",
+    accent: "text-cyan-600 dark:text-cyan-400",
+    ring: "bg-cyan-500",
+  },
+  corporal: {
+    label: "Cuidado corporal",
+    short: "Corporal",
+    description: "Desodorante, talco y body splash",
+    icon: Wind,
+    chip: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300",
+    accent: "text-teal-600 dark:text-teal-400",
+    ring: "bg-teal-500",
+  },
   perfume: {
     label: "Perfumes",
     short: "Perfumes",
@@ -59,6 +85,8 @@ export const CATEGORY_ORDER: RecipeCategoryKey[] = [
   "base",
   "jabon",
   "crema",
+  "cabello",
+  "corporal",
   "perfume",
   "otro",
 ];
