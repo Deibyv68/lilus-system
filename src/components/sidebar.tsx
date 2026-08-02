@@ -69,7 +69,7 @@ export function Sidebar({
           <h1 className="text-xl font-black tracking-tight leading-none">
             LILUS
           </h1>
-          <p className="text-[11px] italic text-muted-foreground mt-1">
+          <p className="text-2xs italic text-muted-foreground mt-1">
             Ilumina tu belleza
           </p>
         </div>
@@ -99,7 +99,7 @@ export function Sidebar({
         {user.role === "admin" && (
           <>
             <div className="pt-3 pb-1">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-3">
+              <p className="text-3xs uppercase tracking-wider text-muted-foreground px-3">
                 Admin
               </p>
             </div>
@@ -128,7 +128,7 @@ export function Sidebar({
       <div className="p-3 border-t space-y-2">
         <div className="px-2">
           <p className="text-xs font-semibold truncate">{user.name}</p>
-          <p className="text-[10px] text-muted-foreground capitalize">
+          <p className="text-3xs text-muted-foreground capitalize">
             {user.role === "admin" ? "Administrador" : "Usuario"}
           </p>
         </div>

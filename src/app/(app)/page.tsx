@@ -115,7 +115,7 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge variant="outline" className="text-3xs">
                       {statusLabel[o.status] ?? o.status}
                     </Badge>
                     <span className="text-sm font-bold tabular-nums">
@@ -164,7 +164,7 @@ function StatCard({
           : "bg-card border"
       }`}
     >
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+      <p className="text-2xs uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p
@@ -197,7 +197,7 @@ function QuickLink({
       <Icon className="size-6 mb-1.5 text-primary" />
       <span className="text-xs font-medium">{label}</span>
       {badge !== undefined && (
-        <span className="text-[10px] text-muted-foreground mt-0.5">
+        <span className="text-3xs text-muted-foreground mt-0.5">
           {badge}
         </span>
       )}

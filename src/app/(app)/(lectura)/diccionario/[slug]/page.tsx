@@ -57,7 +57,7 @@ export default async function TerminoPage({
         </div>
         <div className="min-w-0 flex-1">
           <span
-            className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.chip}`}
+            className={`inline-block text-3xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.chip}`}
           >
             {meta.short}
           </span>
@@ -110,7 +110,7 @@ export default async function TerminoPage({
       {/* Seguir leyendo */}
       {related.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold mb-2">Palabras relacionadas</h2>
+          <h2 className="text-sm tablet:text-lg font-semibold mb-2">Palabras relacionadas</h2>
           <ul className="space-y-2">
             {related.map((r) => (
               <li key={r.slug}>

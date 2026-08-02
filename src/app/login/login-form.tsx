@@ -81,7 +81,7 @@ export function LoginForm() {
                 className="text-sm font-medium leading-tight"
               >
                 Confiar en este dispositivo
-                <span className="block text-[11px] font-normal text-muted-foreground">
+                <span className="block text-2xs font-normal text-muted-foreground">
                   En el futuro podrás entrar solo con un PIN de 4 dígitos.
                 </span>
               </Label>

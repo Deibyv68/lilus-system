@@ -130,7 +130,7 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
                 required
                 defaultValue={initial?.price ?? ""}
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 Cuando se vende por unidad.
               </p>
             </Field>
@@ -143,7 +143,7 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
                 placeholder="Igual al suelto"
                 defaultValue={initial?.packPrice ?? ""}
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 Vacío = usa el precio suelto.
               </p>
             </Field>
@@ -310,7 +310,7 @@ function Field({
         {label} {required && <span className="text-destructive">*</span>}
       </Label>
       {children}
-      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-2xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

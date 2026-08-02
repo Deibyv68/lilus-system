@@ -101,7 +101,7 @@ export function PrinterDot() {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold leading-none ${cfg.bg} ${cfg.text} ${cfg.border}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-3xs font-semibold leading-none ${cfg.bg} ${cfg.text} ${cfg.border}`}
       aria-label={`Impresora: ${cfg.label}`}
     >
       <Icon className={`size-3 shrink-0 ${animate ? "animate-spin" : ""}`} />

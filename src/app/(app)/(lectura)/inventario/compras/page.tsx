@@ -44,7 +44,7 @@ export default async function ComprasPage() {
         <div className="space-y-5">
           {abiertas.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold mb-2">Pendientes</h2>
+              <h2 className="text-sm tablet:text-lg font-semibold mb-2">Pendientes</h2>
               <ul className="space-y-2">
                 {abiertas.map((l) => (
                   <li key={l.id}>
@@ -63,7 +63,7 @@ export default async function ComprasPage() {
 
           {cerradas.length > 0 && (
             <section>
-              <h2 className="text-sm font-semibold mb-2">Completadas</h2>
+              <h2 className="text-sm tablet:text-lg font-semibold mb-2">Completadas</h2>
               <ul className="space-y-2">
                 {cerradas.map((l) => (
                   <li key={l.id}>

@@ -175,7 +175,7 @@ export function SpeechUnsupportedNote() {
   const { supported } = useSpeech();
   if (supported) return null;
   return (
-    <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+    <p className="flex items-center gap-1.5 text-2xs text-muted-foreground">
       <VolumeX className="size-3.5" />
       Este navegador no puede leer en voz alta.
     </p>

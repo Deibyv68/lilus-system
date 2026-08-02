@@ -320,7 +320,7 @@ export function PrintCenter({
               <Sticker className="size-4 mt-0.5 text-primary shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-semibold">Logo para caja de envío</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-2xs text-muted-foreground">
                   Este pedido lleva {packCount} pack
                   {packCount > 1 ? "s" : ""}. Imprime el sello LILUS para la
                   caja.
@@ -329,7 +329,7 @@ export function PrintCenter({
             </div>
             <div className="flex items-end gap-2">
               <div className="flex-1">
-                <Label className="text-[11px] font-medium">Copias</Label>
+                <Label className="text-2xs font-medium">Copias</Label>
                 <Input
                   type="number"
                   min={1}
@@ -360,7 +360,7 @@ export function PrintCenter({
             <FileText className="size-4 shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium">Etiquetas de producto</p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 Una por unidad · PDFs subidos por producto
               </p>
             </div>
@@ -374,7 +374,7 @@ export function PrintCenter({
                 <p className="text-xs font-semibold leading-tight">
                   Ajustar posición (mm)
                 </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                <p className="text-2xs text-muted-foreground mt-0.5 leading-snug">
                   Si la etiqueta queda descuadrada en la impresora, mueve el
                   diseño antes de imprimir.
                   <br />
@@ -399,7 +399,7 @@ export function PrintCenter({
                 onChange={(v) => setOffsetY(clamp(v))}
               />
             </div>
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex items-center justify-between text-2xs">
               <span className="text-muted-foreground">
                 {isAdjusted ? (
                   <>
@@ -458,7 +458,7 @@ export function PrintCenter({
               <p className="text-sm font-medium">
                 Etiquetas 2×1 (caducidad)
               </p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 {productionUnits.length} unidad
                 {productionUnits.length === 1 ? "" : "es"} · lote + caducidad
               </p>
@@ -505,7 +505,7 @@ export function PrintCenter({
         )}
 
         {openedAny && !agentEnabled && (
-          <p className="text-[11px] text-muted-foreground border-t pt-2">
+          <p className="text-2xs text-muted-foreground border-t pt-2">
             Los PDFs se abren en nueva pestaña. Si tu navegador los bloquea,
             permite popups para este sitio.
           </p>
@@ -699,7 +699,7 @@ function PrintButton({
             {statusText ?? title}
           </span>
           {subtitle && (
-            <span className="block text-[11px] font-normal opacity-75">
+            <span className="block text-2xs font-normal opacity-75">
               {subtitle}
             </span>
           )}
@@ -727,7 +727,7 @@ function OffsetInput({
 }) {
   return (
     <div>
-      <Label className="text-[11px] font-medium">{label}</Label>
+      <Label className="text-2xs font-medium">{label}</Label>
       <div className="flex items-center gap-1 mt-1">
         <Button
           type="button"

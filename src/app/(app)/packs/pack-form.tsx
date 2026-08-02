@@ -241,7 +241,7 @@ export function PackForm({
                     </span>
                   </div>
                 )}
-                <p className="text-[11px] text-muted-foreground pt-1">
+                <p className="text-2xs text-muted-foreground pt-1">
                   El precio de venta del pack lo defines arriba; esto es solo
                   referencia. Cada producto puede tener su propio precio de pack
                   en su ficha.

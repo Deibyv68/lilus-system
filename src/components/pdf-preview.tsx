@@ -73,7 +73,7 @@ export function PdfPreview({
           {error ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
               <FileWarning className="size-6 text-muted-foreground" />
-              <p className="text-[10px] text-muted-foreground leading-tight">
+              <p className="text-3xs text-muted-foreground leading-tight">
                 No se pudo generar el preview
               </p>
               <a
@@ -81,7 +81,7 @@ export function PdfPreview({
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-[10px] text-primary inline-flex items-center gap-1 underline"
+                className="text-3xs text-primary inline-flex items-center gap-1 underline"
               >
                 <ExternalLink className="size-3" /> Abrir PDF
               </a>
@@ -107,7 +107,7 @@ export function PdfPreview({
           )}
         </button>
 
-        <p className="text-[10px] text-muted-foreground text-center mt-2">
+        <p className="text-3xs text-muted-foreground text-center mt-2">
           Toca la imagen para ampliar
         </p>
       </div>

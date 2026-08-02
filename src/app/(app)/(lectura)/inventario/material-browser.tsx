@@ -161,12 +161,12 @@ export function MaterialBrowser({ materials }: { materials: MaterialCard[] }) {
               <section key={key}>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon className={`size-4 shrink-0 ${meta.accent}`} />
-                  <h2 className="text-sm font-semibold">{meta.label}</h2>
+                  <h2 className="text-sm tablet:text-lg font-semibold">{meta.label}</h2>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {list.length}
                   </span>
                 </div>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   {list.map((m) => (
                     <li key={m.id}>
                       <MaterialRow material={m} />
@@ -246,7 +246,7 @@ function MaterialRow({ material: m }: { material: MaterialCard }) {
           )}
         </div>
         {m.inciName && (
-          <p className="text-[11px] text-muted-foreground font-mono truncate">
+          <p className="text-2xs text-muted-foreground font-mono truncate">
             {m.inciName}
           </p>
         )}
@@ -256,7 +256,7 @@ function MaterialRow({ material: m }: { material: MaterialCard }) {
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-[11px]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1 text-2xs">
           {m.pendingPurchase && (
             <span className="inline-flex items-center gap-0.5 text-sky-600 dark:text-sky-400">
               <ShoppingCart className="size-3" /> por comprar

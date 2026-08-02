@@ -79,7 +79,7 @@ export function PrintAgentSettings({
           placeholder="Munbyn RW403B-N"
           className="h-11"
         />
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           Tal cual aparece en <code className="font-mono">Get-Printer</code> en
           PowerShell.
         </p>
@@ -116,7 +116,7 @@ export function PrintAgentSettings({
             <RefreshCw className="size-4" />
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           Secreto compartido entre LILUS y el agente. Debe coincidir con el
           <code className="font-mono mx-1">LILUS_AGENT_TOKEN</code>
           del archivo <code className="font-mono">.env</code> del agente. Pulsa

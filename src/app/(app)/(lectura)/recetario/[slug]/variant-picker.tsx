@@ -189,7 +189,7 @@ export function VariantPicker({
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1.5">
+          <p className="text-2xs text-muted-foreground mt-1.5">
             {variants.length} variantes · estás viendo{" "}
             <strong className="text-foreground">{active}</strong>
           </p>
@@ -221,7 +221,7 @@ export function VariantPicker({
       {/* Ingredientes */}
       <section>
         <div className="flex items-center justify-between gap-3 mb-2">
-          <h2 className="text-sm font-semibold">
+          <h2 className="text-sm tablet:text-lg font-semibold">
             Ingredientes{" "}
             <span className="text-muted-foreground font-normal">
               ({visibleIngredients.length})
@@ -272,7 +272,7 @@ export function VariantPicker({
                       >
                         {ing.name}
                         {ing.optional && (
-                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground ml-1.5">
+                          <span className="text-3xs uppercase tracking-wide text-muted-foreground ml-1.5">
                             opcional
                           </span>
                         )}
@@ -285,7 +285,7 @@ export function VariantPicker({
                         >
                           {ing.quantity}
                           {ing.percentage != null && (
-                            <span className="text-[11px] font-normal text-muted-foreground ml-1">
+                            <span className="text-2xs font-normal text-muted-foreground ml-1">
                               ({ing.percentage} %)
                             </span>
                           )}
@@ -298,7 +298,7 @@ export function VariantPicker({
                       <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                         {role && (
                           <span
-                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${roleStyle(
+                            className={`text-3xs font-medium px-2 py-0.5 rounded-full ${roleStyle(
                               ing.role
                             )} ${checked ? "opacity-50" : ""}`}
                           >
@@ -316,7 +316,7 @@ export function VariantPicker({
                     )}
 
                     {ing.note && (
-                      <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
+                      <p className="text-2xs text-muted-foreground mt-1 leading-snug">
                         <GlossaryText>{ing.note}</GlossaryText>
                       </p>
                     )}
@@ -324,7 +324,7 @@ export function VariantPicker({
                     {ing.linked && (
                       <Link
                         href={`/recetario/${ing.linked.slug}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline mt-1"
+                        className="inline-flex items-center gap-1 text-2xs text-primary hover:underline mt-1"
                       >
                         <Link2 className="size-3" />
                         Ver cómo se prepara
@@ -341,7 +341,7 @@ export function VariantPicker({
       {/* Elaboración */}
       <section>
         <div className="flex items-center justify-between gap-3 mb-2">
-          <h2 className="text-sm font-semibold">Elaboración</h2>
+          <h2 className="text-sm tablet:text-lg font-semibold">Elaboración</h2>
           <SpeakButton
             id="elaboracion"
             chunks={stepSpeech.chunks}
@@ -413,7 +413,7 @@ function OptionSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Elegir alternativa"
-        className="appearance-none text-[11px] font-medium rounded-full border bg-muted/60 hover:bg-accent pl-2.5 pr-7 py-1.5 cursor-pointer max-w-[15rem] truncate"
+        className="appearance-none text-2xs font-medium rounded-full border bg-muted/60 hover:bg-accent pl-2.5 pr-7 py-1.5 cursor-pointer max-w-[15rem] truncate"
       >
         {options.map((o) => (
           <option key={o.id} value={o.id}>
@@ -424,7 +424,7 @@ function OptionSelect({
       </select>
       <ChevronDown className="size-3 absolute right-2.5 pointer-events-none text-muted-foreground" />
       {current?.isRecommended && (
-        <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+        <span className="ml-1.5 inline-flex items-center gap-0.5 text-3xs text-amber-600 dark:text-amber-400">
           <Star className="size-2.5 fill-current" />
           recomendado
         </span>

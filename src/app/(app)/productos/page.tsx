@@ -67,7 +67,7 @@ export default async function ProductsPage() {
                   {/* Badges flotantes */}
                   <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                     {!p.isActive && (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-3xs">
                         Inactivo
                       </Badge>
                     )}
@@ -84,7 +84,7 @@ export default async function ProductsPage() {
 
                 {/* Contenido */}
                 <div className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5">
-                  <p className="text-[10px] font-mono text-muted-foreground truncate">
+                  <p className="text-3xs font-mono text-muted-foreground truncate">
                     {p.sku}
                   </p>
                   <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5em]">
@@ -95,11 +95,11 @@ export default async function ProductsPage() {
                       {formatCurrency(p.price)}
                     </span>
                     {p.stock > 0 ? (
-                      <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                      <span className="text-3xs text-muted-foreground tabular-nums whitespace-nowrap">
                         Stock {p.stock}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-amber-600 font-medium whitespace-nowrap">
+                      <span className="text-3xs text-amber-600 font-medium whitespace-nowrap">
                         Sin stock
                       </span>
                     )}

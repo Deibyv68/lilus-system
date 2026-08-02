@@ -169,11 +169,11 @@ export default async function RecipeDetailPage({
 
         <div className="min-w-0 flex-1">
           <span
-            className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.chip}`}
+            className={`inline-block text-3xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.chip}`}
           >
             {meta.short}
           </span>
-          <h1 className="text-xl font-bold leading-tight mt-1.5">
+          <h1 className="text-xl tablet:text-2xl font-bold leading-tight mt-1.5">
             {recipe.name}
           </h1>
           {recipe.summary && (
@@ -245,7 +245,7 @@ export default async function RecipeDetailPage({
                 {recipe.phKind === "objetivo" ? "· ajustar" : "· solo verificar"}
               </span>
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+            <p className="text-2xs text-muted-foreground mt-0.5 leading-snug">
               {recipe.phKind === "objetivo"
                 ? "Medir al final y corregir con ácido láctico hasta entrar en rango. En cremas, diluir 1 parte en 9 de agua destilada: la tira no lee bien sobre crema pura."
                 : "Lo da la base que se compra y no se puede cambiar de forma útil. Solo comprobar que esté en rango."}
@@ -416,7 +416,7 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-2">
-      <h2 className="text-sm font-semibold">{children}</h2>
+      <h2 className="text-sm tablet:text-lg font-semibold">{children}</h2>
       {action}
     </div>
   );
@@ -441,7 +441,7 @@ function SpecCard({
     >
       <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
         <Icon className="size-3.5" />
-        <span className="text-[10px] uppercase tracking-wider font-medium">
+        <span className="text-3xs uppercase tracking-wider font-medium">
           {label}
         </span>
         {interactive && <Link2 className="size-3 ml-auto" />}

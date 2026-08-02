@@ -114,11 +114,11 @@ export default async function MaterialDetailPage({
         </div>
         <div className="min-w-0 flex-1">
           <span
-            className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.chip}`}
+            className={`inline-block text-3xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.chip}`}
           >
             {meta.label}
           </span>
-          <h1 className="text-xl font-bold leading-tight mt-1.5">
+          <h1 className="text-xl tablet:text-2xl font-bold leading-tight mt-1.5">
             {material.name}
           </h1>
           {material.inciName && (
@@ -177,7 +177,7 @@ export default async function MaterialDetailPage({
               <div key={s.label} className="rounded-xl border bg-card p-3">
                 <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
                   <SIcon className="size-3.5" />
-                  <span className="text-[10px] uppercase tracking-wider font-medium">
+                  <span className="text-3xs uppercase tracking-wider font-medium">
                     {s.label}
                   </span>
                 </div>
@@ -192,7 +192,7 @@ export default async function MaterialDetailPage({
         {/* Incompatibilidades */}
         {material.incompatible && (
           <section>
-            <h2 className="text-sm font-semibold mb-2">No se lleva con</h2>
+            <h2 className="text-sm tablet:text-lg font-semibold mb-2">No se lleva con</h2>
             <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/25 dark:border-red-900 p-3 flex gap-2.5">
               <ShieldAlert className="size-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
               <p className="text-sm leading-relaxed">{material.incompatible}</p>
@@ -203,7 +203,7 @@ export default async function MaterialDetailPage({
         {/* Conservación */}
         {(cares.length > 0 || material.container || material.openedShelfLife) && (
           <section>
-            <h2 className="text-sm font-semibold mb-2">Conservación</h2>
+            <h2 className="text-sm tablet:text-lg font-semibold mb-2">Conservación</h2>
             <div className="rounded-xl border bg-card p-3 space-y-2">
               {material.container && (
                 <div className="flex items-start gap-2 text-sm">
@@ -233,7 +233,7 @@ export default async function MaterialDetailPage({
         {/* Espectro, para conservantes */}
         {material.spectrum && (
           <section>
-            <h2 className="text-sm font-semibold mb-2">Protege contra</h2>
+            <h2 className="text-sm tablet:text-lg font-semibold mb-2">Protege contra</h2>
             <div className="rounded-xl border bg-card p-3">
               <p className="text-sm">{material.spectrum}</p>
             </div>
@@ -243,7 +243,7 @@ export default async function MaterialDetailPage({
         {/* Notas */}
         {material.notes && (
           <section>
-            <h2 className="text-sm font-semibold mb-2">Notas</h2>
+            <h2 className="text-sm tablet:text-lg font-semibold mb-2">Notas</h2>
             <div className="rounded-xl border bg-card p-3">
               <p className="text-sm leading-relaxed whitespace-pre-line">
                 {material.notes}
@@ -255,7 +255,7 @@ export default async function MaterialDetailPage({
         {/* Referencia de precio */}
         {unitPrice != null && lotWithPrice && (
           <section>
-            <h2 className="text-sm font-semibold mb-2">Precio de referencia</h2>
+            <h2 className="text-sm tablet:text-lg font-semibold mb-2">Precio de referencia</h2>
             <div className="rounded-xl border bg-card p-3">
               <p className="text-sm">
                 <strong className="tabular-nums">
@@ -263,7 +263,7 @@ export default async function MaterialDetailPage({
                 </strong>{" "}
                 por {lotWithPrice.unit ?? "unidad"}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-2xs text-muted-foreground mt-0.5">
                 Del último lote con precio registrado.
               </p>
             </div>

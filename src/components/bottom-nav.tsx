@@ -97,7 +97,7 @@ function NavLink({
       )}
     >
       <Icon className="size-5" />
-      <span className="text-[10px] font-medium">{item.label}</span>
+      <span className="text-3xs font-medium">{item.label}</span>
     </Link>
   );
 }

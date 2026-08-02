@@ -119,12 +119,12 @@ export function DictionaryBrowser({ terms }: { terms: TermCard[] }) {
               <section key={key}>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon className={`size-4 shrink-0 ${meta.accent}`} />
-                  <h2 className="text-sm font-semibold">{meta.label}</h2>
+                  <h2 className="text-sm tablet:text-lg font-semibold">{meta.label}</h2>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {list.length}
                   </span>
                 </div>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   {list.map((t) => (
                     <li key={t.id}>
                       <Link

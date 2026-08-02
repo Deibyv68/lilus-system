@@ -79,11 +79,11 @@ export default async function PacksPage() {
                   <div className="p-4 flex-1 flex flex-col gap-3">
                     {/* Header: SKU + estado */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      <span className="text-3xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">
                         {p.sku}
                       </span>
                       {p.isActive && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-green-700 dark:text-green-400">
+                        <span className="inline-flex items-center gap-1 text-3xs text-green-700 dark:text-green-400">
                           <span className="size-1.5 rounded-full bg-green-600" />
                           Activo
                         </span>
@@ -108,7 +108,7 @@ export default async function PacksPage() {
 
                     {/* Contenido */}
                     <div className="border-t pt-3 mt-auto">
-                      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+                      <div className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground mb-2">
                         <Boxes className="size-3" />
                         <span>Contenido · {totalUnits} unidades</span>
                       </div>

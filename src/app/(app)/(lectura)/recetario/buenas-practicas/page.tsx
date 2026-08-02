@@ -189,7 +189,7 @@ export default function BuenasPracticasPage() {
                     <h2 className="font-semibold leading-tight">
                       {p.title}
                       {p.priority && (
-                        <span className="ml-2 text-[10px] uppercase tracking-wider text-primary align-middle">
+                        <span className="ml-2 text-3xs uppercase tracking-wider text-primary align-middle">
                           prioritario
                         </span>
                       )}

@@ -277,7 +277,7 @@ function ItemRow({
               {name}
             </span>
             {meta && (
-              <span className="block text-[11px] text-muted-foreground">
+              <span className="block text-2xs text-muted-foreground">
                 {meta.label}
               </span>
             )}
@@ -311,7 +311,7 @@ function ItemRow({
         <div className="px-3 pb-2 -mt-1">
           <Link
             href={`/inventario/${item.materialSlug}`}
-            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+            className="inline-flex items-center gap-1 text-2xs text-primary hover:underline"
           >
             <Link2 className="size-3" /> Ver ficha
           </Link>
@@ -422,7 +422,7 @@ function MaterialPicker({
                 const meta = materialCategoryMeta(key);
                 return (
                   <div key={key}>
-                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">
+                    <p className="text-2xs font-semibold text-muted-foreground mb-1.5">
                       {meta.label}
                     </p>
                     <div className="space-y-1">
@@ -452,7 +452,7 @@ function MaterialPicker({
                               {m.name}
                             </span>
                             {m.pending && (
-                              <span className="text-[10px] text-sky-600 dark:text-sky-400 shrink-0">
+                              <span className="text-3xs text-sky-600 dark:text-sky-400 shrink-0">
                                 por comprar
                               </span>
                             )}

@@ -3,6 +3,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/**
+ * Tablet: pantalla ancha Y alta.
+ *
+ * Solo el ancho no alcanza. Un teléfono acostado mide 844 px de ancho y
+ * pasaría por tablet, pero tiene 390 px de alto: agrandarle la letra ahí
+ * sería justo lo contrario de lo que se busca. Pidiendo las dos cosas
+ * entran las tablets de verdad (744×1133 para arriba) y no los teléfonos.
+ */
+@custom-variant tablet (@media (width >= 48rem) and (height >= 37.5rem));
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -95,6 +105,12 @@
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Los dos tamaños de letra chica que usa la app. Estaban escritos como
+     text-[11px] y text-[10px], y en px no crecen cuando se agranda la
+     raíz en la tablet: la letra grande subía y la chica se quedaba. En
+     rem miden exactamente lo mismo que antes y ahora sí acompañan. */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-3xs: 0.625rem; /* 10px */
 }
 
 @layer base {
@@ -105,5 +121,28 @@
   body {
     background: var(--background);
     color: var(--foreground);
+  }
+}
+
+/**
+ * Modo lectura: recetario, diccionario e inventario en una tablet.
+ *
+ * Son las secciones que se leen de pie y a un brazo de distancia, con las
+ * manos ocupadas. Agrandar la raíz sube de una vez todo lo que está en
+ * rem —letra, espacios, iconos, botones— así que la pantalla crece
+ * entera y en proporción, en vez de quedar con títulos enormes sobre una
+ * maqueta de teléfono.
+ *
+ * Va sobre <html> y no sobre el contenedor porque rem se mide contra la
+ * raíz: puesto más abajo no escalaría nada. El :has() deja que lo pida
+ * una sección de adentro sin que el layout de arriba tenga que saber en
+ * qué página estamos.
+ *
+ * Las media queries miden rem contra el tamaño inicial de la raíz, no
+ * contra este, así que los cortes de pantalla no se mueven.
+ */
+@media (width >= 48rem) and (height >= 37.5rem) {
+  html:has(.modo-lectura) {
+    font-size: 20px;
   }
 }

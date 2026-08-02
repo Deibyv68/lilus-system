@@ -396,7 +396,7 @@ function Field({
       </Label>
       {children}
       {hint && (
-        <p className="text-[10px] text-muted-foreground leading-snug">{hint}</p>
+        <p className="text-3xs text-muted-foreground leading-snug">{hint}</p>
       )}
     </div>
   );
@@ -417,7 +417,7 @@ function Toggle({
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="text-sm font-medium leading-tight">{label}</p>
-        <p className="text-[11px] text-muted-foreground">{hint}</p>
+        <p className="text-2xs text-muted-foreground">{hint}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>

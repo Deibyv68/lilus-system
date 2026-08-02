@@ -121,14 +121,14 @@ export function RecipeBrowser({ recipes }: { recipes: RecipeCard[] }) {
               <section key={key}>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon className={`size-4 shrink-0 ${meta.accent}`} />
-                  <h2 className="text-sm font-semibold">{meta.label}</h2>
+                  <h2 className="text-sm tablet:text-lg font-semibold">{meta.label}</h2>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {list.length}
                   </span>
                 </div>
 
                 {/* Una columna en móvil, dos desde tablet */}
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   {list.map((r) => (
                     <li key={r.id}>
                       <RecipeRow recipe={r} />
@@ -205,7 +205,7 @@ function RecipeRow({ recipe: r }: { recipe: RecipeCard }) {
             {r.summary}
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1.5 text-2xs text-muted-foreground">
           <span className="tabular-nums">{r.ingredientCount} ingredientes</span>
           <span aria-hidden>·</span>
           <span className="tabular-nums">{r.stepCount} pasos</span>

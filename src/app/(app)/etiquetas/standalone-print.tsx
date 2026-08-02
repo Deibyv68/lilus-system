@@ -228,7 +228,7 @@ export function StandalonePrint({
             className={`size-6 mx-auto mb-2 ${kind === "product-labels" ? "text-primary" : "text-muted-foreground"}`}
           />
           <p className="text-sm font-semibold">Etiqueta de producto</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             Circular 2×2 de un jabón
           </p>
         </button>
@@ -245,7 +245,7 @@ export function StandalonePrint({
             className={`size-6 mx-auto mb-2 ${kind === "box-logo" ? "text-primary" : "text-muted-foreground"}`}
           />
           <p className="text-sm font-semibold">Logo de caja</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             Sello LILUS circular 2×2
           </p>
         </button>
@@ -292,7 +292,7 @@ export function StandalonePrint({
               <p className="text-sm font-medium leading-tight">
                 Ajustar posición (mm)
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
+              <p className="text-2xs text-muted-foreground mt-0.5">
                 X: + derecha, − izquierda · Y: + arriba, − abajo
               </p>
             </div>
@@ -411,7 +411,7 @@ function OffsetField({
 }) {
   return (
     <div>
-      <Label className="text-[11px] font-medium">{label}</Label>
+      <Label className="text-2xs font-medium">{label}</Label>
       <div className="flex items-center gap-1 mt-1">
         <Button
           type="button"

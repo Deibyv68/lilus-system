@@ -88,18 +88,18 @@ export function UsersAdmin({
                     <p className="font-semibold leading-tight flex items-center gap-2">
                       {u.name}
                       {isMe && (
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-3xs">
                           Tú
                         </Badge>
                       )}
                       <Badge
                         variant={u.role === "admin" ? "default" : "secondary"}
-                        className="text-[10px]"
+                        className="text-3xs"
                       >
                         {u.role === "admin" ? "Admin" : "Usuario"}
                       </Badge>
                       {!u.isActive && (
-                        <Badge variant="destructive" className="text-[10px]">
+                        <Badge variant="destructive" className="text-3xs">
                           Inactivo
                         </Badge>
                       )}
@@ -273,7 +273,7 @@ function CreateUserDialog({
               autoCapitalize="none"
               className="h-11 font-mono"
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               Letras, números, punto o guion. 3-40 caracteres.
             </p>
           </div>

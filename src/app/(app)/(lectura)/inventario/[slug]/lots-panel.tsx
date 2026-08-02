@@ -115,7 +115,7 @@ export function LotsPanel({
   return (
     <section>
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold">
+        <h2 className="text-sm tablet:text-lg font-semibold">
           Lotes{" "}
           {lots.length > 0 && (
             <span className="text-muted-foreground font-normal">
@@ -289,7 +289,7 @@ function LotCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${status.chip}`}
+              className={`text-3xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${status.chip}`}
             >
               {status.label}
             </span>
@@ -311,7 +311,7 @@ function LotCard({
             {l.container && <p>{l.container}</p>}
           </div>
 
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-2xs text-muted-foreground">
             {l.purchasedAt && <span>Comprado {fmt(l.purchasedAt)}</span>}
             {l.openedAt && (
               <span className="font-medium text-foreground">
@@ -330,13 +330,13 @@ function LotCard({
           </div>
 
           {expiringSoon && (
-            <p className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+            <p className="flex items-center gap-1 text-2xs text-amber-600 dark:text-amber-400 mt-1">
               <AlertTriangle className="size-3" /> Caduca pronto
             </p>
           )}
 
           {l.notes && (
-            <p className="text-[11px] mt-1.5 leading-snug">{l.notes}</p>
+            <p className="text-2xs mt-1.5 leading-snug">{l.notes}</p>
           )}
         </div>
 
@@ -402,7 +402,7 @@ function Field({
     <div className="space-y-1">
       <Label className="text-xs font-medium">{label}</Label>
       {children}
-      {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-3xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

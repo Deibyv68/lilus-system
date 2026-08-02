@@ -811,20 +811,20 @@ function PaperChangeSlide({
             <div className="size-14 rounded-full border-2 border-foreground/40 flex items-center justify-center">
               <FromIcon className="size-6" />
             </div>
-            <span className="text-[11px] font-medium leading-tight text-center max-w-[100px]">
+            <span className="text-2xs font-medium leading-tight text-center max-w-[100px]">
               {from.paperLabel}
             </span>
-            <span className="text-[10px] text-muted-foreground">Quita</span>
+            <span className="text-3xs text-muted-foreground">Quita</span>
           </div>
           <ArrowRight className="size-6 text-amber-600 shrink-0" />
           <div className="flex flex-col items-center gap-2">
             <div className="size-14 rounded-full border-2 border-amber-600 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center">
               <ToIcon className="size-6" />
             </div>
-            <span className="text-[11px] font-bold leading-tight text-center max-w-[100px]">
+            <span className="text-2xs font-bold leading-tight text-center max-w-[100px]">
               {to.paperLabel}
             </span>
-            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+            <span className="text-3xs text-amber-700 dark:text-amber-400 font-medium">
               Pon
             </span>
           </div>
@@ -887,7 +887,7 @@ function OffsetControls({
           <p className="text-sm font-medium leading-tight">
             Ajustar posición (mm)
           </p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
+          <p className="text-2xs text-muted-foreground mt-0.5">
             X: + derecha, − izquierda · Y: + arriba, − abajo
           </p>
         </div>
@@ -895,7 +895,7 @@ function OffsetControls({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-[11px] font-medium">X</Label>
+          <Label className="text-2xs font-medium">X</Label>
           <div className="flex items-center gap-1 mt-1">
             <Button
               type="button"
@@ -925,7 +925,7 @@ function OffsetControls({
           </div>
         </div>
         <div>
-          <Label className="text-[11px] font-medium">Y</Label>
+          <Label className="text-2xs font-medium">Y</Label>
           <div className="flex items-center gap-1 mt-1">
             <Button
               type="button"

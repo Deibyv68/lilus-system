@@ -122,13 +122,13 @@ export function CustomerSearch({
                     "Sin contacto"}
                 </p>
                 {c.lastAddress && (
-                  <p className="text-[11px] text-muted-foreground truncate">
+                  <p className="text-2xs text-muted-foreground truncate">
                     {c.lastAddress.city}, {c.lastAddress.province} ·{" "}
                     {c.lastAddress.address}
                   </p>
                 )}
               </div>
-              <span className="text-[10px] text-muted-foreground shrink-0">
+              <span className="text-3xs text-muted-foreground shrink-0">
                 {c.orderCount} pedido{c.orderCount !== 1 ? "s" : ""}
               </span>
             </button>

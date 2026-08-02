@@ -87,7 +87,7 @@ export default async function MasPage() {
         {isAdmin && (
           <>
             <li className="pt-3 pb-1">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground px-1">
+              <p className="text-3xs uppercase tracking-wider text-muted-foreground px-1">
                 Admin
               </p>
             </li>

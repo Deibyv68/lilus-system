@@ -48,7 +48,7 @@ export function PreviewLightbox({
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent">
         <div className="text-white min-w-0 px-2">
           <p className="text-sm font-semibold truncate">{title ?? "Vista previa"}</p>
-          <p className="text-[10px] opacity-70">
+          <p className="text-3xs opacity-70">
             Pellizca o usa la rueda para hacer zoom · Arrastra para mover
           </p>
         </div>

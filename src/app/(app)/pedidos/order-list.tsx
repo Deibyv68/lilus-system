@@ -155,7 +155,7 @@ export function OrderList({ orders }: { orders: Order[] }) {
               onClick={
                 selectedIds.size === orders.length ? deselectAll : selectAll
               }
-              className="text-[11px] underline opacity-90"
+              className="text-2xs underline opacity-90"
             >
               {selectedIds.size === orders.length
                 ? "Deseleccionar todos"
@@ -285,7 +285,7 @@ function OrderCardContent({ o }: { o: Order }) {
           <p className="text-lg font-bold tabular-nums leading-tight">
             {formatCurrency(o.total)}
           </p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="text-3xs text-muted-foreground mt-0.5">
             {o._count.items} {o._count.items === 1 ? "ítem" : "ítems"}
           </p>
         </div>
@@ -294,14 +294,14 @@ function OrderCardContent({ o }: { o: Order }) {
       <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
-            className={`text-[11px] px-2 py-0.5 rounded-md font-medium ${
+            className={`text-2xs px-2 py-0.5 rounded-md font-medium ${
               statusColor[o.status] ?? "bg-muted text-muted-foreground"
             }`}
           >
             {statusLabel[o.status] ?? o.status}
           </span>
           {o.carrier && (
-            <Badge variant="outline" className="text-[10px]">
+            <Badge variant="outline" className="text-3xs">
               {o.carrier.name}
             </Badge>
           )}

@@ -415,7 +415,7 @@ function StepIndicator({ current }: { current: number }) {
                 {isDone ? <Check className="size-4" /> : <Icon className="size-4" />}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-1.5 font-medium truncate
+                className={`text-3xs sm:text-xs mt-1.5 font-medium truncate
                   ${isActive ? "text-foreground" : "text-muted-foreground"}
                 `}
               >
@@ -1124,7 +1124,7 @@ function BottomNav({
         )}
 
         <div className="flex-1 text-center min-w-0">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-3xs uppercase tracking-wide text-muted-foreground">
             {step}/4 · {itemCount} {itemCount === 1 ? "ítem" : "ítems"}
           </p>
           <p className="text-lg font-bold tabular-nums">{formatCurrency(total)}</p>
