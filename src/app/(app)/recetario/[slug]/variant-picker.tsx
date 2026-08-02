@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Link2, RotateCcw, ChevronDown, Star } from "lucide-react";
+import { SpeakButton, toChunks, useSpeech } from "@/components/speak-button";
+import { GlossaryText } from "@/components/glossary-text";
+import { roleLabel, roleStyle } from "@/lib/roles";
 
 type Ingredient = {
   id: string;
@@ -15,6 +18,8 @@ type Ingredient = {
   optionLabel: string | null;
   isRecommended: boolean;
   percentage: number | null;
+  /** Para qué sirve el ingrediente EN ESTA receta. */
+  role: string | null;
   linked: { slug: string; name: string } | null;
 };
 
@@ -128,6 +133,40 @@ export function VariantPicker({
   ).length;
   const total = visibleIngredients.length + visibleSteps.length;
 
+  // Lectura en voz alta. Cada ingrediente es una frase suelta, así que
+  // el índice que va marcando el motor coincide con la fila.
+  const ingredientSpeech = useMemo(
+    () =>
+      visibleIngredients.map(
+        (i) =>
+          `${i.name}${i.quantity ? `, ${i.quantity}` : ""}${
+            i.optional ? ", opcional" : ""
+          }.`
+      ),
+    [visibleIngredients]
+  );
+
+  // Un paso puede tener varias frases, y hay que partirlo para que Chrome
+  // en Android no lo corte. Guardamos a qué paso pertenece cada frase para
+  // poder resaltar el paso completo mientras se lee.
+  const stepSpeech = useMemo(() => {
+    const chunks: string[] = [];
+    const owner: number[] = [];
+    visibleSteps.forEach((s, idx) => {
+      for (const c of toChunks(s.text)) {
+        chunks.push(c);
+        owner.push(idx);
+      }
+    });
+    return { chunks, owner };
+  }, [visibleSteps]);
+
+  const { speakingId, chunkIndex } = useSpeech();
+  const readingIngredient =
+    speakingId === "ingredientes" ? chunkIndex : -1;
+  const readingStep =
+    speakingId === "elaboracion" ? stepSpeech.owner[chunkIndex] ?? -1 : -1;
+
   return (
     <div className="space-y-6">
       {/* Variantes de la receta */}
@@ -180,22 +219,35 @@ export function VariantPicker({
 
       {/* Ingredientes */}
       <section>
-        <h2 className="text-sm font-semibold mb-2">
-          Ingredientes{" "}
-          <span className="text-muted-foreground font-normal">
-            ({visibleIngredients.length})
-          </span>
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <h2 className="text-sm font-semibold">
+            Ingredientes{" "}
+            <span className="text-muted-foreground font-normal">
+              ({visibleIngredients.length})
+            </span>
+          </h2>
+          <SpeakButton
+            id="ingredientes"
+            chunks={ingredientSpeech}
+            label="Escuchar"
+          />
+        </div>
         <ul className="rounded-xl border bg-card divide-y overflow-hidden">
-          {visibleIngredients.map((ing) => {
+          {visibleIngredients.map((ing, idx) => {
             const checked = done.has(ing.id);
+            const reading = readingIngredient === idx;
             const group = ing.optionGroup
               ? ingredients.filter((i) => i.optionGroup === ing.optionGroup)
               : null;
+            const role = roleLabel(ing.role);
 
             return (
               <li key={ing.id}>
-                <div className="flex items-start gap-3 p-3">
+                <div
+                  className={`flex items-start gap-3 p-3 transition-colors ${
+                    reading ? "bg-primary/10" : ""
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => toggle(ing.id)}
@@ -240,18 +292,31 @@ export function VariantPicker({
                       )}
                     </div>
 
-                    {/* Desplegable de alternativas */}
-                    {group && group.length > 1 && (
-                      <OptionSelect
-                        options={group}
-                        value={ing.id}
-                        onChange={(id) => choose(ing.optionGroup!, id)}
-                      />
+                    {/* Para qué sirve, y alternativas si las hay */}
+                    {(role || (group && group.length > 1)) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        {role && (
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${roleStyle(
+                              ing.role
+                            )} ${checked ? "opacity-50" : ""}`}
+                          >
+                            {role}
+                          </span>
+                        )}
+                        {group && group.length > 1 && (
+                          <OptionSelect
+                            options={group}
+                            value={ing.id}
+                            onChange={(id) => choose(ing.optionGroup!, id)}
+                          />
+                        )}
+                      </div>
                     )}
 
                     {ing.note && (
                       <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-                        {ing.note}
+                        <GlossaryText>{ing.note}</GlossaryText>
                       </p>
                     )}
 
@@ -274,37 +339,52 @@ export function VariantPicker({
 
       {/* Elaboración */}
       <section>
-        <h2 className="text-sm font-semibold mb-2">Elaboración</h2>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <h2 className="text-sm font-semibold">Elaboración</h2>
+          <SpeakButton
+            id="elaboracion"
+            chunks={stepSpeech.chunks}
+            label="Escuchar"
+          />
+        </div>
         <ol className="space-y-2">
           {visibleSteps.map((step, i) => {
             const checked = done.has(step.id);
+            const reading = readingStep === i;
             return (
               <li key={step.id}>
-                <button
-                  type="button"
-                  onClick={() => toggle(step.id)}
-                  aria-pressed={checked}
-                  className={`w-full text-left flex gap-3 p-3 rounded-xl border transition-colors ${
-                    checked ? "bg-muted/50" : "bg-card hover:bg-accent"
+                <div
+                  className={`flex gap-3 p-3 rounded-xl border transition-colors ${
+                    reading
+                      ? "bg-primary/10 border-primary"
+                      : checked
+                        ? "bg-muted/50"
+                        : "bg-card"
                   }`}
                 >
-                  <span
+                  <button
+                    type="button"
+                    onClick={() => toggle(step.id)}
+                    aria-label={
+                      checked ? `Desmarcar paso ${i + 1}` : `Marcar paso ${i + 1}`
+                    }
+                    aria-pressed={checked}
                     className={`size-6 rounded-full shrink-0 flex items-center justify-center text-xs font-bold tabular-nums transition-colors ${
                       checked
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted-foreground/20"
                     }`}
                   >
                     {checked ? <Check className="size-3.5" strokeWidth={3} /> : i + 1}
-                  </span>
-                  <span
+                  </button>
+                  <p
                     className={`text-sm leading-relaxed ${
                       checked ? "line-through text-muted-foreground" : ""
                     }`}
                   >
-                    {step.text}
-                  </span>
-                </button>
+                    <GlossaryText>{step.text}</GlossaryText>
+                  </p>
+                </div>
               </li>
             );
           })}
@@ -327,7 +407,7 @@ function OptionSelect({
   const current = options.find((o) => o.id === value);
 
   return (
-    <div className="relative mt-1.5 inline-flex items-center">
+    <div className="relative inline-flex items-center">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}

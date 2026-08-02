@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { RECIPES } from "../prisma/recetario-data";
+import { roleFor, normalizeName } from "../prisma/ingrediente-roles";
 
 /**
  * Carga inicial del recetario.
@@ -90,6 +91,9 @@ async function main() {
 
   // ── Segunda vuelta: ingredientes, ya con todos los ids disponibles ──
   let links = 0;
+  // Los que no encontraron función en la tabla: hay que agregarlos a
+  // prisma/ingrediente-roles.ts
+  const sinRol = new Set<string>();
   for (const r of RECIPES) {
     const recipeId = idBySlug.get(r.slug)!;
 
@@ -102,6 +106,8 @@ async function main() {
           console.log(`   ⚠ ${r.slug}: no existe la receta ${ing.linkedSlug}`);
         }
         if (linkedRecipeId) links++;
+        const role = roleFor(ing.name);
+        if (!role) sinRol.add(ing.name);
         return {
           recipeId,
           name: ing.name,
@@ -109,6 +115,7 @@ async function main() {
           note: ing.note ?? null,
           optional: ing.optional ?? false,
           variant: ing.variant ?? null,
+          role,
           optionGroup: ing.optionGroup ?? null,
           optionLabel: ing.optionLabel ?? null,
           isRecommended: ing.isRecommended ?? false,
@@ -122,6 +129,14 @@ async function main() {
 
   // ── Resumen ──
   console.log(`✓ ${links} enlaces entre recetas`);
+
+  if (sinRol.size > 0) {
+    console.log(`\n  ⚠ ${sinRol.size} ingredientes sin función asignada:`);
+    for (const n of [...sinRol].sort()) {
+      console.log(`     "${normalizeName(n)}": "",`);
+    }
+    console.log("     Agrégalos a prisma/ingrediente-roles.ts");
+  }
 
   const porCategoria = await prisma.recipe.groupBy({
     by: ["category"],

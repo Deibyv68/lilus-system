@@ -16,6 +16,13 @@ import {
   Hand,
 } from "lucide-react";
 import { VariantPicker } from "./variant-picker";
+import {
+  SpeechProvider,
+  SpeakButton,
+  SpeechUnsupportedNote,
+  toChunks,
+} from "@/components/speak-button";
+import { GlossaryProvider, GlossaryText } from "@/components/glossary-text";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +55,17 @@ export default async function RecipeDetailPage({
 
   if (!recipe || !recipe.isActive) notFound();
 
+  const glossary = await prisma.glossaryTerm.findMany({
+    where: { isActive: true },
+    select: { slug: true, term: true, aliases: true, shortDef: true },
+  });
+  const glossaryTerms = glossary.map((g) => ({
+    slug: g.slug,
+    term: g.term,
+    aliases: g.aliases ? g.aliases.split(",").map((a) => a.trim()) : [],
+    shortDef: g.shortDef,
+  }));
+
   const meta = categoryMeta(recipe.category);
   const Icon = meta.icon;
 
@@ -73,8 +91,53 @@ export default async function RecipeDetailPage({
     new Map(recipe.usedIn.map((u) => [u.recipe.slug, u.recipe])).values()
   );
 
+  // ── Textos para la lectura en voz alta ──
+  // Se arman aquí, en el servidor, para que el cliente solo reciba las
+  // frases ya listas para encolar.
+  const speakBenefits = [
+    "Beneficios.",
+    ...generalBenefits.map((b) => b.text),
+    ...perIngredient.map((b) => `${b.ingredient}. ${b.text}`),
+  ].flatMap(toChunks);
+
+  const speakNotes = ["Notas.", ...notes].flatMap(toChunks);
+
+  const speakUsage = recipe.usage
+    ? ["Modo de uso.", recipe.usage].flatMap(toChunks)
+    : [];
+
+  // La lectura completa arranca por ingredientes y pasos, que es lo que
+  // se necesita con las manos ocupadas. Los ingredientes y pasos de la
+  // receta base van sin variante; si hay variantes, se lee la primera.
+  const firstVariant = variants[0] ?? null;
+  const speakAll = [
+    recipe.name,
+    ...(recipe.summary ? [recipe.summary] : []),
+    "Ingredientes.",
+    // De cada grupo de alternativas se lee solo la recomendada: leer las
+    // tres opciones de conservante seguidas confundiría más que ayudar.
+    ...recipe.ingredients
+      .filter((i) => {
+        if (i.variant && i.variant !== firstVariant) return false;
+        if (!i.optionGroup) return true;
+        const group = recipe.ingredients.filter(
+          (g) => g.optionGroup === i.optionGroup
+        );
+        return (group.find((g) => g.isRecommended) ?? group[0]).id === i.id;
+      })
+      .map((i) => `${i.name}${i.quantity ? `, ${i.quantity}` : ""}.`),
+    "Elaboración.",
+    ...recipe.steps
+      .filter((s) => !s.variant || s.variant === firstVariant)
+      .map((s, i) => `Paso ${i + 1}. ${s.text}`),
+    ...speakBenefits,
+    ...speakUsage,
+    ...speakNotes,
+  ].flatMap(toChunks);
+
   return (
-    <>
+    <SpeechProvider>
+      <GlossaryProvider terms={glossaryTerms}>
       <div className="mb-4">
         <Link
           href="/recetario"
@@ -119,6 +182,17 @@ export default async function RecipeDetailPage({
             </p>
           )}
         </div>
+      </div>
+
+      {/* ─── Escuchar toda la receta ─── */}
+      <div className="mb-5">
+        <SpeakButton
+          id="todo"
+          chunks={speakAll}
+          label="Escuchar toda la receta"
+          size="lg"
+        />
+        <SpeechUnsupportedNote />
       </div>
 
       {/* ─── Ficha técnica ─── */}
@@ -196,6 +270,7 @@ export default async function RecipeDetailPage({
             optionLabel: i.optionLabel,
             isRecommended: i.isRecommended,
             percentage: i.percentage,
+            role: i.role,
             linked: i.linkedRecipe
               ? { slug: i.linkedRecipe.slug, name: i.linkedRecipe.name }
               : null,
@@ -210,14 +285,22 @@ export default async function RecipeDetailPage({
         {/* ─── Beneficios ─── */}
         {(generalBenefits.length > 0 || perIngredient.length > 0) && (
           <section>
-            <SectionTitle>Beneficios</SectionTitle>
+            <SectionTitle
+              action={
+                <SpeakButton id="beneficios" chunks={speakBenefits} label="Escuchar" />
+              }
+            >
+              Beneficios
+            </SectionTitle>
             <div className="rounded-xl border bg-card overflow-hidden">
               {generalBenefits.length > 0 && (
                 <ul className="p-4 space-y-1.5">
                   {generalBenefits.map((b) => (
                     <li key={b.id} className="flex gap-2 text-sm">
                       <span className={`shrink-0 ${meta.accent}`}>•</span>
-                      <span>{b.text}</span>
+                      <span>
+                        <GlossaryText>{b.text}</GlossaryText>
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -232,7 +315,7 @@ export default async function RecipeDetailPage({
                     <div key={b.id} className="px-4 py-2.5">
                       <p className="text-xs font-semibold">{b.ingredient}</p>
                       <p className="text-sm text-muted-foreground leading-snug mt-0.5">
-                        {b.text}
+                        <GlossaryText>{b.text}</GlossaryText>
                       </p>
                     </div>
                   ))}
@@ -245,10 +328,18 @@ export default async function RecipeDetailPage({
         {/* ─── Modo de uso ─── */}
         {recipe.usage && (
           <section>
-            <SectionTitle>Modo de uso</SectionTitle>
+            <SectionTitle
+              action={
+                <SpeakButton id="uso" chunks={speakUsage} label="Escuchar" />
+              }
+            >
+              Modo de uso
+            </SectionTitle>
             <div className="rounded-xl border bg-card p-4 flex gap-3">
               <Hand className={`size-4 mt-0.5 shrink-0 ${meta.accent}`} />
-              <p className="text-sm leading-relaxed">{recipe.usage}</p>
+              <p className="text-sm leading-relaxed">
+                <GlossaryText>{recipe.usage}</GlossaryText>
+              </p>
             </div>
           </section>
         )}
@@ -256,13 +347,21 @@ export default async function RecipeDetailPage({
         {/* ─── Notas ─── */}
         {notes.length > 0 && (
           <section>
-            <SectionTitle>Notas</SectionTitle>
+            <SectionTitle
+              action={
+                <SpeakButton id="notas" chunks={speakNotes} label="Escuchar" />
+              }
+            >
+              Notas
+            </SectionTitle>
             <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/25 dark:border-amber-900 p-4">
               <ul className="space-y-2">
                 {notes.map((n, i) => (
                   <li key={i} className="flex gap-2 text-sm leading-relaxed">
                     <Info className="size-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <span>{n}</span>
+                    <span>
+                      <GlossaryText>{n}</GlossaryText>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -301,14 +400,26 @@ export default async function RecipeDetailPage({
           </section>
         )}
       </div>
-    </>
+      </GlossaryProvider>
+    </SpeechProvider>
   );
 }
 
 // ─────────────────────────────────────────────────────────────
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-sm font-semibold mb-2">{children}</h2>;
+function SectionTitle({
+  children,
+  action,
+}: {
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 mb-2">
+      <h2 className="text-sm font-semibold">{children}</h2>
+      {action}
+    </div>
+  );
 }
 
 function SpecCard({

@@ -279,6 +279,12 @@ model RecipeIngredient {
   variant   String?
   sortOrder Int     @default(0)
 
+  // Qué función cumple este ingrediente EN ESTA receta. No es lo mismo
+  // que la categoría de la materia prima: la glicerina es humectante en
+  // una crema y solvente en otra. Se muestra como etiqueta junto al
+  // nombre para que se entienda para qué está cada cosa.
+  role String?
+
   // ── Alternativas ──
   // Los ingredientes que comparten optionGroup son opciones excluyentes
   // entre sí: se muestran como un desplegable y solo una aplica a la vez.
@@ -327,6 +333,37 @@ model RecipeBenefit {
   recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@index([recipeId])
+}
+
+// ---------- Diccionario ----------
+
+/// Palabras y conceptos del recetario explicados en lenguaje llano.
+/// Se enlazan automáticamente allí donde aparecen en una receta.
+model GlossaryTerm {
+  id   String @id @default(cuid())
+  slug String @unique
+  term String // "Catiónico"
+
+  /// Otras formas de escribirlo, separadas por coma: plurales, femenino,
+  /// sinónimos. Es lo que permite detectar la palabra en los textos.
+  aliases String?
+
+  /// Una línea. Es lo que se ve al tocar la palabra dentro de una receta.
+  shortDef String
+  /// Explicación completa, para la ficha del diccionario.
+  longDef  String?
+  /// Ejemplo sacado del propio recetario, para aterrizarlo.
+  example  String?
+
+  /// "quimica" | "ingrediente" | "proceso" | "medida" | "seguridad"
+  category  String
+  sortOrder Int    @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
 }
 
 // ---------- Inventario de materias primas ----------
