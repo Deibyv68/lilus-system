@@ -33,10 +33,13 @@ export const INGREDIENT_ROLES: Record<string, string> = {
   "vaselina sólida simple": "base",
 
   // ── Agua y solventes ──
-  "agua destilada": "solvente",
-  "agua destilada caliente": "solvente",
-  "agua destilada extra": "solvente",
-  "agua tratada": "solvente",
+  // El agua es el solvente, sí, pero en una crema o un agua micelar es
+  // lo que más pesa y es donde va todo lo demás. "Base" se entiende; que
+  // el agua "disuelve" no le dice nada a nadie.
+  "agua destilada": "base",
+  "agua destilada caliente": "base",
+  "agua destilada extra": "base",
+  "agua tratada": "base",
   "alcohol al 96 %": "solvente",
   "alcohol al 70 %": "solvente",
   "alcohol cosmético": "solvente",

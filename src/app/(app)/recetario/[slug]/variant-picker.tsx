@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Link2, RotateCcw, ChevronDown, Star } from "lucide-react";
-import { SpeakButton, toChunks, useSpeech } from "@/components/speak-button";
+import { SpeakButton, useSpeech } from "@/components/speak-button";
+import { toChunks } from "@/lib/speech-chunks";
 import { GlossaryText } from "@/components/glossary-text";
 import { roleLabel, roleStyle } from "@/lib/roles";
 

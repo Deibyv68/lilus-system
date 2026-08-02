@@ -20,8 +20,8 @@ import {
   SpeechProvider,
   SpeakButton,
   SpeechUnsupportedNote,
-  toChunks,
 } from "@/components/speak-button";
+import { toChunks } from "@/lib/speech-chunks";
 import { GlossaryProvider, GlossaryText } from "@/components/glossary-text";
 
 export const dynamic = "force-dynamic";

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { glossaryCategoryMeta } from "@/lib/diccionario";
 import { ArrowLeft, Lightbulb, ChevronRight } from "lucide-react";
-import { SpeechProvider, SpeakButton, toChunks } from "@/components/speak-button";
+import { SpeechProvider, SpeakButton } from "@/components/speak-button";
+import { toChunks } from "@/lib/speech-chunks";
 
 export const dynamic = "force-dynamic";
 

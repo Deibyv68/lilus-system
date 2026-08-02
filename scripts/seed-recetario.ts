@@ -17,6 +17,48 @@ import { roleFor, normalizeName } from "../prisma/ingrediente-roles";
  */
 const prisma = new PrismaClient();
 
+/**
+ * Muchas notas empiezan diciendo qué es el ingrediente ("Espesante",
+ * "Antioxidante. Protege la fase grasa"). Ahora eso lo dice la etiqueta
+ * de función, así que repetirlo en la nota es ruido: si la nota es solo
+ * el nombre técnico se borra, y si arranca con él se le quita el
+ * arranque y queda lo que de verdad aporta.
+ */
+const TERMINOS_DE_FUNCION = [
+  "tensioactivo",
+  "emulsionante",
+  "espesante",
+  "conservante",
+  "quelante",
+  "antioxidante",
+  "humectante",
+  "emoliente",
+  "oclusivo",
+  "exfoliante",
+  "absorbente",
+  "solubilizante",
+  "acondicionador",
+  "colorante",
+  "fijador",
+  "solvente",
+];
+
+function sinRedundancia(note: string | undefined): string | null {
+  if (!note) return null;
+  const limpio = note.trim();
+  for (const t of TERMINOS_DE_FUNCION) {
+    const solo = new RegExp(`^${t}s?\\.?$`, "i");
+    if (solo.test(limpio)) return null;
+
+    const arranque = new RegExp(`^${t}s?\\s*[.:,-]\\s+`, "i");
+    if (arranque.test(limpio)) {
+      const resto = limpio.replace(arranque, "");
+      return resto.charAt(0).toUpperCase() + resto.slice(1);
+    }
+  }
+  return limpio;
+}
+
 async function main() {
   console.log("═══ Recetario LILUS ═══\n");
 
@@ -112,7 +154,7 @@ async function main() {
           recipeId,
           name: ing.name,
           quantity: ing.quantity ?? null,
-          note: ing.note ?? null,
+          note: sinRedundancia(ing.note),
           optional: ing.optional ?? false,
           variant: ing.variant ?? null,
           role,

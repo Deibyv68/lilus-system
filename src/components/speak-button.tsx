@@ -128,17 +128,6 @@ export function useSpeech() {
   return ctx;
 }
 
-/**
- * Parte un texto largo en frases. Es lo que evita que Chrome en Android
- * corte la lectura a mitad de camino.
- */
-export function toChunks(text: string): string[] {
-  return text
-    .split(/(?<=[.:;!?])\s+|\n+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
 export function SpeakButton({
   id,
   chunks,
