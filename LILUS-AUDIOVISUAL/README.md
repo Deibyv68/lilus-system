@@ -31,6 +31,16 @@ Después, en este orden:
 3. **[02-guiones/](02-guiones/)** — los guiones listos para rodar
 4. **[05-claims/](05-claims/)** — lo que no se puede decir sin meterse en problemas
 
+## Y cuando vayas a rodar
+
+**[06-plan-de-rodaje/](06-plan-de-rodaje/dos-dias.md)** — dos días completos,
+hora por hora, con todo cruzado para que un mismo jabón alimente varios videos.
+
+- **[antes-de-rodar.md](06-plan-de-rodaje/antes-de-rodar.md)** — léelo con una
+  semana de anticipación, hay dos compras que son bloqueantes
+- **[hoja-de-rodaje.md](06-plan-de-rodaje/hoja-de-rodaje.md)** — imprímela y
+  pégala en la pared. Es lo único que hay que mirar durante los dos días
+
 ---
 
 ## Las tres cosas que más te van a servir
@@ -82,6 +92,10 @@ LILUS-AUDIOVISUAL/
 │   └── set-fijo-y-tandas.md            Cómo grabar 12 videos en un día
 ├── 04-postproduccion/
 │   └── flujo-resolve.md
-└── 05-claims/
-    └── lo-que-no-se-puede-decir.md
+├── 05-claims/
+│   └── lo-que-no-se-puede-decir.md
+└── 06-plan-de-rodaje/
+    ├── dos-dias.md                     El plan completo, hora por hora
+    ├── antes-de-rodar.md               Compras y preparación previa
+    └── hoja-de-rodaje.md               Para imprimir y pegar en la pared
 ```
