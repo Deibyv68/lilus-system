@@ -52,6 +52,17 @@ En este orden:
 Si alguna palabra no se entiende:
 **[vocabulario.md](03-produccion/vocabulario.md)**.
 
+### Los dos PDF, y para qué es cada uno
+
+| | |
+|---|---|
+| **[hoja-de-rodaje.pdf](06-plan-de-rodaje/hoja-de-rodaje.pdf)** | A4, 4 hojas. Para **imprimir y pegar en la pared**. Solo el horario y lo que no se puede perder |
+| **[guia-lilus-telefono.pdf](06-plan-de-rodaje/guia-lilus-telefono.pdf)** | Formato vertical angosto, 44 páginas. Para **leer en el teléfono**. Todo el detalle: qué se fabrica, tu set, vocabulario, los dos días plano a plano y la voz |
+
+El de teléfono usa una página angosta a propósito: el visor de PDF ajusta el
+ancho de la página a la pantalla, así que en A4 la letra queda en un milímetro
+real. Con la página angosta, el texto se lee del tamaño de una app.
+
 ---
 
 ## Las tres cosas que más te van a servir
