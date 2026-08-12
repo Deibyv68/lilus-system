@@ -370,44 +370,42 @@ def pagina_dia1(c):
 
 
 def pagina_dia2(c):
-    y = barra_titulo(c, H - M, "DIA 2  ·  SECO", "voz, corte y producto terminado   ·   ~7 h")
+    y = barra_titulo(c, H - M, "DIA 2  ·  SECO", "corte y producto terminado   ·   ~6 h")
     y -= 5 * mm
     y = tira_ajustes(c, y)
 
     y = encabezado_seccion(c, y, "Horario")
     y = horario(c, y, [
-        {"hora": "08:00", "texto": "SESION DE VOZ", "dur": "75'", "pri": 3,
-         "notas": ["va primero, antes de cualquier trabajo fisico: la casa esta tranquila y ella esta descansada",
-                   "sin camara  ·  sin luces  ·  DENTRO DEL CLOSET, entre la ropa colgada  ·  vaso de agua al lado",
-                   "los primeros 5 minutos se botan: empezar charlando con la grabadora ya andando",
-                   "orden:  G05  >  G02  >  G06  >  G08  >  G03  >  olor a huevo x3  >  G07 al final y SIN GUION"]},
-        {"hora": "09:15", "texto": "Montaje  ·  mesa de trabajo", "dur": "15'", "tipo": "pausa"},
-        {"hora": "09:30", "n": "1", "texto": "G07  ·  EL RECETARIO", "dur": "40'", "pri": 3,
+        {"hora": "08:30", "texto": "MONTAJE  ·  mesa de trabajo", "dur": "15'",
+         "notas": ["hoy no se fabrica nada: se corta y se muestra lo de ayer  ·  la voz va aparte, otro dia"]},
+        {"hora": "08:45", "n": "1", "texto": "EL RECETARIO", "dur": "40'", "pri": 3,
          "notas": ["que la receta no se lea completa en pantalla: planos cerrados y desenfoque parcial"]},
-        {"hora": "10:10", "texto": "Cambio de montaje  a  RAYOS   (contraluz duro y rasante)", "dur": "20'", "tipo": "pausa"},
-        {"hora": "10:30", "n": "2", "texto": "EL CORTE  +  bucle  +  variantes", "dur": "70'", "pri": 3,
-         "notas": ["el bloque mas importante de los dos dias",
-                   "despues, sin mover nada: corte del embed  ·  corte multiple  ·  corte lento 60 fps  ·  corte fallido  ·  solo causticas"]},
-        {"hora": "11:40", "n": "3", "texto": "Desmolde 60 fps y polvos", "dur": "30'"},
-        {"hora": "12:10", "texto": "Almuerzo", "dur": "45'", "tipo": "pausa"},
-        {"hora": "12:55", "texto": "Cambio de montaje  a  JOYA   (fondo negro, contraluz)", "dur": "20'", "tipo": "pausa"},
-        {"hora": "13:15", "n": "4", "texto": "Producto terminado girando", "dur": "35'", "pri": 2},
-        {"hora": "13:50", "n": "5", "texto": "G06  ·  el jabon que suda", "dur": "30'",
+        {"hora": "09:25", "texto": "Cambio de montaje  a  RAYOS   (contraluz duro y rasante)", "dur": "20'", "tipo": "pausa"},
+        {"hora": "09:45", "n": "2", "texto": "EL CORTE  +  bucle  +  variantes", "dur": "70'", "pri": 3,
+         "notas": ["el bloque mas importante de los dos dias  ·  ensayar antes con la barra simple",
+                   "sin mover nada: corte del embed  ·  multiple  ·  lento 60 fps  ·  fallido  ·  solo causticas"]},
+        {"hora": "10:55", "n": "3", "texto": "Desmolde 60 fps y polvos", "dur": "30'"},
+        {"hora": "11:25", "texto": "Almuerzo", "dur": "45'", "tipo": "pausa"},
+        {"hora": "12:10", "texto": "Cambio de montaje  a  JOYA   (fondo negro, contraluz)", "dur": "20'", "tipo": "pausa"},
+        {"hora": "12:30", "n": "4", "texto": "Producto terminado girando", "dur": "35'", "pri": 2},
+        {"hora": "13:05", "n": "5", "texto": "El jabon que suda", "dur": "30'",
          "notas": ["las gotas SOLO se ven a contraluz  ·  la barra industrial sin logo visible"]},
-        {"hora": "14:20", "n": "6", "texto": "Espuma y agua", "dur": "20'",
+        {"hora": "13:35", "n": "6", "texto": "Espuma y agua", "dur": "20'",
          "notas": ["con las sobras del corte"]},
-        {"hora": "14:40", "n": "7", "texto": "Banco de planos", "dur": "20'"},
-        {"hora": "15:00", "texto": "LUCES OFF  ·  FOLEY", "dur": "30'"},
-        {"hora": "15:30", "texto": "FIN", "tipo": "fin"},
+        {"hora": "13:55", "n": "7", "texto": "Una palabra del diccionario", "dur": "25'",
+         "notas": ["7 planos de apoyo de 15 s: emulsionante, tensioactivo, conservante, quelante, fase grasa, oclusivo"]},
+        {"hora": "14:20", "n": "8", "texto": "Banco de planos", "dur": "20'"},
+        {"hora": "14:40", "texto": "LUCES OFF  ·  FOLEY", "dur": "30'"},
+        {"hora": "15:10", "texto": "FIN", "tipo": "fin"},
     ])
 
     y = caja_planos(c, y, "Los 3 planos que no se pueden perder hoy", [
         ("EL BOTON DEL RECETARIO sonando mientras las manos siguen trabajando",
-         "Grabar ese audio DE VERDAD, no ponerlo en la edicion. Que se oiga un poco lejos, con el eco del cuarto. Eso es lo que lo hace real."),
+         "Grabar ese audio DE VERDAD con el Maono, no ponerlo en la edicion. Que se oiga un poco lejos, con el eco del cuarto."),
         ("EL BUCLE DEL CORTE",
          "Camara fija y CINTA POR DEBAJO marcando donde va la barra. La segunda barra en la misma posicion exacta, misma entrada de cuchillo: ese es el final que empalma con el principio."),
         ("LA BARRA GIRANDO, montaje joya, 30 SEGUNDOS SEGUIDOS",
-         "Los primeros 5 segundos abren el video de capas y los ultimos 5 lo cierran. Un solo archivo, dos usos."),
+         "Los primeros 5 s abren el video de capas y los ultimos 5 lo cierran. Un archivo, dos usos."),
     ])
 
     pie(c, "El foley del dia esta en la ultima hoja.", y, "dia 2")
@@ -528,7 +526,7 @@ def pagina_referencia(c):
     c.drawString(x2 + 3 * mm, y - 5 * mm, "NUNCA")
     c.setFont("Helvetica-Bold", 8.4)
     for i, t in enumerate(["luz atravesando los frascos", "boton del recetario  ·  bucle del corte",
-                           "la barra de capas", "sesion de voz  ·  foley"]):
+                           "la barra de capas", "el foley del quiebre"]):
         c.setFillColor(TINTA)
         c.drawString(x2 + 3 * mm, y - 10.6 * mm - i * 4.6 * mm, t)
 

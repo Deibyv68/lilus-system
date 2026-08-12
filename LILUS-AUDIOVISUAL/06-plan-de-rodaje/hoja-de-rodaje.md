@@ -1,7 +1,12 @@
 # Hoja de rodaje
 
 > **Imprime esto y pégalo en la pared del taller.** Es lo único que hay que
-> mirar durante los dos días. El detalle está en [dos-dias.md](dos-dias.md).
+> mirar durante los dos días.
+>
+> Hay una versión en PDF lista para imprimir: **[hoja-de-rodaje.pdf](hoja-de-rodaje.pdf)**.
+> El detalle plano por plano está en
+> [dia-1-plano-a-plano.md](dia-1-plano-a-plano.md) y
+> [dia-2-plano-a-plano.md](dia-2-plano-a-plano.md).
 
 ---
 
@@ -70,25 +75,25 @@ MACRO: cerrar a f/5.6 – f/8
 
 # DÍA 2 · SECO
 
+> **La voz NO se graba hoy.** Va aparte, después, con la Focusrite y con el
+> montaje aproximado delante. Hoy se rueda todo mudo; el Maono solo hace foley.
+
 ```
-08:00     SESIÓN DE VOZ  ⭐⭐                         75'
-             sin cámara · sin luces · EN EL CLÓSET
-             los primeros 5 min se botan
-             orden: G05 → G02 → G06 → G08 → G03
-                    → S01 ×3 → G07 (al final, sin guion)
-09:15     MONTAJE mesa de trabajo                    15'
-09:30  ▸ 1  G07 · EL RECETARIO  ⭐⭐                  40'
-10:10     CAMBIO → RAYOS (contraluz duro, rasante)   20'
-10:30  ▸ 2  EL CORTE + bucle + variantes  ⭐⭐⭐       70'
-11:40  ▸ 3  Desmolde 60fps y polvos                  30'
-12:10     ALMUERZO                                   45'
-12:55     CAMBIO → JOYA (fondo negro, contraluz)     20'
-13:15  ▸ 4  Producto terminado girando               35'
-13:50  ▸ 5  G06 · el jabón que suda                  30'
-14:20  ▸ 6  Espuma y agua                            20'
-14:40  ▸ 7  Banco de planos                          20'
-15:00     LUCES OFF → FOLEY                          30'
-15:30     FIN
+08:30  MONTAJE mesa de trabajo                       15'
+08:45  ▸ 1  EL RECETARIO  ⭐⭐                        40'
+09:25     CAMBIO → RAYOS (contraluz duro, rasante)   20'
+09:45  ▸ 2  EL CORTE + bucle + variantes  ⭐⭐⭐       70'
+             ensayar antes con la barra simple
+10:55  ▸ 3  Desmolde 60fps y polvos                  30'
+11:25     ALMUERZO                                   45'
+12:10     CAMBIO → JOYA (fondo negro, contraluz)     20'
+12:30  ▸ 4  Producto terminado girando               35'
+13:05  ▸ 5  El jabón que suda                        30'
+13:35  ▸ 6  Espuma y agua                            20'
+13:55  ▸ 7  Una palabra del diccionario              25'
+14:20  ▸ 8  Banco de planos                          20'
+14:40     LUCES OFF → FOLEY                          30'
+15:10     FIN
 ```
 
 ### Los 3 planos que no se pueden perder — DÍA 2
@@ -116,7 +121,7 @@ MACRO: cerrar a f/5.6 – f/8
 4º  variantes de corte
 
 NUNCA:  luz atravesando · botón del recetario · bucle del corte
-        barra de capas · sesión de voz · foley
+        la barra de capas · el foley del quiebre
 ```
 
 ---

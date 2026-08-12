@@ -33,16 +33,24 @@ Después, en este orden:
 
 ## Y cuando vayas a rodar
 
-**[06-plan-de-rodaje/](06-plan-de-rodaje/dos-dias.md)** — dos días completos,
-hora por hora, con todo cruzado para que un mismo jabón alimente varios videos.
+En este orden:
 
-- **[antes-de-rodar.md](06-plan-de-rodaje/antes-de-rodar.md)** — léelo con una
-  semana de anticipación, hay dos compras que son bloqueantes
-- **[hoja-de-rodaje.pdf](06-plan-de-rodaje/hoja-de-rodaje.pdf)** — 4 hojas A4
-  para imprimir y pegar en la pared. Es lo único que hay que mirar durante los
-  dos días. La versión en texto es
-  [hoja-de-rodaje.md](06-plan-de-rodaje/hoja-de-rodaje.md), y el PDF se
-  regenera con `python 06-plan-de-rodaje/generar-pdf.py salida.pdf`
+1. **[que-se-fabrica.md](06-plan-de-rodaje/que-se-fabrica.md)** — cuántos jabones
+   y cuántas cremas salen, con cantidades y moldes
+2. **[tu-set.md](03-produccion/tu-set.md)** — tu espacio real: tus tres luces,
+   tu azulejo, tus cartulinas y qué hay que mover
+3. **[antes-de-rodar.md](06-plan-de-rodaje/antes-de-rodar.md)** — léelo con una
+   semana de anticipación, hay dos compras que son bloqueantes
+4. **[dos-dias.md](06-plan-de-rodaje/dos-dias.md)** — el mapa general de los dos
+   días
+5. **[dia-1-plano-a-plano.md](06-plan-de-rodaje/dia-1-plano-a-plano.md)** y
+   **[dia-2-plano-a-plano.md](06-plan-de-rodaje/dia-2-plano-a-plano.md)** — el
+   detalle: qué se ve, dónde va la cámara, qué hacen las manos, cuánto rodar
+6. **[hoja-de-rodaje.pdf](06-plan-de-rodaje/hoja-de-rodaje.pdf)** — 4 hojas A4
+   para imprimir y pegar en la pared
+
+Si alguna palabra no se entiende:
+**[vocabulario.md](03-produccion/vocabulario.md)**.
 
 ---
 
@@ -88,6 +96,8 @@ LILUS-AUDIOVISUAL/
 │   ├── G08-mal-a-proposito.md
 │   └── banco-de-ideas.md               40 ideas más, en una línea cada una
 ├── 03-produccion/
+│   ├── tu-set.md                       ← tu espacio real, con tu foto
+│   ├── vocabulario.md                  ← qué quiere decir cada palabra
 │   ├── camara-bmpcc6k.md
 │   ├── iluminacion-jabon-transparente.md
 │   ├── sonido-asmr.md
@@ -98,7 +108,10 @@ LILUS-AUDIOVISUAL/
 ├── 05-claims/
 │   └── lo-que-no-se-puede-decir.md
 └── 06-plan-de-rodaje/
-    ├── dos-dias.md                     El plan completo, hora por hora
+    ├── que-se-fabrica.md               Cuántos jabones y cremas salen
+    ├── dos-dias.md                     El mapa general, hora por hora
+    ├── dia-1-plano-a-plano.md          ← el detalle de cada plano
+    ├── dia-2-plano-a-plano.md          ←
     ├── antes-de-rodar.md               Compras y preparación previa
     ├── hoja-de-rodaje.pdf              ← para imprimir (4 hojas A4)
     ├── hoja-de-rodaje.md               La misma hoja, en texto

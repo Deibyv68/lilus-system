@@ -79,24 +79,72 @@ su voz. La ropa absorbe el eco perfectamente.
 
 ### El micrófono
 
-El **lavalier Maono es el correcto para esto**.
+Con **Focusrite y un buen micrófono**, la voz va a sonar mucho mejor que con el
+lavalier. Pero hay una vuelta de tuerca que conviene saber de antes:
 
-- **Pinzado a 15-20 cm por debajo de la barbilla**, en la ropa
-- **Ligeramente de lado**, no apuntando directo a la boca — así las "p" y las
-  "b" no revientan
-- Que la ropa no lo roce. La tela rozando el micrófono es el ruido más común y
-  el más difícil de quitar
-- Si el Maono es de los inalámbricos con grabación interna, **graba también en el
-  aparato**, no solo transmitiendo. Es tu respaldo
+> **Un micrófono bueno capta más cuarto, no menos.**
 
-### Ajustes
+Un lavalier está pegado al pecho y casi solo oye la voz. Un condensador de
+estudio a 20 cm oye la voz **y la sala**: el eco, la nevera, el carro que pasa.
+Es más sensible, y esa sensibilidad es de doble filo.
+
+O sea que pasar al micrófono bueno **no reemplaza el truco del clóset: lo hace
+más importante todavía.**
+
+**Colocación:**
+
+- **A 15-20 cm de la boca.** Ni pegado ni lejos
+- **Un poco de lado, o apuntando a la barbilla**, no de frente a la boca
+- **Filtro antipop sí o sí** (o una media sobre un aro). A esa distancia, una "p"
+  sin filtro revienta la toma y no tiene arreglo
+- Que ella pueda apoyar los codos. Una postura incómoda se oye en la voz
+
+**Ajustes de la Focusrite:**
 
 - **48 kHz / 24 bits**
-- Nivel promedio en **-18 dB**, picos que no pasen de -6
+- **Alimentación fantasma (+48 V) encendida** si el micrófono es de condensador
+- **Ganancia**: que los picos más fuertes lleguen a **-6 dB y ninguno toque el
+  rojo**. Si el indicador se pone rojo aunque sea un instante, esa toma está
+  arruinada y no se recupera. Es mejor grabar bajo y subir después
+- **Monitoreo directo encendido** y audífonos puestos: que ella se escuche. Casi
+  todo el mundo habla mejor cuando se oye
+- Si tu interfaz tiene modo **"Air"**, pruébalo, pero no lo des por hecho:
+  levanta los agudos y en algunas voces suena áspero. Graba dos minutos con y sin
+
+**Y siempre:**
+
 - **Un vaso de agua al lado.** La boca seca hace chasquidos que se oyen
   muchísimo en primer plano
 - **Treinta segundos de silencio** grabados al principio, para limpiar ruido
   después
+
+### Cuándo se graba: después de rodar, y con el montaje delante
+
+Como la voz ya no se graba el día del rodaje, hay que decidir en qué orden va
+todo. El orden que funciona es este:
+
+```
+1.  Rodar los dos dias, todo mudo
+2.  Montar un CORTE APROXIMADO de cada video, sin voz
+    (imagenes en orden, con los tiempos mas o menos)
+3.  Sesion de voz  ←  ella narra MIRANDO ese corte en una pantalla
+4.  Montaje fino: ajustar la imagen a lo que ella dijo
+```
+
+**El paso 3 es la clave, y es lo que casi nadie hace.** Que ella vea en una
+pantalla lo que está describiendo mientras habla cambia todo:
+
+- Le da el ritmo solo. No hay que decirle "habla más lento"
+- Describe lo que **está viendo**, no lo que recuerda, y eso suena distinto
+- Se dan cuenta juntos de los huecos: "acá falta un plano de la cuchara"
+
+Poner la laptop enfrente con el corte en bucle y dejarla hablar encima cuesta
+cero y sube el resultado enormemente.
+
+> **Ojo con el orden inverso.** Si grabas la voz primero y después montas la
+> imagen a la fuerza, terminas usando planos que no querías solo porque hay que
+> tapar una frase. Con el corte hecho, la voz se acomoda a lo que de verdad
+> tienes.
 
 ### La sesión
 
@@ -152,16 +200,20 @@ un barrio de Cuenca sin explicar, no.
 
 | Error | Qué se escucha | Arreglo |
 |---|---|---|
-| Micrófono apuntando a la boca | "P" y "B" explotan | Ponerlo de lado |
-| Ropa rozando | Frote constante | Fijar bien, ropa quieta |
+| Micrófono de frente a la boca, sin antipop | "P" y "B" explotan | De lado + filtro antipop |
 | Cuarto vacío | Suena a baño | Clóset o cuarto con cosas blandas |
+| Nivel muy alto, toca el rojo | Distorsión | Grabar bajo, subir después |
 | Boca seca | Chasquidos | Agua, y no lácteos antes |
-| Nivel muy alto | Distorsión | Grabar bajo, subir después |
 | Ventilador o nevera | Zumbido de fondo | Apagarlos, y grabar 30 s de sala |
+| Micrófono demasiado cerca | Voz grave y retumbante | Alejarlo a 15-20 cm |
 
 Los tres primeros **no tienen arreglo en la edición**. Vale la pena hacer una
 prueba de dos minutos y escucharla con audífonos antes de grabar una sesión
 entera.
+
+> **El clipping es el único error irreversible de esta lista.** Si el indicador
+> de la Focusrite toca el rojo, esa parte de la onda ya no existe: no hay
+> programa que la devuelva. Deja siempre aire arriba.
 
 ---
 

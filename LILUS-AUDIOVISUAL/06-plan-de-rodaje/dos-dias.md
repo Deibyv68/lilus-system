@@ -1,5 +1,21 @@
 # Plan de dos días de rodaje
 
+> **Este documento es el mapa general: qué bloque va cuándo y por qué.**
+>
+> Si lo que buscas es el detalle plano por plano —qué se ve, dónde va la cámara,
+> qué hacen las manos, cuánto rodar— está en:
+>
+> - **[dia-1-plano-a-plano.md](dia-1-plano-a-plano.md)**
+> - **[dia-2-plano-a-plano.md](dia-2-plano-a-plano.md)**
+>
+> Y las dos cosas que conviene leer antes que nada:
+> **[que-se-fabrica.md](que-se-fabrica.md)** (cuántos jabones y cremas salen) y
+> **[tu-set.md](../03-produccion/tu-set.md)** (tu espacio real, con tus tres
+> luces y tus cartulinas).
+>
+> Si alguna palabra no se entiende:
+> **[vocabulario.md](../03-produccion/vocabulario.md)**.
+
 ## La idea que organiza todo
 
 Hay **dos cosas caras** en un día de rodaje, y no son las que uno cree:
@@ -20,11 +36,13 @@ verdad no se puede acelerar.
 
 ```
 DÍA 1  ·  HÚMEDO        DÍA 2  ·  SECO
-elaboración             revelación y palabra
+elaboración             revelación
 ─────────────────       ─────────────────
 haces el jabón     →    lo cortas y lo muestras
-haces la crema          la voz de tu mamá
-las demostraciones      el producto terminado
+haces la crema          el producto terminado
+las demostraciones      el diccionario en imágenes
+
+        La VOZ va aparte, después, con la Focusrite
 ```
 
 ---
@@ -361,49 +379,34 @@ La lista completa está en
 
 # 📅 DÍA 2 — SECO
 
-**Duración:** ~7 h
+**Duración:** ~6 h  (la voz ya no va aquí)
 **Cambios de luz:** 2
 
 ---
 
-### 08:00 · SESIÓN DE VOZ (75 min) ⭐⭐
+### La voz NO se graba estos dos días
 
-**Va primero, antes de cualquier trabajo físico.** La casa está tranquila, ella
-está descansada, y la voz cansada se nota muchísimo.
+Se graba después, en otro momento, con la Focusrite y un micrófono de estudio.
+Los dos días de rodaje se ruedan **mudos**; el Maono solo captura foley y
+ambiente.
 
-- **Sin cámara. Sin luces.** Solo el lavalier
-- **Adentro del clóset**, entre la ropa colgada. En serio — ver
-  [voz-de-tu-mama.md](../03-produccion/voz-de-tu-mama.md)
-- Vaso de agua al lado
-- **Los primeros 5 minutos se botan.** Empiecen charlando de cualquier cosa con
-  la grabadora ya andando
+Es mejor así, y no solo por comodidad: la voz se graba **con el montaje
+aproximado ya hecho y delante**, para que ella narre mirando lo que describe. El
+cómo y el orden están en
+[voz-de-tu-mama.md](../03-produccion/voz-de-tu-mama.md).
 
-**Orden sugerido** (de lo más fácil a lo más personal, para que entre en
-confianza):
-
-| Video | Guía de voz |
-|---|---|
-| 1. G05 Capas | Proceso puro, es el más fácil para arrancar |
-| 2. G02 El colágeno | |
-| 3. G06 Por qué suda | |
-| 4. G08 Mal a propósito | |
-| 5. G03 Los que se anulan | |
-| 6-8. **S01 olor a huevo, las tres partes** | Seguidas, para que el tono no cambie |
-| 9. **G07 El recetario** | **Al final.** Es el más personal y ya va a estar suelta |
-
-**Para el G07, no le des guion.** Ábranle el cuaderno y grábala hablando quince
-minutos. Las preguntas están en el guion. Vas a sacar cosas que ningún guion
-podría.
+Eso libera 75 minutos del día 2, que este plan usa en hacer bien el bloque del
+corte y en un bloque extra al final.
 
 ---
 
-### 09:15 · Montaje MESA DE TRABAJO (15 min)
+### 08:30 · Montaje MESA DE TRABAJO (15 min)
 
-Luz cálida, suave, fondo claro. El montaje más simple.
+Luz suave frontal, fondo la estantería desenfocada. El montaje más simple.
 
 ---
 
-### 09:30 · BLOQUE 1 — G07 El recetario (40 min) ⭐⭐
+### 08:45 · BLOQUE 1 — G07 El recetario (40 min) ⭐⭐
 
 *Alimenta: G07 — el video de origen de la marca*
 
@@ -425,7 +428,7 @@ Luz cálida, suave, fondo claro. El montaje más simple.
 
 ---
 
-### 10:10 · Cambio de montaje → RAYOS (20 min)
+### 09:25 · Cambio de montaje → RAYOS (20 min)
 
 **Contraluz duro**, sin difusor, fuente pequeña y lejos, **rasante** (casi a la
 altura de la mesa), fondo oscuro, superficie lisa y oscura. El cuarto lo más
@@ -435,7 +438,7 @@ Este montaje es el que da las **cáusticas**.
 
 ---
 
-### 10:30 · BLOQUE 2 — El corte (70 min) ⭐⭐⭐
+### 09:45 · BLOQUE 2 — El corte (70 min) ⭐⭐⭐
 
 **El bloque más importante de los dos días.**
 
@@ -476,7 +479,7 @@ revelación de las capas del G05*
 
 ---
 
-### 11:40 · BLOQUE 3 — Desmolde y polvos (30 min)
+### 10:55 · BLOQUE 3 — Desmolde y polvos (30 min)
 
 | ⭐/○ | Plano | Notas |
 |---|---|---|
@@ -486,11 +489,11 @@ revelación de las capas del G05*
 
 ---
 
-### 12:10 · Almuerzo (45 min)
+### 11:25 · Almuerzo (45 min)
 
 ---
 
-### 12:55 · Cambio de montaje → JOYA (20 min)
+### 12:10 · Cambio de montaje → JOYA (20 min)
 
 Fondo **negro mate**, luz principal **detrás con difusión fuerte**, recorte tenue
 arriba a un cuarto de potencia, **cartulina negra** a un lado.
@@ -501,7 +504,7 @@ nivel percibido más que ninguna otra cosa.
 
 ---
 
-### 13:15 · BLOQUE 4 — Producto terminado (35 min) ⭐
+### 12:30 · BLOQUE 4 — Producto terminado (35 min) ⭐
 
 *Alimenta: apertura y cierre del G05, portadas, carril PRODUCTO*
 
@@ -517,7 +520,7 @@ nivel percibido más que ninguna otra cosa.
 
 ---
 
-### 13:50 · BLOQUE 5 — G06 El jabón que suda (30 min) ⭐
+### 13:05 · BLOQUE 5 — G06 El jabón que suda (30 min) ⭐
 
 *Alimenta: G06 + su variante muda*
 
@@ -537,7 +540,7 @@ exactamente el que hace falta, por eso va acá.
 
 ---
 
-### 14:20 · BLOQUE 6 — Espuma y agua (20 min)
+### 13:35 · BLOQUE 6 — Espuma y agua (20 min)
 
 *Alimenta: #18 espuma, banco*
 
@@ -552,13 +555,13 @@ Con las **sobras del corte**:
 
 ---
 
-### 14:40 · BLOQUE 7 — Banco de planos (20 min)
+### 13:55 · BLOQUE 7 — Banco de planos (20 min)
 
 Con el montaje joya, que es el que menos tienes en el banco.
 
 ---
 
-### 15:00 · LUCES APAGADAS → FOLEY (30 min) ⭐
+### 14:15 · LUCES APAGADAS → FOLEY (30 min) ⭐
 
 ```
 [ ] cuchillo entrando lento          [ ] barra golpeando la mesa
@@ -573,7 +576,7 @@ Con el montaje joya, que es el que menos tienes en el banco.
 > el proyecto. Y si tu grabadora hace 96 kHz, úsalo: después le bajas medio tono
 > y suena el doble de satisfactorio.
 
-**15:30 · Fin.**
+**14:45 · Fin.**
 
 ---
 
@@ -595,7 +598,6 @@ Va a pasar. El primer día de rodaje siempre se va de las manos.
 - ⭐⭐⭐ El botón del recetario sonando (día 2)
 - ⭐⭐⭐ El bucle del corte (día 2)
 - ⭐⭐ La barra de capas — sin ella se cae medio día 2
-- ⭐⭐ La sesión de voz
 - ⭐ El foley
 
 ---
