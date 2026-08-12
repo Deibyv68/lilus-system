@@ -38,8 +38,11 @@ hora por hora, con todo cruzado para que un mismo jabón alimente varios videos.
 
 - **[antes-de-rodar.md](06-plan-de-rodaje/antes-de-rodar.md)** — léelo con una
   semana de anticipación, hay dos compras que son bloqueantes
-- **[hoja-de-rodaje.md](06-plan-de-rodaje/hoja-de-rodaje.md)** — imprímela y
-  pégala en la pared. Es lo único que hay que mirar durante los dos días
+- **[hoja-de-rodaje.pdf](06-plan-de-rodaje/hoja-de-rodaje.pdf)** — 4 hojas A4
+  para imprimir y pegar en la pared. Es lo único que hay que mirar durante los
+  dos días. La versión en texto es
+  [hoja-de-rodaje.md](06-plan-de-rodaje/hoja-de-rodaje.md), y el PDF se
+  regenera con `python 06-plan-de-rodaje/generar-pdf.py salida.pdf`
 
 ---
 
@@ -97,5 +100,7 @@ LILUS-AUDIOVISUAL/
 └── 06-plan-de-rodaje/
     ├── dos-dias.md                     El plan completo, hora por hora
     ├── antes-de-rodar.md               Compras y preparación previa
-    └── hoja-de-rodaje.md               Para imprimir y pegar en la pared
+    ├── hoja-de-rodaje.pdf              ← para imprimir (4 hojas A4)
+    ├── hoja-de-rodaje.md               La misma hoja, en texto
+    └── generar-pdf.py                  Regenera el PDF si cambia el plan
 ```
