@@ -60,3 +60,7 @@ next-env.d.ts
 /print-agent/agent.log
 /print-agent/node_modules
 /print-agent/nssm.exe
+
+# Python (los generadores de PDF)
+__pycache__/
+*.pyc
