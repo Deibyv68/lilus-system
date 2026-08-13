@@ -101,17 +101,24 @@ export default async function AvDocPage({
       <AvBloques bloques={doc.bloques} docId={doc.slug} />
 
       {/* ─── Anterior y siguiente ─── */}
+      {/*
+        Los min-w-0 de aquí abajo son necesarios, no cosméticos. Los hijos
+        de un grid —igual que los de un flex— tienen `min-width: auto` y se
+        niegan a encogerse por debajo de su contenido. Sin ellos, un título
+        largo estira la tarjeta, el `truncate` nunca llega a recortar y la
+        página entera se desplaza de lado en el teléfono.
+      */}
       {(anterior || siguiente) && (
         <nav className="mt-8 pt-5 border-t grid gap-2 sm:grid-cols-2">
           {anterior ? (
             <Link
               href={`/audiovisual/${anterior.slug}`}
-              className="flex items-center gap-2 p-3 rounded-xl border bg-card hover:bg-accent transition-colors"
+              className="min-w-0 flex items-center gap-2 p-3 rounded-xl border bg-card hover:bg-accent transition-colors"
             >
               <ArrowLeft className="size-4 text-muted-foreground shrink-0" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-2xs text-muted-foreground">Anterior</p>
-                <p className="text-sm font-medium leading-tight truncate">
+                <p className="text-sm tablet:text-base font-medium leading-tight truncate">
                   {anterior.titulo}
                 </p>
               </div>
@@ -122,11 +129,11 @@ export default async function AvDocPage({
           {siguiente && (
             <Link
               href={`/audiovisual/${siguiente.slug}`}
-              className="flex items-center gap-2 p-3 rounded-xl border bg-card hover:bg-accent transition-colors sm:text-right"
+              className="min-w-0 flex items-center gap-2 p-3 rounded-xl border bg-card hover:bg-accent transition-colors sm:text-right"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-2xs text-muted-foreground">Siguiente</p>
-                <p className="text-sm font-medium leading-tight truncate">
+                <p className="text-sm tablet:text-base font-medium leading-tight truncate">
                   {siguiente.titulo}
                 </p>
               </div>

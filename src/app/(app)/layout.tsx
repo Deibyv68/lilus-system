@@ -22,7 +22,16 @@ export default async function AppLayout({
         <Sidebar user={{ name: user.name, role: user.role }} />
       </div>
 
-      <main className="flex-1 lg:overflow-y-auto pb-24 lg:pb-0">
+      {/*
+        min-w-0 no es decorativo: sin él, esta página se rompe en móvil.
+
+        Los hijos de un flex tienen `min-width: auto`, o sea que se niegan a
+        encogerse por debajo del ancho de su contenido. Basta con una tabla
+        ancha adentro para que <main> crezca más que la pantalla y toda la
+        página se desplace de lado, y el `overflow-x-auto` de esa tabla nunca
+        llegue a actuar porque nadie la obligó a caber.
+      */}
+      <main className="flex-1 min-w-0 lg:overflow-y-auto pb-24 lg:pb-0">
         <MobileHeader />
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">{children}</div>
       </main>

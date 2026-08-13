@@ -321,7 +321,12 @@ export function AvBloques({ bloques, docId }: { bloques: AvBloque[]; docId: stri
           case "pre":
             return (
               <div key={i} className="my-4 -mx-4 px-4 overflow-x-auto">
-                <pre className="inline-block min-w-full rounded-xl bg-muted/60 border p-3 text-[11px] tablet:text-xs leading-snug font-mono whitespace-pre">
+                {/*
+                  El tamaño va en rem (text-2xs) y no en px, para que los
+                  diagramas también crezcan en el modo lectura de la tablet.
+                  Con un px fijo, la letra grande subía y estos se quedaban.
+                */}
+                <pre className="inline-block min-w-full rounded-xl bg-muted/60 border p-3 text-2xs tablet:text-xs leading-snug font-mono whitespace-pre">
                   {b.lineas.join("\n")}
                 </pre>
               </div>
