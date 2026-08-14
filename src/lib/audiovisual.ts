@@ -40,6 +40,12 @@ export const AV_RAIZ = "LILUS-AUDIOVISUAL";
  */
 const META: Record<string, { orden: number; resumen: string; destacado?: boolean }> = {
   // ── Plan de rodaje ──
+  "que-tengo-y-que-falta": {
+    orden: 0,
+    resumen:
+      "La lista para no perderse: qué se puede editar ya, qué falta y en qué orden.",
+    destacado: true,
+  },
   "que-se-fabrica": {
     orden: 1,
     resumen: "3 tandas de jabón y 2 jarras de crema. Cantidades, moldes y qué video alimenta cada una.",
