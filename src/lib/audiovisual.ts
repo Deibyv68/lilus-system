@@ -90,6 +90,12 @@ const META: Record<string, { orden: number; resumen: string; destacado?: boolean
   "G06-por-que-suda": { orden: 8, resumen: "Una queja de clientas convertida en prueba de calidad.", destacado: true },
   "G07-el-recetario": { orden: 9, resumen: "El video de origen de la marca. Se rueda una vez y trabaja para siempre." },
   "G08-mal-a-proposito": { orden: 10, resumen: "Se anuncia que se va a arruinar algo, y se arruina." },
+  "G09-proceso-jabon-arroz": {
+    orden: 0.5,
+    resumen:
+      "El proceso narrado, escrito sobre el material que ya está grabado. Seis decisiones que no están en la receta.",
+    destacado: true,
+  },
   "banco-de-ideas": { orden: 11, resumen: "40 ideas más, con el mecanismo que usaría cada una." },
   README: { orden: 0, resumen: "Cómo leer un guion y los mecanismos de retención que se usan." },
 

@@ -71,7 +71,9 @@ Cada ingrediente medio segundo, cortando a ritmo, y al final la barra.
 ### 🧼 Con el jabón de arroz
 
 #### El proceso completo, narrado · carril LA VOZ
-**El video más importante que pueden sacar de esta sesión.**
+**El video más importante que pueden sacar de esta sesión.** El guion ya
+está escrito, y está hecho sobre el material de la sesión 1:
+[G09 — El proceso completo (jabón de arroz)](../02-guiones/G09-proceso-jabon-arroz.md).
 
 ```
 [ ] Pesaje (YA)
