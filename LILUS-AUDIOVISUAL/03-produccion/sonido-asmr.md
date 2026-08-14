@@ -27,6 +27,35 @@ micrófono. Es el método.
 
 ---
 
+## Sonido directo y foley no son lo mismo
+
+Antes de nada, una distinción que evita trabajo de más.
+
+**Sonido directo** es el que se graba a la vez que la imagen, y viene
+sincronizado. Si pones micrófonos alrededor de la mesa y el receptor entra
+en la cámara, eso es sonido directo: da el ambiente real y la sensación de
+que la escena ocurrió.
+
+**Foley** es lo contrario: se graba aparte, en silencio, con el micrófono
+a un palmo de la acción, y se monta encima.
+
+| | Sirve para |
+|---|---|
+| **Directo** | Los videos narrados. La voz manda y el proceso suena debajo |
+| **Foley** | El ASMR puro, donde el sonido *es* el video |
+
+Los dos son válidos y no compiten. La regla práctica:
+
+> Si el sonido acompaña, el directo alcanza.
+> Si el sonido **es** el video, hace falta foley.
+
+Y aunque el directo haya salido bien, los **sonidos protagonistas** —el
+chorro, el quiebre, el desmolde, el papel— ganan muchísimo grabados de
+cerca. Rehacer esos ocho o diez es quince minutos; rehacerlo todo es una
+tarde perdida.
+
+---
+
 ## El problema de tu micrófono
 
 El **lavalier Maono** es un micrófono de corbata. Está diseñado para captar una

@@ -23,10 +23,14 @@ glicerina, mezcla, molde, desmolde y envuelto en papel film. Cuatro
 jabones. Eso es **una tanda completa**, que es justo la unidad de la que
 salen muchos videos.
 
+**Y hay sonido.** Se grabó con los dos micrófonos inalámbricos a los lados
+de la mesa, entrando por el auxiliar de la cámara, así que viene
+sincronizado con la imagen. Eso no es poco: es el trabajo pesado ya hecho.
+
 > **La cuenta honesta:** tienen mucho material y todavía ningún video
-> terminado. Lo que convierte lo uno en lo otro son **dos cosas que
-> faltan** —el sonido y la voz— y las dos se hacen sin volver a montar
-> luces.
+> terminado. Lo único que falta de verdad para publicar los primeros es
+> **la voz** — y antes, diez minutos de escuchar el sonido que ya está
+> grabado para saber si alcanza tal cual.
 
 ---
 
@@ -40,7 +44,7 @@ La más fácil de todas, y son seis o siete videos de una sentada.
 ```
 [ ] Plano del ingrediente (YA LO TIENEN)
 [ ] Voz: una frase explicando qué hace
-[ ] Foley: el polvo cayendo o el líquido vertiéndose
+[ ] Sonido: ya está en el directo (comprobar que se oiga)
 ```
 
 Sale directo del diccionario del sistema: emulsionante, tensioactivo,
@@ -52,14 +56,14 @@ Cada ingrediente medio segundo, cortando a ritmo, y al final la barra.
 ```
 [ ] Los planos de todos los ingredientes (YA LOS TIENEN)
 [ ] La barra terminada al final
-[ ] Foley de polvos y líquidos
+[ ] Sonido: el directo, o foley si quedó lejos
 ```
 
 #### ASMR de polvos · carril TALLER
 ```
 [ ] Cuchara entrando en el polvo (YA)
 [ ] Polvo cayendo (YA)
-[ ] Foley: cuchara, polvo, tamiz
+[ ] Sonido de cerca: aquí SÍ conviene foley (es ASMR puro)
 ```
 
 ---
@@ -77,7 +81,7 @@ Cada ingrediente medio segundo, cortando a ritmo, y al final la barra.
 [ ] Desmolde (YA)
 [ ] Envuelto en papel film (YA)
 [ ] Voz de tu mamá contando el proceso
-[ ] Foley de todo lo anterior
+[ ] Sonido: el directo alcanza si se oye limpio
 ```
 
 #### "Por qué arroz" · carril POR QUÉ
@@ -98,45 +102,102 @@ pelo. Es una oportunidad y hay que tratarla con cuidado con los claims.
 Suele ser el plano más bonito de cualquier tanda.
 ```
 [ ] El chorro entrando al molde (YA)
-[ ] Foley del vertido
+[ ] Sonido: el directo, y el chorro de cerca si se puede
 ```
 
 #### El desmolde · carril TALLER
 ```
 [ ] El molde doblándose y la barra saliendo (YA)
-[ ] Foley del "pop"
+[ ] Sonido: el "pop" de cerca gana mucho
 ```
 
 #### El envuelto · carril TALLER
 Casi nadie graba esto y es de lo más satisfactorio que hay.
 ```
 [ ] Las manos envolviendo en papel film (YA)
-[ ] Foley del papel
+[ ] Sonido: el papel de cerca gana mucho
 ```
 
 ---
 
 ## Lo que falta, en orden de importancia
 
-### 1. 🔊 El sonido — sin esto no hay ningún video
+### 1. 🔊 El sonido — antes de nada, escúchalo
 
-Es lo que más falta y lo más barato de resolver. **Ningún video de proceso
-funciona mudo**, y el audio de la cámara no sirve: tiene el ventilador, las
-luces y el ambiente encima.
+**Corrección a lo que decía antes:** el sonido no está en cero. Se grabó con
+los dos micrófonos inalámbricos puestos a los lados de la mesa y el receptor
+entrando por el auxiliar de la cámara. O sea que **hay audio y viene
+sincronizado con la imagen**, que es justo el trabajo pesado que ya no hay
+que hacer.
 
-Media hora en silencio, con las luces apagadas y el Maono a 10 cm, y queda
-resuelto para toda esta tanda:
+Eso se llama **sonido directo**, y es una cosa distinta del foley:
+
+| | Qué da | Para qué sirve |
+|---|---|---|
+| **Sonido directo** (lo que tienen) | El ambiente real, sincronizado, la sensación de que pasó | Los videos narrados: la voz manda y el proceso suena debajo |
+| **Foley** (grabado aparte, muy cerca) | Detalle exagerado y limpio | El ASMR puro, donde el sonido *es* el video |
+
+**Así que la pregunta no es «hay que grabar foley», es «alcanza con lo que
+hay».** Y eso solo se sabe escuchándolo.
+
+#### La prueba de diez minutos
+
+Mete el material en Resolve, ponte audífonos y escucha con el volumen que
+usarías normalmente:
 
 ```
-[ ] cuchara entrando en polvo      [ ] verter en el molde
-[ ] polvo cayendo                  [ ] remover la mezcla
-[ ] tamizar                        [ ] desmoldar (el pop)
-[ ] frasco abriendo y cerrando     [ ] envolver en papel film
-[ ] liquido vertiendose            [ ] la barra sobre la mesa
-[ ] balanza (el pitido, si tiene)  [ ] ambiente de cuarto, 30 s
+[ ] Se oyen los sonidos del trabajo (la cuchara, el chorro, el papel)
+    o solo se oye "cuarto"?
+[ ] Hay un siseo de fondo constante? (el previo de la camara es ruidoso)
+[ ] Se oye el ventilador de la camara o un zumbido de las luces?
+[ ] La onda esta MUY chiquita? (habra que subir mucho, y el siseo sube igual)
+[ ] La onda esta aplastada arriba? (eso es saturacion, y no se arregla)
 ```
 
-**Es lo primero que hay que hacer.** No hace falta montar nada.
+#### El dato que casi nadie mira: ¿son dos canales distintos?
+
+Con dos transmisores, el receptor pudo estar en **modo mono** (los dos
+micrófonos mezclados en un solo sonido) o en **modo dos canales** (uno a la
+izquierda y otro a la derecha).
+
+```
+[ ] En Resolve, separar los canales 1 y 2 y escucharlos por separado
+[ ] Suenan distinto?  -> hay DOS tomas de sonido de cada plano
+[ ] Suenan igual?     -> el receptor iba en mono
+```
+
+Si son distintos es una ventaja grande y gratis: para cada plano se elige el
+micrófono que quedó mejor, o se mezclan. Y si uno saturó, el otro
+probablemente se salvó.
+
+#### Qué hacer según lo que se oiga
+
+**Si se oye limpio y los sonidos del trabajo se distinguen** → úsalo tal
+cual. Es sincronizado y es real, y para los videos narrados eso vale más
+que un foley perfecto.
+
+**Si hay siseo o zumbido pero los sonidos están** → se limpia en Resolve y
+se usa por debajo de la voz. Para el carril de LA VOZ alcanza de sobra.
+
+**Si solo se oye "cuarto"** → los micrófonos estaban demasiado lejos. A 40 o
+50 cm de la acción se capta la sala, no el detalle; el ASMR pide 5 a 15 cm.
+Ahí sí toca foley, pero **solo de los sonidos protagonistas**, no de todo.
+
+#### Los sonidos que vale la pena volver a grabar de cerca
+
+Aunque el directo haya salido bien, estos ocho ganan muchísimo grabados a
+diez centímetros, en silencio y sin luces. Son quince minutos:
+
+```
+[ ] el chorro entrando al molde        [ ] el papel film envolviendo
+[ ] la cuchara entrando en el polvo    [ ] el desmolde (el "pop")
+[ ] el polvo cayendo                   [ ] la barra apoyandose en la mesa
+[ ] remover la mezcla                  [ ] ambiente de cuarto, 30 s
+```
+
+> **Ojo con una cosa del directo:** se grabó con las luces encendidas y la
+> cámara funcionando, así que si hay zumbido o ventilador, está metido en
+> todas las tomas. Por eso el foley se hace siempre con todo apagado.
 
 ### 2. 🎙️ La voz
 
@@ -196,7 +257,7 @@ casi todo:
 
 | | Qué | Cuánto |
 |---|---|---|
-| 1 | **Foley** de toda la tanda (luces apagadas) | 40 min |
+| 1 | **Escuchar** el directo y decidir. Foley solo de los 8 sonidos protagonistas | 25 min |
 | 2 | Montaje **joya** y los 4 jabones girando | 30 min |
 | 3 | Cortar una barra por la mitad, montaje **rayos** | 30 min |
 | 4 | Dejar una barra sudando para el día siguiente | 5 min |
