@@ -1,51 +1,47 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAgentsView } from "@/lib/print-queue";
 
 export const dynamic = "force-dynamic";
 
-// Threshold: si no hemos visto al agente en los últimos 10s,
-// lo consideramos desconectado (polling default es 2s).
-const STALE_THRESHOLD_MS = 10_000;
-
+/**
+ * Estado del sistema de impresión.
+ *
+ * Devuelve el detalle por PC y además un resumen. El resumen es lo que
+ * mira el chip de "impresora lista": con una sola impresora que se muda,
+ * lo que importa no es qué PC la tiene sino que **alguna** la tenga.
+ */
 export async function GET() {
-  const settings = await prisma.setting.findMany({
-    where: {
-      key: {
-        in: [
-          "agent_last_seen",
-          "print_agent_enabled",
-          "agent_printer_status",
-        ],
-      },
-    },
+  const enabledSetting = await prisma.setting.findUnique({
+    where: { key: "print_agent_enabled" },
   });
-  const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  const enabled = enabledSetting?.value === "true";
 
-  const enabled = map.print_agent_enabled === "true";
-  const lastSeenStr = map.agent_last_seen;
-  let agentOnline = false;
-  let lastSeenAgo: number | null = null;
+  const agents = await getAgentsView();
 
-  if (lastSeenStr) {
-    const lastSeen = new Date(lastSeenStr).getTime();
-    const now = Date.now();
-    lastSeenAgo = now - lastSeen;
-    agentOnline = lastSeenAgo < STALE_THRESHOLD_MS;
-  }
+  const online = agents.filter((a) => a.online);
+  const conImpresora = agents.find((a) => a.hasPrinter);
+  const agentOnline = online.length > 0;
 
-  // Si el agente está caído, no importa el status reportado de impresora
-  // (es viejo, no representa la realidad actual).
-  const rawPrinterStatus = agentOnline
-    ? (map.agent_printer_status ?? "unknown")
-    : "unknown";
+  // Si nadie tiene la impresora, se muestra el motivo del agente vivo que
+  // esté más cerca de tenerla, para no decir solo "desconocido".
+  const printerStatus = conImpresora
+    ? conImpresora.printerStatus
+    : (online.find((a) => a.printerStatus !== "unknown")?.printerStatus ??
+      "unknown");
+
+  const masReciente = agents[0] ?? null;
 
   return NextResponse.json({
     enabled,
     agentOnline,
-    // Compat: el frontend antiguo lee "online" como agente conectado
+    // Compat con el frontend que leía "online" como agente conectado
     online: agentOnline,
-    lastSeenAgo,
-    lastSeenAt: lastSeenStr ?? null,
-    printerStatus: rawPrinterStatus,
+    printerStatus,
+    printerReady: !!conImpresora,
+    printerOn: conImpresora?.name ?? null,
+    lastSeenAgo: masReciente?.lastSeenAgo ?? null,
+    lastSeenAt: masReciente?.lastSeenAt ?? null,
+    agents,
   });
 }

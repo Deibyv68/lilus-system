@@ -35,6 +35,11 @@ const SERVER_URL = (process.env.LILUS_SERVER_URL || "").replace(/\/$/, "");
 const TOKEN = process.env.LILUS_AGENT_TOKEN || "";
 const POLL_INTERVAL_MS = parseInt(process.env.LILUS_POLL_INTERVAL_MS || "2000", 10);
 
+// Con quién habla el servidor. Por defecto el nombre de la PC en Windows,
+// que ya es único y no obliga a inventar nada al instalar. Se puede pisar
+// con LILUS_AGENT_NAME si el hostname no dice nada útil.
+const AGENT_NAME = (process.env.LILUS_AGENT_NAME || os.hostname() || "pc").trim();
+
 if (!SERVER_URL || !TOKEN) {
   console.error("✗ Falta configuración. Crea .env con LILUS_SERVER_URL y LILUS_AGENT_TOKEN");
   process.exit(1);
@@ -223,19 +228,38 @@ async function maybeCheckPrinter() {
   if (now - lastPrinterCheck < PRINTER_CHECK_INTERVAL) return;
   lastPrinterCheck = now;
   if (!cachedPrinterName) return;
+  const antes = cachedPrinterStatus;
   try {
     cachedPrinterStatus = await getPrinterStatus(cachedPrinterName);
   } catch {
     cachedPrinterStatus = "error";
+  }
+  // Se avisa el cambio porque es justo lo que se mira al pasar el cable
+  // de una PC a la otra: acá se ve cuál de las dos quedó a cargo.
+  if (cachedPrinterStatus !== antes) {
+    const tomo = ["ok", "printing"].includes(cachedPrinterStatus);
+    const teniaAntes = ["ok", "printing"].includes(antes);
+    if (tomo && !teniaAntes) {
+      console.log(`🖨  Impresora conectada aquí — esta PC toma los trabajos.`);
+    } else if (!tomo && teniaAntes) {
+      console.log(
+        `○  Impresora desconectada (${cachedPrinterStatus}) — los trabajos van a otra PC.`
+      );
+    }
   }
 }
 
 async function pollNext() {
   await maybeRefreshConfig();
   await maybeCheckPrinter();
-  const url = `${SERVER_URL}/api/print-queue?token=${encodeURIComponent(
-    TOKEN
-  )}&printer=${encodeURIComponent(cachedPrinterStatus)}`;
+  // El estado de la impresora no es informativo: es lo que decide si el
+  // servidor nos entrega trabajo o no. La PC que no la tiene enchufada
+  // recibe 204 siempre, aunque la cola esté llena.
+  const url =
+    `${SERVER_URL}/api/print-queue?token=${encodeURIComponent(TOKEN)}` +
+    `&agent=${encodeURIComponent(AGENT_NAME)}` +
+    `&printer=${encodeURIComponent(cachedPrinterStatus)}` +
+    `&printerName=${encodeURIComponent(cachedPrinterName || "")}`;
   const res = await fetch(url);
   if (res.status === 204) return null;
   if (!res.ok) throw new Error(`Poll failed: HTTP ${res.status}`);
@@ -286,11 +310,13 @@ async function tick() {
 console.log("════════════════════════════════════════════");
 console.log(" LILUS Print Agent");
 console.log("════════════════════════════════════════════");
+console.log(` Esta PC:   ${AGENT_NAME}`);
 console.log(` Servidor:  ${SERVER_URL}`);
 console.log(` Token:     ${TOKEN.slice(0, 4)}…${TOKEN.slice(-4)}`);
 console.log(` Polling:   cada ${POLL_INTERVAL_MS}ms`);
 console.log(` Token ID:  ${crypto.createHash("sha256").update(TOKEN).digest("hex").slice(0, 8)}`);
 console.log("");
+console.log(" Solo se imprime en la PC que tenga la impresora enchufada.");
 console.log(" Esperando trabajos…");
 console.log("");
 

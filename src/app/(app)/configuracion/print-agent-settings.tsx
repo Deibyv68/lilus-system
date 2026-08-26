@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Eye, EyeOff, RefreshCw, Printer } from "lucide-react";
 import { savePrintAgentSettingsAction } from "./actions";
+import { AgentList } from "./agent-list";
 
 export function PrintAgentSettings({
   initial,
@@ -50,10 +51,16 @@ export function PrintAgentSettings({
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
         Activa el agente para que los botones de impresión envíen directo a la
-        impresora conectada por USB en la PC del 1er piso (en lugar de
-        abrir el PDF en una pestaña). El agente debe estar instalado y corriendo
-        en esa PC.
+        impresora conectada por USB (en lugar de abrir el PDF en una pestaña).
+        Puede estar instalado en varias computadoras: la etiqueta sale
+        <strong className="text-foreground"> en la que tenga la impresora
+        enchufada en ese momento</strong>, sin que haya que elegir nada.
       </p>
+
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Computadoras conectadas</Label>
+        <AgentList />
+      </div>
 
       <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
         <div className="flex items-center gap-2">

@@ -32,13 +32,16 @@ export function PrinterDot() {
         const data = (await res.json()) as {
           enabled: boolean;
           agentOnline: boolean;
+          printerReady: boolean;
           printerStatus: PrinterStatus;
         };
         if (cancelled) return;
+        // Con la impresora mudándose de PC, lo que importa no es qué
+        // computadora la tiene sino que alguna la tenga: printerReady ya
+        // resuelve eso mirando a todos los agentes vivos.
         if (!data.enabled) setState("off");
+        else if (data.printerReady) setState("ok");
         else if (!data.agentOnline) setState("down");
-        else if (data.printerStatus === "ok" || data.printerStatus === "printing")
-          setState("ok");
         else if (data.printerStatus === "offline") setState("down");
         else setState("warning");
       } catch {}

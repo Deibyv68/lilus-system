@@ -260,3 +260,61 @@ export async function validateAgentToken(token: string | null): Promise<boolean>
   }))?.value;
   return !!expected && expected === token;
 }
+
+// ──────────────────────────────────────────────────────────
+// Agentes
+//
+// La impresora es una sola y va cambiando de PC. Cada agente reporta si
+// la ve enchufada, y de ahí sale a quién se le entregan los trabajos.
+// ──────────────────────────────────────────────────────────
+
+/** Sin noticias en este lapso, damos al agente por caído (hace poll cada 2 s). */
+export const AGENT_STALE_MS = 10_000;
+
+/**
+ * Cuánto espera un trabajo antes de darse por vencido.
+ *
+ * Con una sola impresora que se muda, es normal que pase un rato sin
+ * estar enchufada en ningún lado. Se aguanta ese rato, pero no un día:
+ * si no, al conectarla saldrían de golpe todas las etiquetas viejas.
+ */
+export const STALE_JOB_MS = 15 * 60_000;
+
+/** Estados en los que la impresora sirve para recibir trabajo. */
+export function agentHasPrinter(status: string | null | undefined): boolean {
+  return status === "ok" || status === "printing";
+}
+
+export type AgentView = {
+  name: string;
+  online: boolean;
+  printerStatus: string;
+  hasPrinter: boolean;
+  lastSeenAt: string;
+  lastSeenAgo: number;
+};
+
+/**
+ * Foto del estado de todos los agentes, ya resuelto contra el reloj: un
+ * agente apagado sigue teniendo guardado su último "impresora ok", y sin
+ * este filtro parecería que la impresora está lista en una PC que ni
+ * siquiera está encendida.
+ */
+export async function getAgentsView(): Promise<AgentView[]> {
+  const now = Date.now();
+  const agents = await prisma.printAgent.findMany({
+    orderBy: { lastSeenAt: "desc" },
+  });
+  return agents.map((a) => {
+    const lastSeenAgo = now - a.lastSeenAt.getTime();
+    const online = lastSeenAgo < AGENT_STALE_MS;
+    return {
+      name: a.name,
+      online,
+      printerStatus: online ? a.printerStatus : "unknown",
+      hasPrinter: online && agentHasPrinter(a.printerStatus),
+      lastSeenAt: a.lastSeenAt.toISOString(),
+      lastSeenAgo,
+    };
+  });
+}

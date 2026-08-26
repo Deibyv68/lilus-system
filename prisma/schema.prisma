@@ -544,9 +544,25 @@ model PrintJob {
   pdfBase64   String         // PDF a imprimir, encodeado
   status      PrintJobStatus @default(PENDING)
   error       String?
+  agentName   String?        // qué PC lo agarró, para poder rastrearlo después
   createdAt   DateTime       @default(now())
   pickedAt    DateTime?      // cuando el agente lo agarró
   finishedAt  DateTime?      // cuando reportó done/failed
+}
+
+/// Cada PC que tiene el agente instalado.
+///
+/// Existe porque la impresora es una sola y va cambiando de computadora.
+/// Cada agente reporta si la ve enchufada o no, y la cola solo le entrega
+/// trabajos al que en ese momento la tiene: así el sistema manda la
+/// etiqueta a donde está el papel sin que nadie tenga que elegir.
+model PrintAgent {
+  id            String   @id @default(cuid())
+  name          String   @unique // hostname de la PC, o LILUS_AGENT_NAME
+  printerStatus String   @default("unknown") // ok | printing | offline | error | stopped
+  printerName   String? // la impresora que el agente encontró
+  lastSeenAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
 }
 
 enum PrintJobStatus {
