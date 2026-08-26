@@ -21,12 +21,15 @@ export function BotonCarrito() {
   return (
     <Link
       href="/carrito"
-      className="relative flex items-center gap-2 rounded-full border border-stone-300 px-4 py-2 text-sm transition-colors hover:bg-stone-100"
+      className="relative flex items-center gap-2 rounded-full border border-tienda-linea px-5 py-2.5 text-sm
+        transition-[color,border-color,transform] duration-[400ms] ease-tienda
+        hover:border-tienda-texto hover:text-white
+        active:scale-[0.97] active:duration-100 active:ease-tienda-tap"
     >
       <ShoppingBag className="size-4" />
       <span className="hidden sm:inline">Carrito</span>
       {listo && unidades > 0 && (
-        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-stone-900 text-stone-50 text-xs tabular-nums">
+        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-tienda-acento text-tienda-fondo text-xs tabular-nums">
           {unidades}
         </span>
       )}

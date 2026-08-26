@@ -39,7 +39,7 @@ export function ImagenArticulo({
 
   return (
     <div
-      className="absolute inset-0 flex items-center justify-center bg-stone-100"
+      className="absolute inset-0 flex items-center justify-center bg-tienda-velo"
       // Decorativo: el nombre del producto ya está escrito al lado.
       aria-hidden="true"
     >
@@ -48,7 +48,7 @@ export function ImagenArticulo({
         alt=""
         width={72}
         height={72}
-        className="rounded-full opacity-15 grayscale"
+        className="rounded-full opacity-10 grayscale"
       />
     </div>
   );

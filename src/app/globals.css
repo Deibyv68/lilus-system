@@ -72,6 +72,47 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ──────────────────────────────────────────────────────────────
+   La tienda
+   ──────────────────────────────────────────────────────────────
+
+   Tokens propios, con prefijo `tienda-`, separados de los del panel.
+   Los de arriba los comparte todo el sistema y un ajuste allá para que
+   una tabla se lea mejor no tiene por qué cambiarle el fondo a la web
+   de cara al público.
+
+   Los valores salen de medir la plantilla de referencia, no de
+   aproximarlos a ojo: son los estilos computados del sitio original.
+
+   El texto es verde salvia pálido y no blanco puro. Es el detalle que
+   más hace por el conjunto: el blanco puro sobre casi negro vibra y se
+   lee barato.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  --color-tienda-fondo: #131415;
+  --color-tienda-fondo-alt: #0e0f0f;
+  --color-tienda-texto: #cdd1c2;
+  --color-tienda-tenue: #898a87;
+  --color-tienda-acento: #758251;
+  --color-tienda-linea: rgba(205, 209, 194, 0.12);
+  --color-tienda-velo: rgba(205, 209, 194, 0.03);
+
+  /* Esquinas muy redondeadas: es lo más reconocible de la plantilla. */
+  --radius-tienda: 60px;
+  --radius-tienda-sm: 24px;
+
+  /* La curva firma. Simétrica y sin rebote: insinúa, no salta. */
+  --ease-tienda: cubic-bezier(0.44, 0, 0.56, 1);
+  /* La seca, para lo que responde al dedo. */
+  --ease-tienda-tap: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Las fuentes NO van aqui: viven en el bloque `@theme inline` de abajo.
+     En un `@theme` normal el valor se resuelve en la raiz, y ahi
+     `--fuente-display` todavia no existe — la define next/font sobre el
+     contenedor de la tienda. `inline` deja la var sin resolver para que
+     se lea donde toca. */
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -105,6 +146,9 @@
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Las de la tienda. Las define next/font sobre su propio contenedor. */
+  --font-display: var(--fuente-display);
+  --font-cuerpo: var(--fuente-cuerpo);
   /* Los dos tamaños de letra chica que usa la app. Estaban escritos como
      text-[11px] y text-[10px], y en px no crecen cuando se agranda la
      raíz en la tablet: la letra grande subía y la chica se quedaba. En
@@ -144,5 +188,33 @@
 @media (width >= 48rem) and (height >= 37.5rem) {
   html:has(.modo-lectura) {
     font-size: 20px;
+  }
+}
+
+/* ── La aparición al entrar en pantalla ──
+   Ver src/components/tienda/revelar.tsx para el porqué de los valores. */
+.revelar {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 400ms var(--ease-tienda),
+    transform 400ms var(--ease-tienda);
+}
+
+.revelar[data-revelar="si"] {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+  Quien pidió menos movimiento no ve ninguno: aparece y ya. Sin esto, un
+  sitio lleno de cosas que suben puede provocar mareo de verdad — no es
+  una preferencia estética.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .revelar {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

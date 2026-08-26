@@ -44,10 +44,18 @@ export function BotonAgregar({
       type="button"
       onClick={onClick}
       aria-label={`Agregar ${articulo.nombre} al carrito`}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+      /*
+        `active:scale-[0.97]` con 100 ms y la curva seca es la
+        microinteraccion de la referencia: el boton cede bajo el dedo y
+        vuelve. Es lo unico de toda la tienda que se mueve rapido — el
+        resto respira a 400 ms.
+      */
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium
+        transition-[background-color,color,transform] duration-[400ms] ease-tienda
+        active:scale-[0.97] active:duration-100 active:ease-tienda-tap ${
         agregado
-          ? "bg-emerald-700 text-white"
-          : "bg-stone-900 text-stone-50 hover:bg-stone-700"
+          ? "bg-tienda-acento text-tienda-fondo"
+          : "bg-tienda-texto text-tienda-fondo hover:bg-tienda-acento"
       } ${className}`}
     >
       {agregado ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { Bebas_Neue, Inter } from "next/font/google";
 import { BotonCarrito } from "@/components/tienda/boton-carrito";
 import { datosDeContacto } from "@/lib/tienda";
 
@@ -11,12 +12,29 @@ import { datosDeContacto } from "@/lib/tienda";
  * herramienta de trabajo: denso, gris, hecho para hacer veinte cosas
  * rápido. Esto es un escaparate, y tiene que respirar.
  *
- * Va con colores fijos en vez de los tokens de shadcn. Esos los comparte
- * con el panel, y un ajuste allá para que una tabla se lea mejor no tiene
- * por qué cambiarle el fondo a la tienda. Tampoco sigue el modo oscuro:
- * una marca de cosmética artesanal se ve como se ve, y no según lo que
- * tenga configurado el teléfono de quien entra.
+ * Los colores, los radios y las curvas viven en `globals.css` bajo el
+ * prefijo `tienda-`, separados de los del panel: un ajuste allá para que
+ * una tabla se lea mejor no tiene por qué cambiarle el fondo a la tienda.
+ *
+ * Tampoco sigue el modo oscuro del sistema: es oscura siempre. Una marca
+ * de cosmética artesanal se ve como se ve, no según lo que tenga
+ * configurado el teléfono de quien entra.
  */
+
+/** Los títulos. Condensada, con el interletrado apretado de la referencia. */
+const display = Bebas_Neue({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--fuente-display",
+  display: "swap",
+});
+
+/** Todo lo demás. */
+const cuerpo = Inter({
+  subsets: ["latin"],
+  variable: "--fuente-cuerpo",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -35,18 +53,31 @@ export default async function TiendaLayout({
   const contacto = await datosDeContacto();
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-stone-200 bg-stone-50/85 backdrop-blur">
-        <div className="mx-auto max-w-5xl px-5 h-16 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2.5 min-w-0">
+    <div
+      className={`${display.variable} ${cuerpo.variable} font-cuerpo min-h-screen bg-tienda-fondo text-tienda-texto flex flex-col antialiased`}
+    >
+      {/*
+        Sin JavaScript, todo lo que espera para aparecer se quedaría
+        invisible y la tienda saldría en negro. Esto la devuelve entera:
+        sin animación, pero completa.
+      */}
+      <noscript>
+        <style>{`.revelar { opacity: 1 !important; transform: none !important; }`}</style>
+      </noscript>
+
+      <header className="sticky top-0 z-40 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-10 h-20 flex items-center justify-between gap-4">
+          <Link href="/" className="group flex items-center gap-3 min-w-0">
             <Image
               src="/brand/lilus-logo.png"
               alt=""
-              width={32}
-              height={32}
+              width={36}
+              height={36}
               className="rounded-full shrink-0"
             />
-            <span className="font-medium tracking-wide">LILUS</span>
+            <span className="font-display text-2xl leading-none pt-1 tracking-[-0.02em] transition-colors duration-[400ms] ease-tienda group-hover:text-tienda-acento">
+              LILUS
+            </span>
           </Link>
 
           <BotonCarrito />
@@ -55,53 +86,35 @@ export default async function TiendaLayout({
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-stone-200 mt-20">
-        <div className="mx-auto max-w-5xl px-5 py-10 text-sm text-stone-500 space-y-3">
-          <p className="text-stone-700">LILUS · Jabones artesanales</p>
+      <footer className="mt-32 border-t border-tienda-linea">
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-10 py-16 space-y-4 text-sm text-tienda-tenue">
+          <p className="font-display text-3xl tracking-[-0.02em] text-tienda-texto">
+            LILUS
+          </p>
           <p>Hechos en Ecuador. Enviamos a todo el país por Servientrega.</p>
 
-          {/*
-            Los enlaces salen de Configuración. Si no están cargados no se
-            pinta nada: un enlace de contacto que no lleva a ningún lado es
-            peor que no ofrecerlo.
-          */}
           {(contacto.whatsapp || contacto.instagram) && (
-            <p className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+            <p className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
               {contacto.whatsapp && (
-                <a
-                  href={contacto.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-stone-900 transition-colors"
-                >
+                <Externo href={contacto.whatsapp}>
                   Escríbenos por WhatsApp
-                </a>
+                </Externo>
               )}
               {contacto.instagram && (
-                <a
-                  href={contacto.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-stone-900 transition-colors"
-                >
+                <Externo href={contacto.instagram}>
                   @{contacto.instagramUsuario}
-                </a>
+                </Externo>
               )}
             </p>
           )}
-          <p className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
-            <Link href="/legal/terminos" className="underline underline-offset-4 hover:text-stone-900 transition-colors">
-              Condiciones de compra
-            </Link>
-            <Link href="/legal/devoluciones" className="underline underline-offset-4 hover:text-stone-900 transition-colors">
-              Cambios y devoluciones
-            </Link>
-            <Link href="/legal/privacidad" className="underline underline-offset-4 hover:text-stone-900 transition-colors">
-              Tus datos
-            </Link>
+
+          <p className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
+            <Interno href="/legal/terminos">Condiciones de compra</Interno>
+            <Interno href="/legal/devoluciones">Cambios y devoluciones</Interno>
+            <Interno href="/legal/privacidad">Tus datos</Interno>
           </p>
 
-          <p className="text-xs leading-relaxed max-w-lg">
+          <p className="max-w-lg pt-4 text-xs leading-relaxed text-tienda-tenue/70">
             Nuestros productos son cosméticos de higiene y cuidado personal. No
             son medicamentos y no tratan ni curan ninguna enfermedad. Si tienes
             una condición en la piel, consulta a un profesional de la salud.
@@ -109,5 +122,25 @@ export default async function TiendaLayout({
         </div>
       </footer>
     </div>
+  );
+}
+
+/** Los enlaces usan la transición de color de 400 ms de la referencia. */
+const claseEnlace =
+  "transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto";
+
+function Interno({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className={claseEnlace}>
+      {children}
+    </Link>
+  );
+}
+
+function Externo({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={claseEnlace}>
+      {children}
+    </a>
   );
 }
