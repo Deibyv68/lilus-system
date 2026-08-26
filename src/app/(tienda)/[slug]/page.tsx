@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
-import { buscarPorSlug } from "@/lib/tienda";
+import { buscarPorSlug, opcionesDeEnvio } from "@/lib/tienda";
 import { formatCurrency } from "@/lib/format";
 import { ImagenArticulo } from "@/components/tienda/imagen-articulo";
 import { BotonAgregar } from "@/components/tienda/boton-agregar";
@@ -38,7 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function FichaArticulo({ params }: Props) {
   const { slug } = await params;
-  const articulo = await buscarPorSlug(slug);
+  const [articulo, zonas] = await Promise.all([
+    buscarPorSlug(slug),
+    opcionesDeEnvio(),
+  ]);
   if (!articulo) notFound();
 
   const portada = articulo.imagenes[0] ?? null;
@@ -147,12 +150,30 @@ export default async function FichaArticulo({ params }: Props) {
             </Bloque>
           )}
 
-          <Bloque titulo="Envío">
-            <p className="leading-relaxed">
-              Enviamos por Servientrega a todo el Ecuador. Quito $3.50, resto
-              del país $5.50.
-            </p>
-          </Bloque>
+          {/*
+            Las tarifas salen de la tabla de Envíos, no escritas acá. Estaban
+            a mano y eso significaba que el día que la dueña subiera el precio
+            del envío, esta página seguiría prometiendo el viejo — que es
+            justo la clase de error que nadie nota hasta que un cliente
+            reclama.
+          */}
+          {zonas.length > 0 && (
+            <Bloque titulo="Envío">
+              <p className="leading-relaxed">
+                Enviamos por {zonas[0].transportadora} a todo el Ecuador.
+              </p>
+              <ul className="mt-2 space-y-1">
+                {zonas.map((z) => (
+                  <li key={z.id} className="flex justify-between gap-4">
+                    <span>{z.nombre}</span>
+                    <span className="tabular-nums">
+                      {formatCurrency(z.precio)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Bloque>
+          )}
         </div>
       </div>
     </div>

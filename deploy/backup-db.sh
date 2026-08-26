@@ -88,3 +88,30 @@ for f in "${OLD[@]:-}"; do
 done
 
 echo "✓ $KIND: $(basename "$OUT") ($((SIZE / 1024)) KB) · origen: $DB_PATH"
+
+# ─────────────────────────────────────────────────────────────
+# Las fotos y los PDF de etiqueta.
+#
+# La base se puede volver a sembrar; una foto de producto que se borró no
+# vuelve. Son lo único verdaderamente irreemplazable de la instalación, y
+# hasta ahora no se respaldaban.
+#
+# Va con rsync y SIN --delete a propósito: esto no es un espejo, es un
+# baúl. Si alguien borra una foto por error, tiene que seguir estando
+# acá — que es justo el caso para el que existe un respaldo. El costo es
+# que el baúl solo crece, y crece con fotos de jabones: son megabytes.
+# ─────────────────────────────────────────────────────────────
+UPLOADS="$APP_DIR/public/uploads"
+VAULT="$BACKUP_ROOT/uploads"
+
+if [[ -d "$UPLOADS" ]]; then
+  mkdir -p "$VAULT"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a "$UPLOADS/" "$VAULT/"
+  else
+    cp -rn "$UPLOADS/." "$VAULT/" 2>/dev/null || true
+  fi
+  echo "✓ archivos subidos: $(find "$VAULT" -type f | wc -l) en $VAULT"
+else
+  echo "  (todavía no hay archivos subidos que respaldar)"
+fi

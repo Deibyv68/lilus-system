@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarTienda } from "@/lib/revalidar-tienda";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { productSchema } from "@/lib/schemas";
@@ -81,6 +82,7 @@ export async function createProductAction(formData: FormData) {
       },
     });
     revalidatePath("/sistema/productos");
+    revalidarTienda();
     redirect(`/sistema/productos/${product.id}`);
   } catch (e: unknown) {
     const err = e as { code?: string };
@@ -159,6 +161,7 @@ export async function updateProductAction(id: string, formData: FormData) {
       },
     });
     revalidatePath("/sistema/productos");
+    revalidarTienda();
     revalidatePath(`/sistema/productos/${id}`);
     return { ok: true };
   } catch (e: unknown) {
@@ -175,5 +178,6 @@ export async function deleteProductAction(id: string) {
 
   await prisma.product.delete({ where: { id } });
   revalidatePath("/sistema/productos");
+  revalidarTienda();
   redirect("/sistema/productos");
 }

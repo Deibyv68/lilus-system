@@ -78,6 +78,28 @@ else
 fi
 
 echo ""
+echo "─── 3.5) Revisar la configuración de la tienda ───"
+# Avisa, no aborta. Que falte el correo no es motivo para dejar el sistema
+# sin actualizar: la tienda sigue tomando pedidos igual. Pero tiene que
+# decirse en voz alta, porque el sintoma —"no me llegan los avisos"— no
+# apunta solo a su causa.
+faltan=()
+grep -qE '^APP_URL=.+' "$APP_DIR/.env" || faltan+=("APP_URL (los enlaces de los correos salen rotos sin esto)")
+grep -qE '^SMTP_HOST=.+' "$APP_DIR/.env" || faltan+=("SMTP_HOST")
+grep -qE '^SMTP_USER=.+' "$APP_DIR/.env" || faltan+=("SMTP_USER")
+grep -qE '^SMTP_PASS=.+' "$APP_DIR/.env" || faltan+=("SMTP_PASS")
+
+if [[ ${#faltan[@]} -gt 0 ]]; then
+  echo "  ⚠ Falta configurar en .env:"
+  for f in "${faltan[@]}"; do echo "      - $f"; done
+  echo "    Sin esto NO salen los avisos de pedido nuevo, ni al cliente ni a"
+  echo "    la dueña. Los pedidos se siguen guardando: hay que mirar el panel."
+  echo "    Ver .env.example para el detalle."
+else
+  echo "  ✓ Correo y APP_URL configurados"
+fi
+
+echo ""
 echo "─── 4) Rebuild ───"
 sudo -u "$APP_USER" npm run build
 

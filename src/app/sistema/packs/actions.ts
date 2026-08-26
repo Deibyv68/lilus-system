@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidarTienda } from "@/lib/revalidar-tienda";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { packSchema } from "@/lib/schemas";
@@ -67,6 +68,7 @@ export async function createPackAction(formData: FormData) {
       },
     });
     revalidatePath("/sistema/packs");
+    revalidarTienda();
     redirect(`/sistema/packs/${pack.id}`);
   } catch (e: unknown) {
     const err = e as { code?: string };
@@ -130,6 +132,7 @@ export async function updatePackAction(id: string, formData: FormData) {
       }),
     ]);
     revalidatePath("/sistema/packs");
+    revalidarTienda();
     revalidatePath(`/sistema/packs/${id}`);
     return { ok: true };
   } catch (e: unknown) {
@@ -146,5 +149,6 @@ export async function deletePackAction(id: string) {
 
   await prisma.pack.delete({ where: { id } });
   revalidatePath("/sistema/packs");
+  revalidarTienda();
   redirect("/sistema/packs");
 }
