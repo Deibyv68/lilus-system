@@ -30,11 +30,22 @@ model Product {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // ── Tienda pública ──
+  // `isActive` decide si el producto se puede vender desde el sistema.
+  // `isPublic` decide si además se muestra en la web. Son cosas distintas:
+  // algo se sigue vendiendo por WhatsApp mientras todavía no tiene fotos
+  // buenas para publicarlo. Nace en false — a la tienda se sale a propósito,
+  // no por olvido.
+  slug            String?  @unique // dirección pública: /jabon-de-carbon-activado
+  tagline         String?  // una línea, se lee debajo del nombre en el catálogo
+  isPublic        Boolean  @default(false)
+
   variants        ProductVariant[]
   packItems       PackItem[]
   orderItems      OrderItem[]
   productionUnits ProductionUnit[]
   recipes         Recipe[]
+  storeImages     StoreImage[]
 }
 
 model ProductVariant {
@@ -64,8 +75,42 @@ model Pack {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  items      PackItem[]
-  orderItems OrderItem[]
+  // ── Tienda pública ── (ver la nota en Product)
+  slug     String?  @unique
+  tagline  String?
+  isPublic Boolean  @default(false)
+
+  items       PackItem[]
+  orderItems  OrderItem[]
+  storeImages StoreImage[]
+}
+
+/// Las fotos que ve el cliente en la tienda.
+///
+/// Van aparte de `imageUrl` a propósito. Esa es la miniatura con la que se
+/// trabaja adentro del sistema: sirve para reconocer el producto en una
+/// lista y da igual si está mal iluminada. Estas son las de vender, no
+/// tienen por qué ser las mismas, y no tienen por qué ser una sola.
+///
+/// Cuelga de un producto O de un pack — el mismo patrón que ya usa
+/// OrderItem para apuntar a uno u otro.
+model StoreImage {
+  id        String  @id @default(cuid())
+  productId String?
+  packId    String?
+
+  url String  // /uploads/store/xxx.webp
+  /// Qué se ve en la foto. Lo lee quien navega sin ver, y también Google.
+  alt String?
+
+  sortOrder Int      @default(0) // la primera es la portada
+  createdAt DateTime @default(now())
+
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pack    Pack?    @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([packId])
 }
 
 model PackItem {
