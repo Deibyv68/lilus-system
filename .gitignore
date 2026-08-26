@@ -60,6 +60,9 @@ next-env.d.ts
 /print-agent/agent.log
 /print-agent/node_modules
 /print-agent/nssm.exe
+# La plantilla SÍ va al repo: sin ella el primer paso del README
+# ("copy .env.example .env") no se puede hacer en una PC nueva.
+!/print-agent/.env.example
 
 # Python (los generadores de PDF)
 __pycache__/
