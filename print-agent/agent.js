@@ -106,7 +106,18 @@ function getPrinterStatus(printerName) {
     `.trim();
     execFile(
       "powershell.exe",
-      ["-NoProfile", "-NonInteractive", "-Command", psScript],
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        // La consulta va como texto, no como archivo, así que la política
+        // de ejecución no debería tocarla. Se pide igual el permiso porque
+        // en una PC restringida el costo de equivocarse es que el agente
+        // reporte "error" para siempre y no imprima nunca.
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        psScript,
+      ],
       { timeout: 8000 },
       (err, stdout) => {
         if (err) {

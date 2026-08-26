@@ -267,9 +267,26 @@ function Invoke-Instalacion {
     # ── 6. El servicio ──
     Titulo "6/6  Instalar el servicio"
     Write-Host "  Instalando dependencias..."
+
+    # Se llama a npm.cmd y no a npm a propósito.
+    #
+    # Node instala tres lanzadores: npm.ps1, npm.cmd y npm. Escribir "npm"
+    # a secas hace que PowerShell elija el .ps1, y en una PC con la
+    # ejecución de scripts restringida —que es lo que Windows trae de
+    # fábrica en muchas máquinas— eso falla antes de empezar. El .cmd hace
+    # exactamente lo mismo sin pasar por PowerShell.
+    #
+    # La alternativa sería bajarle la política de seguridad a la PC, y no
+    # hace falta tocar eso para instalar una impresora.
+    $npmCmd = (Get-Command npm.cmd -ErrorAction SilentlyContinue).Source
+    if (-not $npmCmd) {
+        $npmCmd = Join-Path (Split-Path (Get-Command node).Source) "npm.cmd"
+    }
+    if (-not (Test-Path $npmCmd)) { Detener "No se encuentra npm.cmd junto a Node." }
+
     # La salida se guarda en vez de tirarse: si npm falla, el motivo está
     # ahí y sin eso solo quedaría un "no dejó las dependencias" sin pistas.
-    $salidaNpm = (npm install --omit=dev --no-audit --no-fund 2>&1 | Out-String)
+    $salidaNpm = (& $npmCmd install --omit=dev --no-audit --no-fund 2>&1 | Out-String)
     if (-not (Test-Path (Join-Path $AgentDir "node_modules\pdf-to-printer"))) {
         Write-Host ""
         Write-Host "  Lo que dijo npm:" -ForegroundColor Yellow
