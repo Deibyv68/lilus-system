@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage() {
   // Si ya hay sesión, ir directo al dashboard
   const user = await getCurrentUser();
-  if (user) redirect("/");
+  if (user) redirect("/sistema");
 
   // Si el dispositivo es de confianza y tiene PIN, ofrecer login por PIN
   const device = await getTrustedDevice();

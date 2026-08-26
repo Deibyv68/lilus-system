@@ -58,7 +58,7 @@ export async function loginWithPassword(formData: FormData) {
     await setDeviceCookie(deviceToken);
   }
 
-  redirect("/");
+  redirect("/sistema");
 }
 
 export async function loginWithPin(formData: FormData) {
@@ -106,7 +106,7 @@ export async function loginWithPin(formData: FormData) {
   await resetFailedTries(device.id);
   const sessionToken = await createSession(device.userId);
   await setSessionCookie(sessionToken);
-  redirect("/");
+  redirect("/sistema");
 }
 
 export async function logoutAction() {

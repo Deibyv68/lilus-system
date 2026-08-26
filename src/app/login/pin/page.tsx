@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPinPage() {
   const user = await getCurrentUser();
-  if (user) redirect("/");
+  if (user) redirect("/sistema");
 
   const device = await getTrustedDevice();
   if (!device) {

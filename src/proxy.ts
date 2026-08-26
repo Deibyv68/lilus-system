@@ -6,11 +6,14 @@
  *
  * ── La regla ──
  *
- * Cerrado por defecto. Lo que puede ver un desconocido está en
- * `ABIERTO_AL_PUBLICO` y en ningún otro lado. Se hace al revés — abrir
- * todo y cerrar lo delicado — y algún día se agrega una ruta nueva, nadie
- * se acuerda de cerrarla, y queda abierta sin que nadie lo note. Así no:
- * una ruta nueva nace cerrada, y si tiene que ser pública hay que decirlo.
+ * La raíz es la tienda y la ve cualquiera. El panel vive bajo `/sistema`
+ * y pide sesión. Son dos sitios distintos servidos por la misma app.
+ *
+ * Todo lo administrativo cuelga de UN prefijo a propósito: así la frontera
+ * es una sola línea que se puede leer de un vistazo, en vez de una lista
+ * de secciones que hay que acordarse de mantener. Una pantalla nueva del
+ * panel nace protegida por estar donde está, no porque alguien se acordó
+ * de agregarla a una lista.
  *
  * ── Lo que este archivo NO es ──
  *
@@ -28,30 +31,35 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, DEVICE_COOKIE } from "@/lib/constants";
 
 /**
- * Lo único que puede ver alguien sin sesión.
+ * Lo que se revisa. Todo lo demás es tienda y se sirve a cualquiera.
  *
- * `/api/agent` y `/api/print-queue` están abiertas a propósito: el agente
- * de impresión es un proceso en otra computadora, no un navegador. No
- * tiene cookies ni puede tenerlas — se identifica con `?token=`, que cada
- * una de esas rutas valida por su cuenta con `validateAgentToken`. Si se
- * las cierra aquí, la impresora deja de recibir trabajos.
+ * La regla se invirtió cuando el panel se mudó a `/sistema`: antes había
+ * que enumerar lo poco que era público, ahora se enumera lo poco que es
+ * privado. Es una lista mucho más corta y mucho más fácil de mirar y
+ * decir «sí, eso es todo lo que hay que proteger».
  */
-const ABIERTO_AL_PUBLICO = [
-  "/login",
-  "/api/agent",
-  "/api/print-queue",
-];
+const REQUIERE_SESION = ["/sistema", "/api"];
 
-function esPublico(pathname: string): boolean {
-  return ABIERTO_AL_PUBLICO.some(
-    (ruta) => pathname === ruta || pathname.startsWith(`${ruta}/`)
-  );
+/**
+ * Excepciones dentro de `/api`.
+ *
+ * El agente de impresión es un proceso en otra computadora, no un
+ * navegador. No tiene cookies ni puede tenerlas — se identifica con
+ * `?token=`, que cada una de esas rutas valida por su cuenta con
+ * `validateAgentToken`. Si se las cierra aquí, la impresora deja de
+ * recibir trabajos.
+ */
+const CON_TOKEN_PROPIO = ["/api/agent", "/api/print-queue"];
+
+function empiezaPor(pathname: string, rutas: string[]): boolean {
+  return rutas.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 }
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (esPublico(pathname)) return NextResponse.next();
+  if (empiezaPor(pathname, CON_TOKEN_PROPIO)) return NextResponse.next();
+  if (!empiezaPor(pathname, REQUIERE_SESION)) return NextResponse.next();
 
   // Chequeo optimista: ¿trae cookie de sesión? Si sí, que siga — quien
   // decide de verdad es `guard.ts`, ya con la base delante.
@@ -75,9 +83,10 @@ export function proxy(req: NextRequest) {
 /**
  * El sistema no se indexa. Nunca.
  *
- * Hoy no hace falta porque nadie conoce la URL, pero el día que la tienda
- * viva en el mismo dominio, Google va a entrar a mirar. Que no encuentre
- * el panel es gratis y se agradece.
+ * La tienda vive en el mismo dominio y se quiere que Google la recorra
+ * entera. Al hacerlo va a tropezar con /sistema. Que ahí encuentre un
+ * cartel de «no me indexes» es gratis y evita que el panel termine
+ * saliendo en una búsqueda.
  */
 function sinIndexar(res: NextResponse) {
   res.headers.set("X-Robots-Tag", "noindex, nofollow");
@@ -91,9 +100,8 @@ export const config = {
    * worker y los PDFs de etiqueta de `/uploads` (que son material de
    * producto, no datos de nadie).
    *
-   * Cuando la tienda exista, sus rutas se agregan a ABIERTO_AL_PUBLICO
-   * — no aquí. El matcher decide qué se revisa; la lista de arriba decide
-   * qué se deja pasar. Mezclarlos es como se cuelan los agujeros.
+   * Las páginas de la tienda no hace falta excluirlas: entran, se ve que
+   * no empiezan por /sistema ni por /api, y pasan de largo.
    */
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|sw.js|manifest.webmanifest|brand/|uploads/).*)",

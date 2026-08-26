@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "LILUS",
     description:
       "Sistema de gestión de ventas de jabones artesanales LILUS. Crea pedidos, imprime etiquetas y administra el catálogo.",
-    start_url: "/",
+    start_url: "/sistema", // la PWA instalada es el panel, no la tienda
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",
@@ -33,13 +33,13 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Nuevo pedido",
         short_name: "Nuevo",
-        url: "/pedidos/nuevo",
+        url: "/sistema/pedidos/nuevo",
         description: "Crear un nuevo pedido rápido",
       },
       {
         name: "Pedidos",
         short_name: "Pedidos",
-        url: "/pedidos",
+        url: "/sistema/pedidos",
       },
     ],
   };

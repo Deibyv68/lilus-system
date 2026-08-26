@@ -5,7 +5,7 @@ export function MobileHeader() {
   return (
     <header className="lg:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
       <div className="px-4 py-2.5 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 min-w-0">
+        <Link href="/sistema" className="flex items-center gap-2 min-w-0">
           <Image
             src="/brand/lilus-logo.png"
             alt="LILUS"

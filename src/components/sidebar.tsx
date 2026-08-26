@@ -25,28 +25,28 @@ import {
 import { logoutAction } from "@/app/login/actions";
 
 const nav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/sistema", label: "Dashboard", icon: LayoutDashboard },
   {
-    href: "/pedidos/nuevo",
+    href: "/sistema/pedidos/nuevo",
     label: "Nuevo pedido",
     icon: PlusCircle,
     accent: true,
   },
-  { href: "/pedidos", label: "Pedidos", icon: ShoppingCart },
-  { href: "/productos", label: "Productos", icon: Package },
-  { href: "/packs", label: "Packs", icon: Boxes },
-  { href: "/recetario", label: "Recetario", icon: BookOpen },
-  { href: "/inventario", label: "Inventario", icon: FlaskConical },
-  { href: "/diccionario", label: "Diccionario", icon: BookMarked },
-  { href: "/audiovisual", label: "Audiovisual", icon: Clapperboard },
-  { href: "/etiquetas", label: "Imprimir etiquetas", icon: Printer },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/envios", label: "Envíos", icon: Truck },
-  { href: "/configuracion", label: "Configuración", icon: Settings },
+  { href: "/sistema/pedidos", label: "Pedidos", icon: ShoppingCart },
+  { href: "/sistema/productos", label: "Productos", icon: Package },
+  { href: "/sistema/packs", label: "Packs", icon: Boxes },
+  { href: "/sistema/recetario", label: "Recetario", icon: BookOpen },
+  { href: "/sistema/inventario", label: "Inventario", icon: FlaskConical },
+  { href: "/sistema/diccionario", label: "Diccionario", icon: BookMarked },
+  { href: "/sistema/audiovisual", label: "Audiovisual", icon: Clapperboard },
+  { href: "/sistema/etiquetas", label: "Imprimir etiquetas", icon: Printer },
+  { href: "/sistema/clientes", label: "Clientes", icon: Users },
+  { href: "/sistema/envios", label: "Envíos", icon: Truck },
+  { href: "/sistema/configuracion", label: "Configuración", icon: Settings },
 ];
 
 const adminNav = [
-  { href: "/configuracion/usuarios", label: "Usuarios", icon: UserCog },
+  { href: "/sistema/configuracion/usuarios", label: "Usuarios", icon: UserCog },
 ];
 
 export function Sidebar({
@@ -79,7 +79,10 @@ export function Sidebar({
 
       <nav className="p-2 flex-1 space-y-1 overflow-y-auto">
         {nav.map(({ href, label, icon: Icon, accent }) => {
-          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const active =
+            href === "/sistema"
+              ? pathname === "/sistema"
+              : pathname.startsWith(href);
           return (
             <Link
               key={href}

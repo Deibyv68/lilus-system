@@ -1,0 +1,71 @@
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { NewOrderForm } from "./new-order-form";
+import { ArrowLeft } from "lucide-react";
+
+export const dynamic = "force-dynamic";
+
+export default async function NewOrderPage() {
+  const [products, packs, zones, carriers, rates, agentEnabledSetting] =
+    await Promise.all([
+      prisma.product.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, sku: true, price: true, imageUrl: true },
+      }),
+      prisma.pack.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, sku: true, price: true, imageUrl: true },
+      }),
+      prisma.shippingZone.findMany({ orderBy: { name: "asc" } }),
+      prisma.carrier.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.shippingRate.findMany(),
+      prisma.setting.findUnique({ where: { key: "print_agent_enabled" } }),
+    ]);
+  const agentEnabled = agentEnabledSetting?.value === "true";
+
+  return (
+    <>
+      <PageHeader
+        title="Nuevo pedido"
+        description="Registra una venta recibida por WhatsApp, Instagram o cualquier otro medio."
+        actions={
+          <Button variant="outline" asChild>
+            <Link href="/sistema/pedidos">
+              <ArrowLeft className="size-4" /> Volver
+            </Link>
+          </Button>
+        }
+      />
+      {products.length === 0 && packs.length === 0 ? (
+        <div className="rounded-lg border-2 border-dashed p-12 text-center">
+          <p className="text-muted-foreground mb-4">
+            Necesitas productos o packs activos para crear un pedido.
+          </p>
+          <Button asChild>
+            <Link href="/sistema/productos/nuevo">Crear producto</Link>
+          </Button>
+        </div>
+      ) : (
+        <NewOrderForm
+          products={products}
+          packs={packs}
+          zones={zones}
+          carriers={carriers}
+          rates={rates.map((r) => ({
+            zoneId: r.zoneId,
+            carrierId: r.carrierId,
+            price: r.price,
+          }))}
+          agentEnabled={agentEnabled}
+        />
+      )}
+    </>
+  );
+}

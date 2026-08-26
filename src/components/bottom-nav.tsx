@@ -12,34 +12,39 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Inicio", icon: Home, match: (p: string) => p === "/" },
   {
-    href: "/pedidos",
+    href: "/sistema",
+    label: "Inicio",
+    icon: Home,
+    match: (p: string) => p === "/sistema",
+  },
+  {
+    href: "/sistema/pedidos",
     label: "Pedidos",
     icon: ShoppingCart,
-    match: (p: string) => p.startsWith("/pedidos") && !p.startsWith("/pedidos/nuevo"),
+    match: (p: string) => p.startsWith("/sistema/pedidos") && !p.startsWith("/sistema/pedidos/nuevo"),
   },
   // El centro lleva el FAB
   {
-    href: "/productos",
+    href: "/sistema/productos",
     label: "Catálogo",
     icon: Package,
-    match: (p: string) => p.startsWith("/productos") || p.startsWith("/packs"),
+    match: (p: string) => p.startsWith("/sistema/productos") || p.startsWith("/sistema/packs"),
   },
   {
-    href: "/mas",
+    href: "/sistema/mas",
     label: "Más",
     icon: MoreHorizontal,
     match: (p: string) =>
-      p.startsWith("/clientes") ||
-      p.startsWith("/envios") ||
-      p.startsWith("/configuracion") ||
-      p.startsWith("/recetario") ||
-      p.startsWith("/inventario") ||
-      p.startsWith("/diccionario") ||
-      p.startsWith("/audiovisual") ||
-      p.startsWith("/etiquetas") ||
-      p.startsWith("/mas"),
+      p.startsWith("/sistema/clientes") ||
+      p.startsWith("/sistema/envios") ||
+      p.startsWith("/sistema/configuracion") ||
+      p.startsWith("/sistema/recetario") ||
+      p.startsWith("/sistema/inventario") ||
+      p.startsWith("/sistema/diccionario") ||
+      p.startsWith("/sistema/audiovisual") ||
+      p.startsWith("/sistema/etiquetas") ||
+      p.startsWith("/sistema/mas"),
   },
 ];
 
@@ -47,7 +52,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   // Ocultar en la página de creación de pedido (tiene su propia bottom bar)
-  const hide = pathname === "/pedidos/nuevo";
+  const hide = pathname === "/sistema/pedidos/nuevo";
   if (hide) return null;
 
   return (
@@ -61,7 +66,7 @@ export function BottomNav() {
         {/* FAB central — Nuevo pedido */}
         <div className="flex justify-center -mt-5">
           <Link
-            href="/pedidos/nuevo"
+            href="/sistema/pedidos/nuevo"
             aria-label="Nuevo pedido"
             className="flex items-center justify-center size-14 rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
           >

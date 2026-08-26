@@ -80,7 +80,7 @@ export function GlossaryProvider({
             <p className="text-sm leading-relaxed">{entry.shortDef}</p>
 
             <Link
-              href={`/diccionario/${entry.slug}`}
+              href={`/sistema/diccionario/${entry.slug}`}
               className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-3"
             >
               Ver explicación completa
