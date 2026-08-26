@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -224,11 +223,21 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
           <CardContent className="space-y-3">
             {imgPreview ? (
               <div className="relative aspect-square w-full rounded overflow-hidden bg-muted">
-                <Image
+                {/*
+                  Va con <img> y no con next/image a propósito.
+
+                  Al elegir un archivo, el navegador arma una dirección
+                  «blob:» que solo existe dentro de esa pestaña. next/image
+                  manda la dirección al servidor para que la optimice, el
+                  servidor no puede ver ese archivo, y el resultado es el
+                  ícono de imagen rota. Acá no hay nada que optimizar: es
+                  una vista previa que se descarta al guardar.
+                */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={imgPreview}
-                  alt="preview"
-                  fill
-                  className="object-cover"
+                  alt="Vista previa de la imagen"
+                  className="absolute inset-0 size-full object-cover"
                 />
               </div>
             ) : (

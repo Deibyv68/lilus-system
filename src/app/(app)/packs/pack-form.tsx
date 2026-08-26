@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -276,11 +275,17 @@ export function PackForm({
           <CardContent className="space-y-3">
             {imgPreview ? (
               <div className="relative aspect-square w-full rounded overflow-hidden bg-muted">
-                <Image
+                {/*
+                  Mismo caso que en el formulario de productos: la vista
+                  previa es una dirección «blob:» que solo existe en el
+                  navegador, y next/image la manda a optimizar al servidor,
+                  que no puede verla. Ver el comentario largo allá.
+                */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={imgPreview}
-                  alt="preview"
-                  fill
-                  className="object-cover"
+                  alt="Vista previa de la imagen"
+                  className="absolute inset-0 size-full object-cover"
                 />
               </div>
             ) : (

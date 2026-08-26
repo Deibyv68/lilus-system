@@ -1,7 +1,12 @@
 // LILUS — Print Agent
-// Vive en la PC del 1er piso. Pregunta al servidor LILUS cada N segundos si
-// hay trabajos de impresión pendientes. Cuando los hay, decodifica el PDF y
+// Vive en la PC que tenga la impresora. Pregunta al servidor LILUS cada N
+// segundos si hay trabajos pendientes. Cuando los hay, decodifica el PDF y
 // lo manda a la impresora MUNBYN vía la cola de Windows.
+
+// Se imprime al arrancar y en el diagnóstico. Sirve para responder de un
+// vistazo "¿esta PC tiene el código nuevo o el viejo?", que es la primera
+// pregunta cuando algo se comporta distinto en una máquina y no en otra.
+const VERSION = "3 — detección por presencia física";
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -372,6 +377,7 @@ async function tick() {
 if (process.argv.includes("--diagnostico")) {
   (async () => {
     console.log("\n═══ Diagnóstico de impresora ═══\n");
+    console.log(` Version:   ${VERSION}`);
     console.log(` PC:        ${AGENT_NAME}`);
     console.log(` Servidor:  ${SERVER_URL}`);
     await maybeRefreshConfig();
@@ -420,6 +426,7 @@ if (process.argv.includes("--diagnostico")) {
 console.log("════════════════════════════════════════════");
 console.log(" LILUS Print Agent");
 console.log("════════════════════════════════════════════");
+console.log(` Version:   ${VERSION}`);
 console.log(` Esta PC:   ${AGENT_NAME}`);
 console.log(` Servidor:  ${SERVER_URL}`);
 console.log(` Token:     ${TOKEN.slice(0, 4)}…${TOKEN.slice(-4)}`);

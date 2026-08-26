@@ -139,8 +139,16 @@ function Invoke-Instalacion {
     # ── 3. El proyecto ──
     Titulo "3/6  Descargar el proyecto"
     if (Test-Path (Join-Path $Carpeta ".git")) {
-        Bien "Ya estaba en $Carpeta, actualizando"
-        git -C $Carpeta pull --ff-only | Out-Null
+        Write-Host "  Ya estaba en $Carpeta, actualizando..."
+        # fetch + reset y no pull: la copia se clona en modo superficial y
+        # el pull puede quedarse callado sin traer nada. Esta carpeta es una
+        # copia de trabajo del servidor, no un lugar donde se programa, asi
+        # que dejarla igual al repositorio es exactamente lo que se quiere.
+        git -C $Carpeta fetch --depth 1 origin main 2>&1 | Out-Null
+        # FETCH_HEAD y no origin/main: en una copia superficial la rama de
+        # seguimiento no siempre se actualiza, y entonces el reset no mueve
+        # nada y todo parece haber salido bien.
+        git -C $Carpeta reset --hard FETCH_HEAD 2>&1 | Out-Null
     }
     else {
         if (Test-Path $Carpeta) {
@@ -151,8 +159,13 @@ function Invoke-Instalacion {
         if (-not (Test-Path (Join-Path $Carpeta ".git"))) {
             Detener "No se pudo descargar el proyecto. Hay internet en esta PC?"
         }
-        Bien "Descargado"
     }
+
+    # Se muestra que version quedo. Sin esto, un "actualizando" que no
+    # actualizo nada pasa desapercibido y despues no se entiende por que la
+    # PC se comporta como antes.
+    $commit = (git -C $Carpeta log -1 --format="%h  %ad  %s" --date=short 2>$null | Select-Object -First 1)
+    Bien "Codigo al dia: $commit"
 
     $AgentDir = Join-Path $Carpeta "print-agent"
     if (-not (Test-Path $AgentDir)) { Detener "No se encontro la carpeta print-agent." }
