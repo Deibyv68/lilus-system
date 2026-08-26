@@ -14,6 +14,7 @@ const ALLOWED_KEYS = new Set([
   "sender_province",
   "sender_address",
   "order_prefix",
+  "bank_details",
   "print_agent_enabled",
   "print_agent_token",
   "print_agent_printer",

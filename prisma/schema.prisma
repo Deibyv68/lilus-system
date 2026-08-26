@@ -212,9 +212,25 @@ model Order {
   trackingNumber     String?     // guía de la transportadora
   shippedAt          DateTime?   // cuándo se marcó como enviado
   notes              String?
-  source             String?     // "WhatsApp", "Instagram", "Manual"...
+  source             String?     // "WhatsApp", "Instagram", "Manual", "Web"...
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
+
+  /// Dirección con la que el cliente ve su propio pedido, sin cuenta ni
+  /// contraseña: /pedido/<token>.
+  ///
+  /// Es un valor aleatorio largo y no el `id` a propósito. Los cuid son
+  /// difíciles de adivinar pero no están pensados para eso, y sobre todo
+  /// son la llave que se usa en todo el sistema: si mañana un id aparece
+  /// en un log, en una URL del panel o en un mensaje, no debería alcanzar
+  /// para abrir el pedido de nadie. Este token solo sirve para eso.
+  ///
+  /// Nulo en los pedidos que se cargan a mano desde el panel: esos no se
+  /// comparten con nadie.
+  publicToken        String?     @unique
+
+  /// Comprobante de la transferencia, subido por el cliente.
+  paymentProofUrl    String?
 
   customer        Customer         @relation(fields: [customerId], references: [id])
   shippingAddress ShippingAddress? @relation(fields: [shippingAddressId], references: [id])

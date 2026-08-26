@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { orderSchema } from "@/lib/schemas";
 import {
-  generateOrderNumber,
-  generateBatchCode,
-  calcExpiry,
+  createOrderWithNumber,
+  buildProductionUnits,
+  type ProductoParaEtiqueta,
 } from "@/lib/order-utils";
-import { DEFAULT_SHELF_LIFE_MONTHS } from "@/lib/constants";
 import { requireUser } from "@/lib/guard";
 
 type CreateOrderPayload = {
@@ -99,62 +98,25 @@ export async function createOrderAction(payload: CreateOrderPayload) {
 
   const total = subtotal + data.shippingCost;
 
-  // Construir ProductionUnits (una por cada unidad física)
-  const now = new Date();
-  let seq = 0;
-  const productionUnits: Array<{
-    productId: string;
-    productName: string;
-    productSku: string;
-    batchCode: string;
-    manufactureDate: Date;
-    expiryDate: Date;
-    ingredients: string | null;
-  }> = [];
-
+  // Una unidad física por cada jabón que va a entrar en la caja: un pack
+  // de cinco son cinco etiquetas. Se expanden los packs y el resto (lote,
+  // fechas, numeración) lo resuelve el helper, que es el mismo que usa la
+  // tienda.
+  const lineasFisicas: { producto: ProductoParaEtiqueta; cantidad: number }[] = [];
   for (const it of data.items) {
     if (it.kind === "product") {
-      const p = productMap.get(it.refId)!;
-      for (let q = 0; q < it.quantity; q++) {
-        seq++;
-        productionUnits.push({
-          productId: p.id,
-          productName: p.shortName ?? p.name,
-          productSku: p.sku,
-          batchCode: generateBatchCode(now, seq),
-          manufactureDate: now,
-          expiryDate: calcExpiry(
-            now,
-            p.shelfLifeMonths ?? DEFAULT_SHELF_LIFE_MONTHS
-          ),
-          ingredients: p.ingredients,
-        });
-      }
+      lineasFisicas.push({ producto: productMap.get(it.refId)!, cantidad: it.quantity });
     } else {
       const pk = packMap.get(it.refId)!;
-      for (let pq = 0; pq < it.quantity; pq++) {
-        for (const ci of pk.items) {
-          for (let q = 0; q < ci.quantity; q++) {
-            seq++;
-            productionUnits.push({
-              productId: ci.product.id,
-              productName: ci.product.shortName ?? ci.product.name,
-              productSku: ci.product.sku,
-              batchCode: generateBatchCode(now, seq),
-              manufactureDate: now,
-              expiryDate: calcExpiry(
-                now,
-                ci.product.shelfLifeMonths ?? DEFAULT_SHELF_LIFE_MONTHS
-              ),
-              ingredients: ci.product.ingredients,
-            });
-          }
-        }
+      for (const ci of pk.items) {
+        lineasFisicas.push({
+          producto: ci.product,
+          cantidad: ci.quantity * it.quantity,
+        });
       }
     }
   }
-
-  const orderNumber = await generateOrderNumber();
+  const productionUnits = buildProductionUnits(lineasFisicas);
 
   // Crear cliente (sin merge fuerte por ahora; siempre nuevo registro)
   const customer = await prisma.customer.create({
@@ -179,22 +141,22 @@ export async function createOrderAction(payload: CreateOrderPayload) {
     },
   });
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber,
-      status: "PENDING",
-      customerId: customer.id,
-      shippingAddressId: address.id,
-      carrierId: data.carrierId,
-      zoneId: data.address.zoneId,
-      shippingCost: data.shippingCost,
-      subtotal,
-      total,
-      notes: data.notes || null,
-      source: data.source || null,
-      items: { create: orderItemsData },
-      productionUnits: { create: productionUnits },
-    },
+  // El número lo resuelve el helper, adentro de una transacción y con
+  // reintento: la tienda ahora también crea pedidos y las dos pueden caer
+  // en el mismo instante.
+  const order = await createOrderWithNumber({
+    status: "PENDING",
+    customerId: customer.id,
+    shippingAddressId: address.id,
+    carrierId: data.carrierId,
+    zoneId: data.address.zoneId,
+    shippingCost: data.shippingCost,
+    subtotal,
+    total,
+    notes: data.notes || null,
+    source: data.source || null,
+    items: { create: orderItemsData },
+    productionUnits: { create: productionUnits },
   });
 
   revalidatePath("/sistema/pedidos");

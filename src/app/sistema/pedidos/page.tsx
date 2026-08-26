@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function OrdersPage() {
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },
+    // `source` se muestra en la lista: ahora que la tienda crea pedidos
+    // sola, hay que poder distinguir de un vistazo cuál llegó por la web
+    // y está esperando que alguien revise la transferencia.
     include: {
       customer: { select: { name: true } },
       carrier: { select: { name: true } },
@@ -53,6 +56,7 @@ export default async function OrdersPage() {
             status: o.status,
             total: o.total,
             createdAt: o.createdAt.toISOString(),
+            source: o.source,
             customer: { name: o.customer.name },
             carrier: o.carrier ? { name: o.carrier.name } : null,
             _count: { items: o._count.items },

@@ -33,6 +33,7 @@ export default async function SettingsPage() {
                 sender_city: map.sender_city ?? "Quito",
                 sender_province: map.sender_province ?? "Pichincha",
                 sender_address: map.sender_address ?? "",
+                bank_details: map.bank_details ?? "",
               }}
             />
           </CardContent>

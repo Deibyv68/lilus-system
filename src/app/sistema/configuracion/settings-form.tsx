@@ -120,6 +120,27 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         </div>
       </div>
 
+      {/* Cobro */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Cobro de la tienda
+        </h3>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium">Datos para la transferencia</Label>
+          <Textarea
+            value={values.bank_details ?? ""}
+            onChange={(e) => update("bank_details", e.target.value)}
+            placeholder="Banco, tipo de cuenta, número, nombre y cédula del titular"
+            rows={5}
+          />
+          <p className="text-xs text-muted-foreground">
+            Es lo que ve el cliente al terminar su pedido en la web. Si lo
+            dejas vacío, la tienda le dice que se los enviamos por WhatsApp
+            en vez de mostrar una cuenta equivocada.
+          </p>
+        </div>
+      </div>
+
       <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
         {isPending ? "Guardando…" : "Guardar"}
       </Button>

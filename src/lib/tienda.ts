@@ -170,23 +170,120 @@ export async function buscarPorSlug(slug: string): Promise<ArticuloDetalle | nul
  */
 export async function preciosVigentes(
   refs: { tipo: TipoArticulo; id: string }[]
-): Promise<Map<string, { nombre: string; precio: number }>> {
+): Promise<Map<string, { nombre: string; sku: string; precio: number }>> {
   const idsProducto = refs.filter((r) => r.tipo === "producto").map((r) => r.id);
   const idsPack = refs.filter((r) => r.tipo === "pack").map((r) => r.id);
 
   const [productos, packs] = await Promise.all([
     prisma.product.findMany({
       where: { id: { in: idsProducto }, ...VISIBLE },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, sku: true, price: true },
     }),
     prisma.pack.findMany({
       where: { id: { in: idsPack }, ...VISIBLE },
-      select: { id: true, name: true, price: true },
+      select: { id: true, name: true, sku: true, price: true },
     }),
   ]);
 
-  const mapa = new Map<string, { nombre: string; precio: number }>();
-  for (const p of productos) mapa.set(`producto:${p.id}`, { nombre: p.name, precio: p.price });
-  for (const p of packs) mapa.set(`pack:${p.id}`, { nombre: p.name, precio: p.price });
+  const mapa = new Map<string, { nombre: string; sku: string; precio: number }>();
+  for (const p of productos) {
+    mapa.set(`producto:${p.id}`, { nombre: p.name, sku: p.sku, precio: p.price });
+  }
+  for (const p of packs) {
+    mapa.set(`pack:${p.id}`, { nombre: p.name, sku: p.sku, precio: p.price });
+  }
   return mapa;
+}
+
+/**
+ * A dónde se puede enviar y cuánto cuesta.
+ *
+ * Se muestra en el checkout para que el total no aparezca recién al final.
+ * Es la misma tabla que usa el panel: si la dueña cambia una tarifa en
+ * Envíos, la tienda cobra la nueva sin que nadie toque código.
+ *
+ * De cada zona se toma la transportadora más barata que esté activa. Hoy
+ * solo hay Servientrega, pero el día que haya dos, elegir la más cara
+ * porque quedó primera en la lista sería una sorpresa cara.
+ */
+export async function opcionesDeEnvio() {
+  const zonas = await prisma.shippingZone.findMany({
+    orderBy: { isDefault: "desc" },
+    select: {
+      id: true,
+      name: true,
+      isDefault: true,
+      rates: {
+        where: { carrier: { isActive: true } },
+        orderBy: { price: "asc" },
+        take: 1,
+        select: { price: true, carrier: { select: { name: true } } },
+      },
+    },
+  });
+
+  return zonas
+    .filter((z) => z.rates.length > 0)
+    .map((z) => ({
+      id: z.id,
+      nombre: z.name,
+      porDefecto: z.isDefault,
+      precio: z.rates[0].price,
+      transportadora: z.rates[0].carrier.name,
+    }));
+}
+
+/**
+ * El pedido que ve el cliente, buscado por su token público.
+ *
+ * Se eligen las columnas a mano, igual que en el catálogo, y por la misma
+ * razón: el pedido guarda el costo de producción indirectamente y la
+ * dirección de otra gente si uno se equivoca de consulta. Acá solo sale lo
+ * que esa persona ya sabe, porque lo escribió ella.
+ */
+export async function buscarPedidoPorToken(token: string) {
+  if (!token) return null;
+
+  const pedido = await prisma.order.findUnique({
+    where: { publicToken: token },
+    select: {
+      orderNumber: true,
+      status: true,
+      subtotal: true,
+      shippingCost: true,
+      total: true,
+      createdAt: true,
+      trackingNumber: true,
+      customer: { select: { name: true } },
+      carrier: { select: { name: true, trackingUrlTemplate: true } },
+      shippingAddress: {
+        select: { address: true, city: true, province: true, reference: true },
+      },
+      items: {
+        select: { itemName: true, quantity: true, unitPrice: true, lineTotal: true },
+      },
+    },
+  });
+
+  if (!pedido) return null;
+
+  const seguimiento =
+    pedido.trackingNumber && pedido.carrier?.trackingUrlTemplate
+      ? pedido.carrier.trackingUrlTemplate.replace("{tracking}", pedido.trackingNumber)
+      : null;
+
+  return { ...pedido, seguimiento };
+}
+
+/**
+ * Cómo se paga. Lo escribe la dueña en Configuración.
+ *
+ * Si no está cargado, la tienda no inventa un número de cuenta: dice que
+ * los datos llegan por WhatsApp. Mostrar una cuenta equivocada sería mucho
+ * peor que no mostrar ninguna.
+ */
+export async function datosDeTransferencia(): Promise<string | null> {
+  const ajuste = await prisma.setting.findUnique({ where: { key: "bank_details" } });
+  const valor = ajuste?.value?.trim();
+  return valor ? valor : null;
 }

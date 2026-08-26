@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Trash2,
   AlertTriangle,
+  Globe,
 } from "lucide-react";
 import { deleteOrdersAction } from "./actions";
 
@@ -32,6 +33,7 @@ type Order = {
   status: string;
   total: number;
   createdAt: string | Date;
+  source: string | null;
   customer: { name: string };
   carrier: { name: string } | null;
   _count: { items: number };
@@ -300,6 +302,21 @@ function OrderCardContent({ o }: { o: Order }) {
           >
             {statusLabel[o.status] ?? o.status}
           </span>
+          {/*
+            El pedido web se marca distinto y no como una etiqueta gris mas.
+            Es el unico que nadie tomo a mano: llego solo, y alguien tiene
+            que ir a mirar si la transferencia entro.
+          */}
+          {o.source === "Web" && (
+            <Badge className="text-3xs bg-emerald-600 hover:bg-emerald-600">
+              <Globe className="size-2.5" /> Web
+            </Badge>
+          )}
+          {o.source && o.source !== "Web" && (
+            <Badge variant="secondary" className="text-3xs">
+              {o.source}
+            </Badge>
+          )}
           {o.carrier && (
             <Badge variant="outline" className="text-3xs">
               {o.carrier.name}
