@@ -61,8 +61,10 @@ prisma/
   schema.prisma        # modelos de la BD
   seed.ts              # datos iniciales (zonas, transportadora, settings)
 src/
+  proxy.ts             # filtro de entrada: /sistema y /api piden sesión
   app/
-    (app)/             # layout con sidebar
+    page.tsx           # raíz pública (tienda)
+    sistema/           # el panel: layout con sidebar, pide sesión
       page.tsx         # dashboard
       productos/       # CRUD productos individuales
       packs/           # CRUD packs (grupos de productos)
@@ -77,6 +79,7 @@ src/
         product-labels/  # GET — combina los PDFs subidos de cada producto
   lib/
     prisma.ts          # cliente singleton
+    guard.ts           # requireUser() / denyIfAnonymous(): la verificación real
     schemas.ts         # validadores Zod
     pdf-shipping-label.ts
     pdf-expiry-label.ts
@@ -153,7 +156,6 @@ DATABASE_URL="file:./prisma/dev.db"
 
 ## Pendiente / próximos pasos
 
-- Login con usuario único (por ahora la app está abierta)
 - Variantes de producto (la tabla existe, falta UI)
 - Impresión directa por Bluetooth a la MUNBYN sin intervención del navegador
 - Importación desde Excel para arrancar con el catálogo
