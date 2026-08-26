@@ -341,3 +341,15 @@ export async function identidadDelVendedor() {
     email: m.sender_email || null,
   };
 }
+
+/**
+ * El nombre de la marca, tal como se pinta en la cabecera.
+ *
+ * Sale de Configuración y no de una constante: es el tipo de cosa que se
+ * decide una vez y se cambia sin avisar a nadie, y no debería hacer falta
+ * tocar código ni volver a desplegar para corregir una letra.
+ */
+export async function nombreDeMarca(): Promise<string> {
+  const ajuste = await prisma.setting.findUnique({ where: { key: "brand_name" } });
+  return ajuste?.value?.trim() || "LILUS";
+}

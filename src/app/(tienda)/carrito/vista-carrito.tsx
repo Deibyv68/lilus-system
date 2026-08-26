@@ -31,7 +31,7 @@ export function VistaCarrito() {
       <Marco>
         <p className="text-stone-600">Tu carrito está vacío.</p>
         <Link
-          href="/"
+          href="/tienda"
           className="mt-6 inline-block rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700"
         >
           Ver el catálogo
@@ -48,7 +48,7 @@ export function VistaCarrito() {
         {lineas.map((l) => (
           <li key={`${l.tipo}:${l.id}`} className="flex gap-4 py-5">
             <Link
-              href={`/${l.slug}`}
+              href={`/tienda/${l.slug}`}
               className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-stone-100"
             >
               <ImagenArticulo url={l.imagen} alt={null} nombre={l.nombre} />
@@ -57,7 +57,7 @@ export function VistaCarrito() {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <Link
-                  href={`/${l.slug}`}
+                  href={`/tienda/${l.slug}`}
                   className="font-medium leading-snug hover:underline underline-offset-4"
                 >
                   {l.nombre}

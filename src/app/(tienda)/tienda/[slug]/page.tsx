@@ -49,7 +49,7 @@ export default async function FichaArticulo({ params }: Props) {
   return (
     <div className="mx-auto max-w-5xl px-5 py-10">
       <Link
-        href="/"
+        href="/tienda"
         className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 transition-colors"
       >
         <ArrowLeft className="size-4" />
@@ -110,7 +110,7 @@ export default async function FichaArticulo({ params }: Props) {
                     </span>
                     {c.slug ? (
                       <Link
-                        href={`/${c.slug}`}
+                        href={`/tienda/${c.slug}`}
                         className="underline underline-offset-4 decoration-stone-300 hover:decoration-stone-900"
                       >
                         {c.nombre}

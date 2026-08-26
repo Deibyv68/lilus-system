@@ -1,9 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { Bebas_Neue, Inter } from "next/font/google";
-import { BotonCarrito } from "@/components/tienda/boton-carrito";
-import { datosDeContacto } from "@/lib/tienda";
+import { Cabecera } from "@/components/tienda/cabecera";
+import { datosDeContacto, nombreDeMarca } from "@/lib/tienda";
 
 /**
  * La tienda.
@@ -50,7 +49,10 @@ export default async function TiendaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const contacto = await datosDeContacto();
+  const [contacto, marca] = await Promise.all([
+    datosDeContacto(),
+    nombreDeMarca(),
+  ]);
 
   return (
     <div
@@ -65,31 +67,14 @@ export default async function TiendaLayout({
         <style>{`.revelar { opacity: 1 !important; transform: none !important; }`}</style>
       </noscript>
 
-      <header className="sticky top-0 z-40 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md">
-        <div className="mx-auto max-w-[1440px] px-6 sm:px-10 h-20 flex items-center justify-between gap-4">
-          <Link href="/" className="group flex items-center gap-3 min-w-0">
-            <Image
-              src="/brand/lilus-logo.png"
-              alt=""
-              width={36}
-              height={36}
-              className="rounded-full shrink-0"
-            />
-            <span className="font-display text-2xl leading-none pt-1 tracking-[-0.02em] transition-colors duration-[400ms] ease-tienda group-hover:text-tienda-acento">
-              LILUS
-            </span>
-          </Link>
-
-          <BotonCarrito />
-        </div>
-      </header>
+      <Cabecera marca={marca} />
 
       <main className="flex-1">{children}</main>
 
       <footer className="mt-32 border-t border-tienda-linea">
         <div className="mx-auto max-w-[1440px] px-6 sm:px-10 py-16 space-y-4 text-sm text-tienda-tenue">
-          <p className="font-display text-3xl tracking-[-0.02em] text-tienda-texto">
-            LILUS
+          <p className="font-display text-3xl tracking-[0.02em] text-tienda-texto">
+            {marca}
           </p>
           <p>Hechos en Ecuador. Enviamos a todo el país por Servientrega.</p>
 

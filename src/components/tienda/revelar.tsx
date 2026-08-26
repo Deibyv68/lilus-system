@@ -5,15 +5,23 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Aparecer al entrar en pantalla.
  *
- * Es el gesto que define la plantilla de referencia, y su gracia está en
- * lo poco que se mueve: **diez píxeles**. La mayoría de las plantillas
- * desplazan cuarenta o sesenta y el resultado se siente barato, como si
- * la página estuviera armándose delante de uno. Diez píxeles no se leen
- * como movimiento; se leen como que la página respira.
+ * Los valores están medidos del sitio original, no aproximados.
  *
- * Los valores están medidos del sitio original, no aproximados:
- * opacidad 0 → 1 y translateY(10px) → 0, en 400 ms con la curva
- * cubic-bezier(0.44, 0, 0.56, 1).
+ * ── Lo que hace que se sienta como la referencia ──
+ *
+ * No es la distancia, es el muelle. La primera versión de esto usaba una
+ * curva bezier simétrica y no se parecía: un bezier llega al destino y
+ * frena en seco. La referencia usa un muelle físico (bounce .3) que pasa
+ * un 4,6 % de largo y vuelve. Esa vuelta es lo que se lee como calidad.
+ *
+ * ── Las variantes ──
+ *
+ * La referencia no anima todo igual, y por eso una sola variante se veía
+ * pobre. Hay tres gestos distintos, cada uno para su sitio:
+ *
+ *   subir     opacidad + 10 px hacia arriba. El más frecuente.
+ *   enfocar   además desenfoca 10 px y va enfocando. Para títulos.
+ *   inclinar  entra girada 3° desde abajo-izquierda. Para tarjetas.
  *
  * ── Que no desaparezca el contenido ──
  *
@@ -25,10 +33,17 @@ import { useEffect, useRef, useState } from "react";
  * contenido directamente. No es un adorno de accesibilidad: hay gente a
  * la que el movimiento en pantalla le produce mareo de verdad.
  */
+export type VarianteRevelar =
+  | "subir"
+  | "enfocar"
+  | "inclinar"
+  | "inclinar-derecha";
+
 export function Revelar({
   children,
   /** Milisegundos de espera. Para escalonar una fila de tarjetas. */
   retardo = 0,
+  variante = "subir",
   className = "",
   /*
     Qué etiqueta se pinta. No es cosmético: una tarjeta dentro de una
@@ -39,6 +54,7 @@ export function Revelar({
 }: {
   children: React.ReactNode;
   retardo?: number;
+  variante?: VarianteRevelar;
   className?: string;
   as?: "div" | "section" | "li" | "article";
 }) {
@@ -84,6 +100,7 @@ export function Revelar({
     <Etiqueta
       ref={ref}
       data-revelar={visible ? "si" : "no"}
+      data-variante={variante}
       style={retardo ? { transitionDelay: `${retardo}ms` } : undefined}
       className={`revelar ${className}`}
     >

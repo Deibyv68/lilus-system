@@ -18,13 +18,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const fijas: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: "weekly", priority: 1 },
+    { url: `${base}/tienda`, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${base}/nosotros`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/contacto`, changeFrequency: "yearly", priority: 0.4 },
     { url: `${base}/legal/terminos`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/legal/devoluciones`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/legal/privacidad`, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   const articulos: MetadataRoute.Sitemap = [...packs, ...productos].map((a) => ({
-    url: `${base}/${a.slug}`,
+    url: `${base}/tienda/${a.slug}`,
     changeFrequency: "monthly",
     priority: a.tipo === "pack" ? 0.8 : 0.6,
   }));
