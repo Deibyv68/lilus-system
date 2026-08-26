@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { buscarPedidoPorToken, datosDeTransferencia } from "@/lib/tienda";
+import {
+  buscarPedidoPorToken,
+  datosDeTransferencia,
+  datosDeContacto,
+} from "@/lib/tienda";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 /**
@@ -61,9 +65,10 @@ export default async function PaginaPedido({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [pedido, banco] = await Promise.all([
+  const [pedido, banco, contacto] = await Promise.all([
     buscarPedidoPorToken(token),
     datosDeTransferencia(),
+    datosDeContacto(),
   ]);
 
   if (!pedido) notFound();
@@ -100,9 +105,27 @@ export default async function PaginaPedido({
                 <strong className="font-medium">
                   {formatCurrency(pedido.total)}
                 </strong>{" "}
-                y mándanos el comprobante por WhatsApp poniendo el número{" "}
+                y mándanos el comprobante poniendo el número{" "}
                 <strong className="font-medium">{pedido.orderNumber}</strong>.
               </p>
+
+              {/*
+                El botón lleva el número de pedido ya escrito en el mensaje.
+                Sin eso, quien recibe el comprobante tiene que adivinar de
+                cuál de los pedidos pendientes es.
+              */}
+              {contacto.whatsapp && (
+                <a
+                  href={`${contacto.whatsapp}?text=${encodeURIComponent(
+                    `Hola, acabo de hacer el pedido ${pedido.orderNumber}. Les mando el comprobante.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-block rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700"
+                >
+                  Enviar comprobante por WhatsApp
+                </a>
+              )}
             </>
           ) : (
             <p className="mt-3 text-sm text-stone-600">

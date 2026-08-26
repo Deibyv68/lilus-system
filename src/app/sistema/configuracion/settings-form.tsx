@@ -141,6 +141,27 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         </div>
       </div>
 
+      {/* Contacto publico */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Contacto en la tienda
+        </h3>
+        <Field
+          label="WhatsApp"
+          value={values.contact_whatsapp ?? ""}
+          onChange={(v) => update("contact_whatsapp", v)}
+          placeholder="593991234567"
+          hint="Con código de país y sin signos. Es el enlace que usa el cliente para mandar el comprobante."
+        />
+        <Field
+          label="Instagram"
+          value={values.contact_instagram ?? ""}
+          onChange={(v) => update("contact_instagram", v)}
+          placeholder="lilus.ec"
+          hint="Solo el usuario, sin la arroba."
+        />
+      </div>
+
       <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
         {isPending ? "Guardando…" : "Guardar"}
       </Button>

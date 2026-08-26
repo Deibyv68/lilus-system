@@ -287,3 +287,27 @@ export async function datosDeTransferencia(): Promise<string | null> {
   const valor = ajuste?.value?.trim();
   return valor ? valor : null;
 }
+
+/**
+ * Por dónde nos escribe el cliente.
+ *
+ * Devuelve enlaces ya armados, no números sueltos. El número de WhatsApp
+ * se guarda como lo escriba la dueña —con espacios, guiones o un «+»— y
+ * wa.me solo acepta dígitos, así que la limpieza se hace acá y no en cada
+ * sitio que quiera poner un enlace.
+ */
+export async function datosDeContacto() {
+  const filas = await prisma.setting.findMany({
+    where: { key: { in: ["contact_whatsapp", "contact_instagram"] } },
+  });
+  const mapa = Object.fromEntries(filas.map((f) => [f.key, f.value]));
+
+  const digitos = (mapa.contact_whatsapp ?? "").replace(/\D/g, "");
+  const instagram = (mapa.contact_instagram ?? "").trim().replace(/^@/, "");
+
+  return {
+    whatsapp: digitos ? `https://wa.me/${digitos}` : null,
+    instagram: instagram ? `https://instagram.com/${instagram}` : null,
+    instagramUsuario: instagram || null,
+  };
+}

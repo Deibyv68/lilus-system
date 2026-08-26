@@ -9,6 +9,7 @@ import {
   buildProductionUnits,
   type ProductoParaEtiqueta,
 } from "@/lib/order-utils";
+import { avisarAlCliente, avisarAlAdmin } from "@/lib/avisos-pedido";
 
 /**
  * Crear el pedido que llega por la web.
@@ -194,6 +195,41 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
     items: { create: items },
     productionUnits: { create: productionUnits },
   });
+
+  // Los avisos van después de que el pedido está guardado, y envueltos:
+  // para este punto la compra ya está hecha y la persona está esperando su
+  // número. Que se caiga el servidor de correo no puede convertir una
+  // compra buena en un error en pantalla.
+  //
+  // Se esperan (no se disparan y se olvidan) porque en un servidor sin
+  // estado el proceso puede terminar apenas se responde, y el correo se
+  // quedaría a medio mandar. Son un par de segundos, y suceden mientras la
+  // persona todavía está leyendo la pantalla de confirmación.
+  const aviso = {
+    orderNumber: pedido.orderNumber,
+    publicToken: pedido.publicToken!,
+    total: pedido.total,
+    subtotal: pedido.subtotal,
+    shippingCost: pedido.shippingCost,
+    clienteNombre: d.cliente.nombre,
+    clienteEmail: d.cliente.email,
+    clienteTelefono: d.cliente.telefono,
+    ciudad: d.direccion.ciudad,
+    provincia: d.direccion.provincia,
+    items: items.map((i) => ({
+      itemName: i.itemName,
+      quantity: i.quantity,
+      lineTotal: i.lineTotal,
+    })),
+  };
+
+  try {
+    await Promise.allSettled([avisarAlCliente(aviso), avisarAlAdmin(aviso)]);
+  } catch (e) {
+    // allSettled ya no lanza; esto es el cinturón por si algo del armado
+    // del mensaje falla. El pedido está guardado igual.
+    console.error("[checkout] Fallaron los avisos del pedido", pedido.orderNumber, e);
+  }
 
   return { ok: true, token: pedido.publicToken!, numero: pedido.orderNumber };
 }
