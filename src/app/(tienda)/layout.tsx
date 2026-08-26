@@ -2,7 +2,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Bebas_Neue, Inter } from "next/font/google";
 import { Cabecera } from "@/components/tienda/cabecera";
-import { datosDeContacto, nombreDeMarca } from "@/lib/tienda";
+import { BarraPromo } from "@/components/tienda/barra-promo";
+import {
+  datosDeContacto,
+  nombreDeMarca,
+  barraDePromocion,
+} from "@/lib/tienda";
 
 /**
  * La tienda.
@@ -49,9 +54,10 @@ export default async function TiendaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [contacto, marca] = await Promise.all([
+  const [contacto, marca, promo] = await Promise.all([
     datosDeContacto(),
     nombreDeMarca(),
+    barraDePromocion(),
   ]);
 
   return (
@@ -66,6 +72,13 @@ export default async function TiendaLayout({
       <noscript>
         <style>{`.revelar { opacity: 1 !important; transform: none !important; }`}</style>
       </noscript>
+
+      {/*
+        La cinta va ENCIMA de la cabecera y se va con el scroll. La
+        cabecera se queda pegada arriba; una promoción que ocupa sitio en
+        todas las pantallas todo el rato molesta más de lo que vende.
+      */}
+      {promo && <BarraPromo texto={promo.texto} enlace={promo.enlace} />}
 
       <Cabecera marca={marca} />
 

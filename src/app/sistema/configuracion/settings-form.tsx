@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { saveSettingsAction } from "./actions";
 
 type Initial = Record<string, string>;
@@ -160,6 +161,49 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           placeholder="lilus.ec"
           hint="Solo el usuario, sin la arroba."
         />
+      </div>
+
+      {/* Cinta de promocion */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Cinta de promoción
+        </h3>
+
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <Label htmlFor="promo_activa">Mostrarla en la tienda</Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Es la franja que se desplaza arriba del todo.
+            </p>
+          </div>
+          <Switch
+            id="promo_activa"
+            checked={values.promo_activa === "true"}
+            onCheckedChange={(v) => update("promo_activa", v ? "true" : "false")}
+          />
+        </div>
+
+        <Field
+          label="Texto"
+          value={values.promo_texto ?? ""}
+          onChange={(v) => update("promo_texto", v)}
+          placeholder="Envío gratis en pedidos desde $30"
+          hint="Corto. Se repite en bucle, así que una frase larga se lee a medias."
+        />
+        <Field
+          label="A dónde lleva (opcional)"
+          value={values.promo_enlace ?? ""}
+          onChange={(v) => update("promo_enlace", v)}
+          placeholder="/tienda"
+          hint="Si lo dejas vacío, la cinta no es un enlace."
+        />
+
+        {values.promo_activa === "true" && !values.promo_texto?.trim() && (
+          <p className="text-xs text-amber-600 dark:text-amber-500">
+            Está encendida pero sin texto, así que la tienda no la va a
+            mostrar. Escribe algo o apágala.
+          </p>
+        )}
       </div>
 
       <Button type="submit" disabled={isPending} className="w-full sm:w-auto">

@@ -353,3 +353,27 @@ export async function nombreDeMarca(): Promise<string> {
   const ajuste = await prisma.setting.findUnique({ where: { key: "brand_name" } });
   return ajuste?.value?.trim() || "LILUS";
 }
+
+/**
+ * La cinta de promoción de arriba del todo.
+ *
+ * Devuelve null si está apagada o sin texto, y entonces la tienda no
+ * pinta la barra en absoluto. Es a propósito: una cinta encendida con el
+ * texto vacío dejaría una franja negra sin explicación, y una promoción
+ * que ya venció es peor que ninguna.
+ */
+export async function barraDePromocion(): Promise<{
+  texto: string;
+  enlace: string | null;
+} | null> {
+  const filas = await prisma.setting.findMany({
+    where: { key: { in: ["promo_activa", "promo_texto", "promo_enlace"] } },
+  });
+  const m = Object.fromEntries(filas.map((f) => [f.key, f.value.trim()]));
+
+  if (m.promo_activa !== "true") return null;
+  const texto = m.promo_texto;
+  if (!texto) return null;
+
+  return { texto, enlace: m.promo_enlace || null };
+}
