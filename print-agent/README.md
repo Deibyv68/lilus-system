@@ -45,10 +45,31 @@ El token es el mismo en todas las PCs — es el secreto compartido con el
 servidor, no un identificador. Quién es cada una sale del nombre de la
 computadora en Windows (o de `LILUS_AGENT_NAME` en el `.env`).
 
+## Instalación automática (lo normal)
+
+En la PC nueva, **PowerShell como administrador**, y pegar esto:
+
+```powershell
+irm https://raw.githubusercontent.com/Deibyv68/lilus-system/main/print-agent/instalar.ps1 | iex
+```
+
+Instala lo que falte (Node, Git, Tailscale), baja el proyecto, arma el `.env`,
+registra el servicio y comprueba que el servidor conteste. Lo único que pide es
+el **token**, que se copia de LILUS → Configuración → Agente de impresión.
+
+Se puede volver a correr las veces que haga falta: lo que ya está no lo toca, así
+que también sirve para reparar una instalación a medias.
+
+Después queda por hacer a mano una sola cosa: **instalar el driver de la MUNBYN**,
+que viene con la impresora y no se puede automatizar.
+
+El resto de este documento es el detalle de lo que hace el script, por si algo
+falla o hay que hacerlo a mano.
+
 ## Requisitos en la PC
 
 1. **Windows 10/11**
-2. **Node.js 22 LTS** instalado (<https://nodejs.org/>)
+2. **Node.js LTS** instalado (<https://nodejs.org/>)
 3. **Driver MUNBYN** instalado y la impresora conectada por USB-C (verifica con
    `Get-Printer` en PowerShell que aparezca `Munbyn RW403B-N`)
 4. **nssm.exe** copiado en esta carpeta (descarga de <https://nssm.cc/download>,

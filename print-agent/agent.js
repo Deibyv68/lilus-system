@@ -15,7 +15,14 @@ const { execFile } = require("node:child_process");
 function loadEnv() {
   const envPath = path.join(__dirname, ".env");
   if (!fs.existsSync(envPath)) return;
-  const lines = fs.readFileSync(envPath, "utf-8").split(/\r?\n/);
+  // Se quita el BOM: varios editores de Windows lo escriben al guardar, y
+  // son tres bytes invisibles que se pegan al nombre de la primera
+  // variable. El archivo se ve perfecto y el agente muere diciendo que
+  // falta configuración.
+  const lines = fs
+    .readFileSync(envPath, "utf-8")
+    .replace(/^﻿/, "")
+    .split(/\r?\n/);
   for (const line of lines) {
     const t = line.trim();
     if (!t || t.startsWith("#")) continue;
