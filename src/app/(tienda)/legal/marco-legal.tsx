@@ -27,7 +27,7 @@ export function MarcoLegal({
     <div className="mx-auto max-w-2xl px-5 py-12">
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-tienda-tenue hover:text-white transition-colors"
       >
         <ArrowLeft className="size-4" />
         Volver al catálogo
@@ -36,11 +36,11 @@ export function MarcoLegal({
       <h1 className="mt-8 text-2xl font-medium tracking-tight text-balance">
         {titulo}
       </h1>
-      <p className="mt-3 text-stone-600 leading-relaxed text-pretty">{entrada}</p>
+      <p className="mt-3 text-tienda-tenue leading-relaxed text-pretty">{entrada}</p>
 
       <div className="mt-10 space-y-9">{children}</div>
 
-      <p className="mt-14 border-t border-stone-200 pt-5 text-xs text-stone-500">
+      <p className="mt-14 border-t border-tienda-linea pt-5 text-xs text-tienda-tenue">
         Última actualización: {ULTIMA_ACTUALIZACION_LEGAL}. Si algo de esto
         cambia, lo cambiamos aquí y la fecha lo dice.
       </p>
@@ -58,7 +58,7 @@ export function Seccion({
   return (
     <section>
       <h2 className="text-base font-medium">{titulo}</h2>
-      <div className="mt-2.5 space-y-3 leading-relaxed text-stone-700 text-pretty">
+      <div className="mt-2.5 space-y-3 leading-relaxed text-tienda-texto text-pretty">
         {children}
       </div>
     </section>

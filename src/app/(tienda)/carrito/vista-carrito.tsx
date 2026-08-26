@@ -29,10 +29,10 @@ export function VistaCarrito() {
   if (lineas.length === 0) {
     return (
       <Marco>
-        <p className="text-stone-600">Tu carrito está vacío.</p>
+        <p className="text-tienda-tenue">Tu carrito está vacío.</p>
         <Link
           href="/tienda"
-          className="mt-6 inline-block rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700"
+          className="mt-6 inline-block rounded-full bg-tienda-texto px-5 py-2.5 text-sm font-medium text-tienda-fondo transition-colors hover:bg-tienda-acento"
         >
           Ver el catálogo
         </Link>
@@ -44,12 +44,12 @@ export function VistaCarrito() {
 
   return (
     <Marco>
-      <ul className="divide-y divide-stone-200 border-y border-stone-200">
+      <ul className="divide-y divide-tienda-linea border-y border-tienda-linea">
         {lineas.map((l) => (
           <li key={`${l.tipo}:${l.id}`} className="flex gap-4 py-5">
             <Link
               href={`/tienda/${l.slug}`}
-              className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-stone-100"
+              className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-tienda-velo"
             >
               <ImagenArticulo url={l.imagen} alt={null} nombre={l.nombre} />
             </Link>
@@ -66,13 +66,13 @@ export function VistaCarrito() {
                   type="button"
                   onClick={() => quitar(l)}
                   aria-label={`Quitar ${l.nombre} del carrito`}
-                  className="shrink-0 rounded-full p-1 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-900"
+                  className="shrink-0 rounded-full p-1 text-tienda-tenue transition-colors hover:bg-tienda-velo hover:text-white"
                 >
                   <X className="size-4" />
                 </button>
               </div>
 
-              <p className="mt-0.5 text-sm text-stone-500 tabular-nums">
+              <p className="mt-0.5 text-sm text-tienda-tenue tabular-nums">
                 {formatCurrency(l.precio)} c/u
               </p>
 
@@ -98,12 +98,12 @@ export function VistaCarrito() {
 
       <Link
         href="/checkout"
-        className="mt-7 block rounded-full bg-stone-900 px-5 py-3 text-center text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700"
+        className="mt-7 block rounded-full bg-tienda-texto px-5 py-3 text-center text-sm font-medium text-tienda-fondo transition-colors hover:bg-tienda-acento"
       >
         Continuar con el pedido
       </Link>
 
-      <p className="mt-4 text-center text-xs text-stone-500">
+      <p className="mt-4 text-center text-xs text-tienda-tenue">
         El pago es por transferencia bancaria. Te damos los datos al final.
       </p>
     </Marco>
@@ -121,12 +121,12 @@ function Cantidad({
   onDelta: (delta: number) => void;
 }) {
   return (
-    <div className="flex items-center rounded-full border border-stone-300">
+    <div className="flex items-center rounded-full border border-tienda-linea">
       <button
         type="button"
         onClick={() => onDelta(-1)}
         aria-label={`Quitar uno de ${nombre}`}
-        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-stone-100"
+        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-tienda-velo"
       >
         <Minus className="size-3.5" />
       </button>
@@ -137,7 +137,7 @@ function Cantidad({
         type="button"
         onClick={() => onDelta(1)}
         aria-label={`Agregar uno de ${nombre}`}
-        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-stone-100"
+        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-tienda-velo"
       >
         <Plus className="size-3.5" />
       </button>
@@ -156,8 +156,8 @@ function Fila({
 }) {
   return (
     <div className="flex justify-between gap-4">
-      <span className="text-stone-500">{etiqueta}</span>
-      <span className={tenue ? "text-stone-500" : "tabular-nums"}>{valor}</span>
+      <span className="text-tienda-tenue">{etiqueta}</span>
+      <span className={tenue ? "text-tienda-tenue" : "tabular-nums"}>{valor}</span>
     </div>
   );
 }

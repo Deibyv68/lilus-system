@@ -78,17 +78,17 @@ export default async function PaginaPedido({
 
   return (
     <div className="mx-auto max-w-xl px-5 py-12">
-      <p className="text-sm text-stone-500">
+      <p className="text-sm text-tienda-tenue">
         Pedido {pedido.orderNumber} · {formatDate(pedido.createdAt)}
       </p>
       <h1 className="mt-2 text-2xl font-medium tracking-tight text-balance">
         {primerNombre}, {estado.titulo.toLowerCase()}
       </h1>
-      <p className="mt-3 text-stone-600 text-pretty">{estado.detalle}</p>
+      <p className="mt-3 text-tienda-tenue text-pretty">{estado.detalle}</p>
 
       {pedido.status === "PENDING" && (
-        <section className="mt-8 rounded-xl border border-stone-300 bg-white p-5">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-stone-400">
+        <section className="mt-8 rounded-xl border border-tienda-linea bg-tienda-fondo-alt p-5">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-tienda-tenue">
             Cómo pagar
           </h2>
 
@@ -100,7 +100,7 @@ export default async function PaginaPedido({
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed">
                 {banco}
               </p>
-              <p className="mt-4 text-sm text-stone-600">
+              <p className="mt-4 text-sm text-tienda-tenue">
                 Transfiere{" "}
                 <strong className="font-medium">
                   {formatCurrency(pedido.total)}
@@ -121,14 +121,14 @@ export default async function PaginaPedido({
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-block rounded-full bg-stone-900 px-5 py-2.5 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700"
+                  className="mt-4 inline-block rounded-full bg-tienda-texto px-5 py-2.5 text-sm font-medium text-tienda-fondo transition-colors hover:bg-tienda-acento"
                 >
                   Enviar comprobante por WhatsApp
                 </a>
               )}
             </>
           ) : (
-            <p className="mt-3 text-sm text-stone-600">
+            <p className="mt-3 text-sm text-tienda-tenue">
               Te escribimos por WhatsApp con los datos de la cuenta y el total a
               transferir. Ten a mano el número {pedido.orderNumber}.
             </p>
@@ -138,7 +138,7 @@ export default async function PaginaPedido({
 
       {pedido.seguimiento && (
         <section className="mt-8">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-stone-400">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-tienda-tenue">
             Seguimiento
           </h2>
           <p className="mt-3 text-sm">
@@ -156,14 +156,14 @@ export default async function PaginaPedido({
       )}
 
       <section className="mt-8">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-stone-400">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-tienda-tenue">
           Qué pediste
         </h2>
-        <ul className="mt-3 divide-y divide-stone-200 border-y border-stone-200">
+        <ul className="mt-3 divide-y divide-tienda-linea border-y border-tienda-linea">
           {pedido.items.map((i, n) => (
             <li key={n} className="flex justify-between gap-4 py-3 text-sm">
               <span>
-                <span className="text-stone-400 tabular-nums">{i.quantity}×</span>{" "}
+                <span className="text-tienda-tenue tabular-nums">{i.quantity}×</span>{" "}
                 {i.itemName}
               </span>
               <span className="tabular-nums">{formatCurrency(i.lineTotal)}</span>
@@ -174,7 +174,7 @@ export default async function PaginaPedido({
         <dl className="mt-4 space-y-2 text-sm">
           <Fila etiqueta="Productos" valor={formatCurrency(pedido.subtotal)} />
           <Fila etiqueta="Envío" valor={formatCurrency(pedido.shippingCost)} />
-          <div className="flex justify-between gap-4 border-t border-stone-200 pt-2 text-base">
+          <div className="flex justify-between gap-4 border-t border-tienda-linea pt-2 text-base">
             <dt className="font-medium">Total</dt>
             <dd className="font-medium tabular-nums">
               {formatCurrency(pedido.total)}
@@ -185,17 +185,17 @@ export default async function PaginaPedido({
 
       {pedido.shippingAddress && (
         <section className="mt-8">
-          <h2 className="text-sm font-medium uppercase tracking-wide text-stone-400">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-tienda-tenue">
             A dónde va
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-stone-700">
+          <p className="mt-3 text-sm leading-relaxed text-tienda-texto">
             {pedido.shippingAddress.address}
             <br />
             {pedido.shippingAddress.city}, {pedido.shippingAddress.province}
             {pedido.shippingAddress.reference && (
               <>
                 <br />
-                <span className="text-stone-500">
+                <span className="text-tienda-tenue">
                   {pedido.shippingAddress.reference}
                 </span>
               </>
@@ -204,7 +204,7 @@ export default async function PaginaPedido({
         </section>
       )}
 
-      <p className="mt-10 text-sm text-stone-500">
+      <p className="mt-10 text-sm text-tienda-tenue">
         Guarda esta página: es donde puedes ver cómo va tu pedido.
       </p>
 
@@ -218,7 +218,7 @@ export default async function PaginaPedido({
 function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-stone-500">{etiqueta}</dt>
+      <dt className="text-tienda-tenue">{etiqueta}</dt>
       <dd className="tabular-nums">{valor}</dd>
     </div>
   );

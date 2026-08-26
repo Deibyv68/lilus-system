@@ -50,7 +50,7 @@ export default async function FichaArticulo({ params }: Props) {
     <div className="mx-auto max-w-5xl px-5 py-10">
       <Link
         href="/tienda"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-tienda-tenue hover:text-white transition-colors"
       >
         <ArrowLeft className="size-4" />
         Volver al catálogo
@@ -58,7 +58,7 @@ export default async function FichaArticulo({ params }: Props) {
 
       <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-14">
         <div className="space-y-3">
-          <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-100">
+          <div className="relative aspect-square overflow-hidden rounded-xl bg-tienda-velo">
             <ImagenArticulo
               url={portada?.url ?? null}
               alt={portada?.alt ?? null}
@@ -72,7 +72,7 @@ export default async function FichaArticulo({ params }: Props) {
               {articulo.imagenes.slice(1).map((img) => (
                 <li
                   key={img.url}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-stone-100"
+                  className="relative aspect-square overflow-hidden rounded-lg bg-tienda-velo"
                 >
                   <ImagenArticulo
                     url={img.url}
@@ -91,7 +91,7 @@ export default async function FichaArticulo({ params }: Props) {
           </h1>
 
           {articulo.tagline && (
-            <p className="mt-2 text-stone-600 text-pretty">{articulo.tagline}</p>
+            <p className="mt-2 text-tienda-tenue text-pretty">{articulo.tagline}</p>
           )}
 
           <p className="mt-6 text-2xl tabular-nums">
@@ -105,13 +105,13 @@ export default async function FichaArticulo({ params }: Props) {
               <ul className="space-y-1.5">
                 {articulo.contenido.map((c) => (
                   <li key={c.nombre} className="flex gap-2">
-                    <span className="text-stone-400 tabular-nums">
+                    <span className="text-tienda-tenue tabular-nums">
                       {c.cantidad}×
                     </span>
                     {c.slug ? (
                       <Link
                         href={`/tienda/${c.slug}`}
-                        className="underline underline-offset-4 decoration-stone-300 hover:decoration-stone-900"
+                        className="underline underline-offset-4 decoration-tienda-linea hover:decoration-tienda-texto"
                       >
                         {c.nombre}
                       </Link>
@@ -188,11 +188,11 @@ function Bloque({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-9 border-t border-stone-200 pt-6">
-      <h2 className="text-sm font-medium uppercase tracking-wide text-stone-400">
+    <section className="mt-9 border-t border-tienda-linea pt-6">
+      <h2 className="text-sm font-medium uppercase tracking-wide text-tienda-tenue">
         {titulo}
       </h2>
-      <div className="mt-3 text-stone-700">{children}</div>
+      <div className="mt-3 text-tienda-texto">{children}</div>
     </section>
   );
 }

@@ -17,7 +17,7 @@ export default async function Checkout() {
     return (
       <div className="mx-auto max-w-xl px-5 py-14">
         <h1 className="text-2xl font-medium tracking-tight">Tu pedido</h1>
-        <p className="mt-5 text-stone-600">
+        <p className="mt-5 text-tienda-tenue">
           Ahora mismo no podemos calcular el envío. Escríbenos y cerramos el
           pedido por WhatsApp.
         </p>

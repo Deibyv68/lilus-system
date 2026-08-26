@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Search, ShoppingBag, Menu, X } from "lucide-react";
 import { useCarrito, totalUnidades } from "@/lib/carrito";
+import { PanelCarrito } from "@/components/tienda/panel-carrito";
 
 /**
  * La cabecera de la tienda.
@@ -34,6 +35,7 @@ const SECUNDARIOS = [
 
 export function Cabecera({ marca }: { marca: string }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [carritoAbierto, setCarritoAbierto] = useState(false);
   const pathname = usePathname();
 
   const lineas = useCarrito((s) => s.lineas);
@@ -87,8 +89,16 @@ export function Cabecera({ marca }: { marca: string }) {
             <Search className="size-5" strokeWidth={1.5} />
           </Link>
 
-          <Link
-            href="/carrito"
+          {/*
+            Abre el panel en vez de navegar. La página /carrito sigue
+            existiendo y se llega desde dentro del panel: el vistazo no
+            debería costar salir de donde uno estaba.
+          */}
+          <button
+            type="button"
+            onClick={() => setCarritoAbierto(true)}
+            aria-haspopup="dialog"
+            aria-expanded={carritoAbierto}
             aria-label={
               listo && unidades > 0
                 ? `Carrito, ${unidades} ${unidades === 1 ? "artículo" : "artículos"}`
@@ -108,7 +118,7 @@ export function Cabecera({ marca }: { marca: string }) {
                 {unidades}
               </span>
             )}
-          </Link>
+          </button>
 
           <button
             type="button"
@@ -167,6 +177,11 @@ export function Cabecera({ marca }: { marca: string }) {
           </ul>
         </nav>
       </div>
+
+      <PanelCarrito
+        abierto={carritoAbierto}
+        onCerrar={() => setCarritoAbierto(false)}
+      />
     </header>
   );
 }

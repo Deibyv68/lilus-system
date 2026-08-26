@@ -51,7 +51,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
   if (lineas.length === 0) {
     return (
       <Marco>
-        <p className="text-stone-600">
+        <p className="text-tienda-tenue">
           Tu carrito está vacío, así que no hay nada que pedir todavía.
         </p>
         <Link href="/" className="mt-6 inline-block underline underline-offset-4">
@@ -107,7 +107,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
     <Marco>
       <Link
         href="/carrito"
-        className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-tienda-tenue hover:text-white transition-colors"
       >
         <ArrowLeft className="size-4" />
         Volver al carrito
@@ -142,15 +142,15 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
 
         <Bloque titulo="A dónde lo enviamos">
           <fieldset>
-            <legend className="mb-2 text-sm text-stone-600">Zona</legend>
+            <legend className="mb-2 text-sm text-tienda-tenue">Zona</legend>
             <div className="space-y-2">
               {zonas.map((z) => (
                 <label
                   key={z.id}
                   className={`flex cursor-pointer items-center justify-between gap-4 rounded-lg border px-4 py-3 transition-colors ${
                     z.id === zonaId
-                      ? "border-stone-900 bg-white"
-                      : "border-stone-300 hover:bg-white"
+                      ? "border-tienda-texto bg-tienda-fondo-alt"
+                      : "border-tienda-linea hover:bg-tienda-fondo-alt"
                   }`}
                 >
                   <span className="flex items-center gap-3">
@@ -160,11 +160,11 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
                       value={z.id}
                       checked={z.id === zonaId}
                       onChange={() => setZonaId(z.id)}
-                      className="size-4 accent-stone-900"
+                      className="size-4 accent-tienda-acento"
                     />
                     <span>
                       <span className="block text-sm">{z.nombre}</span>
-                      <span className="block text-xs text-stone-500">
+                      <span className="block text-xs text-tienda-tenue">
                         {z.transportadora}
                       </span>
                     </span>
@@ -198,13 +198,13 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           <dl className="space-y-2 text-sm">
             <Fila etiqueta="Productos" valor={formatCurrency(productos)} />
             <Fila etiqueta={`Envío · ${zona.nombre}`} valor={formatCurrency(zona.precio)} />
-            <div className="flex justify-between gap-4 border-t border-stone-200 pt-2 text-base">
+            <div className="flex justify-between gap-4 border-t border-tienda-linea pt-2 text-base">
               <dt className="font-medium">Total</dt>
               <dd className="font-medium tabular-nums">{formatCurrency(total)}</dd>
             </div>
           </dl>
 
-          <p className="mt-4 rounded-lg bg-stone-100 px-4 py-3 text-sm text-stone-600">
+          <p className="mt-4 rounded-lg bg-tienda-velo px-4 py-3 text-sm text-tienda-tenue">
             El pago es por <strong className="font-medium">transferencia bancaria</strong>.
             Al confirmar te damos los datos de la cuenta y el número de tu
             pedido. Lo preparamos apenas veamos la transferencia.
@@ -213,7 +213,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           {error && (
             <p
               role="alert"
-              className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800"
+              className="mt-4 rounded-lg bg-red-950/40 px-4 py-3 text-sm text-red-300"
             >
               {error}
             </p>
@@ -224,7 +224,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
             momento en que la persona entrega su direccion y su telefono:
             si va a saber que existe una politica, tiene que ser aqui.
           */}
-          <p className="mt-5 text-xs leading-relaxed text-stone-500">
+          <p className="mt-5 text-xs leading-relaxed text-tienda-tenue">
             Al enviar el pedido aceptas las{" "}
             <Link href="/legal/terminos" className="underline underline-offset-2">
               condiciones de compra
@@ -240,7 +240,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           <button
             type="submit"
             disabled={enviando}
-            className="mt-3 w-full rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700 disabled:opacity-60"
+            className="mt-3 w-full rounded-full bg-tienda-texto px-5 py-3 text-sm font-medium text-tienda-fondo transition-colors hover:bg-tienda-acento disabled:opacity-60"
           >
             {enviando ? "Creando tu pedido…" : "Confirmar pedido"}
           </button>
@@ -268,7 +268,7 @@ function Campo({
   const idAyuda = ayuda ? `${nombre}-ayuda` : undefined;
   return (
     <div>
-      <label htmlFor={nombre} className="block text-sm text-stone-600">
+      <label htmlFor={nombre} className="block text-sm text-tienda-tenue">
         {etiqueta}
       </label>
       <input
@@ -278,10 +278,10 @@ function Campo({
         required={requerido}
         autoComplete={autoComplete}
         aria-describedby={idAyuda}
-        className="mt-1.5 w-full rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-stone-900"
+        className="mt-1.5 w-full rounded-lg border border-tienda-linea bg-tienda-fondo-alt px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-tienda-texto"
       />
       {ayuda && (
-        <p id={idAyuda} className="mt-1 text-xs text-stone-500">
+        <p id={idAyuda} className="mt-1 text-xs text-tienda-tenue">
           {ayuda}
         </p>
       )}
@@ -292,7 +292,7 @@ function Campo({
 function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-stone-500">{etiqueta}</dt>
+      <dt className="text-tienda-tenue">{etiqueta}</dt>
       <dd className="tabular-nums">{valor}</dd>
     </div>
   );
@@ -307,7 +307,7 @@ function Bloque({
 }) {
   return (
     <section>
-      <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-stone-400">
+      <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-tienda-tenue">
         {titulo}
       </h2>
       <div className="space-y-4">{children}</div>
