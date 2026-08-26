@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,11 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // El PDF lleva nombre, teléfono y dirección del cliente impresos.
+  // No sale sin sesión.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   const { id } = await params;
   const order = await prisma.order.findUnique({
     where: { id },

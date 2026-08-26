@@ -9,6 +9,7 @@ import {
   calcExpiry,
 } from "@/lib/order-utils";
 import { DEFAULT_SHELF_LIFE_MONTHS } from "@/lib/constants";
+import { requireUser } from "@/lib/guard";
 
 type CreateOrderPayload = {
   customer: {
@@ -32,6 +33,8 @@ type CreateOrderPayload = {
 };
 
 export async function createOrderAction(payload: CreateOrderPayload) {
+  await requireUser();
+
   const parsed = orderSchema.safeParse(payload);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
@@ -203,6 +206,8 @@ export async function createOrderAction(payload: CreateOrderPayload) {
 }
 
 export async function deleteOrdersAction(orderIds: string[]) {
+  await requireUser();
+
   if (!Array.isArray(orderIds) || orderIds.length === 0) {
     return { ok: false as const, error: "Sin pedidos a eliminar" };
   }
@@ -221,6 +226,8 @@ export async function updateOrderStatusAction(
   orderId: string,
   status: "PENDING" | "PAID" | "PACKED" | "SHIPPED" | "DELIVERED" | "CANCELLED"
 ) {
+  await requireUser();
+
   const data: { status: typeof status; shippedAt?: Date | null } = { status };
   if (status === "SHIPPED") {
     data.shippedAt = new Date();
@@ -234,6 +241,8 @@ export async function markAsShippedAction(
   orderId: string,
   trackingNumber: string
 ) {
+  await requireUser();
+
   const trimmed = trackingNumber.trim();
   if (!trimmed) return { ok: false as const, error: "La guía no puede estar vacía" };
   if (trimmed.length > 60) {
@@ -256,6 +265,8 @@ export async function updateTrackingAction(
   orderId: string,
   trackingNumber: string
 ) {
+  await requireUser();
+
   const trimmed = trackingNumber.trim();
   await prisma.order.update({
     where: { id: orderId },

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/guard";
 
 /**
  * Lee un campo de texto. Los selects usan "none" para el vacío porque
@@ -82,6 +83,8 @@ function materialData(fd: FormData) {
 }
 
 export async function createMaterialAction(fd: FormData) {
+  await requireUser();
+
   const data = materialData(fd);
   if (!data.name) return { ok: false, error: "El nombre es obligatorio" };
 
@@ -98,6 +101,8 @@ export async function createMaterialAction(fd: FormData) {
 }
 
 export async function updateMaterialAction(id: string, fd: FormData) {
+  await requireUser();
+
   const data = materialData(fd);
   if (!data.name) return { ok: false, error: "El nombre es obligatorio" };
 
@@ -108,6 +113,8 @@ export async function updateMaterialAction(id: string, fd: FormData) {
 }
 
 export async function deleteMaterialAction(id: string) {
+  await requireUser();
+
   await prisma.material.delete({ where: { id } });
   revalidatePath("/inventario");
   redirect("/inventario");
@@ -116,6 +123,8 @@ export async function deleteMaterialAction(id: string) {
 // ─────────────────────── Lotes ───────────────────────
 
 export async function createLotAction(materialId: string, fd: FormData) {
+  await requireUser();
+
   await prisma.materialLot.create({
     data: {
       materialId,
@@ -139,6 +148,8 @@ export async function createLotAction(materialId: string, fd: FormData) {
 }
 
 export async function updateLotStatusAction(lotId: string, status: string) {
+  await requireUser();
+
   const lot = await prisma.materialLot.update({
     where: { id: lotId },
     // Abrir un lote sin fecha de apertura la pone hoy: es el dato que
@@ -155,6 +166,8 @@ export async function updateLotStatusAction(lotId: string, status: string) {
 }
 
 export async function deleteLotAction(lotId: string) {
+  await requireUser();
+
   const lot = await prisma.materialLot.delete({
     where: { id: lotId },
     include: { material: true },
@@ -167,6 +180,8 @@ export async function deleteLotAction(lotId: string) {
 // ─────────────────────── Listas de compra ───────────────────────
 
 export async function createShoppingListAction(fd: FormData) {
+  await requireUser();
+
   const name = str(fd, "name") ?? `Compra ${new Date().toLocaleDateString("es-EC")}`;
   const list = await prisma.shoppingList.create({
     data: { name, notes: str(fd, "notes") },
@@ -179,6 +194,8 @@ export async function addShoppingItemsAction(
   listId: string,
   materialIds: string[]
 ) {
+  await requireUser();
+
   if (materialIds.length === 0) return { ok: true };
 
   const last = await prisma.shoppingItem.findFirst({
@@ -206,6 +223,8 @@ export async function addShoppingItemsAction(
 }
 
 export async function addFreeTextItemAction(listId: string, text: string) {
+  await requireUser();
+
   const t = text.trim();
   if (!t) return { ok: false, error: "Escribe algo" };
 
@@ -226,6 +245,8 @@ export async function updateShoppingItemAction(
   itemId: string,
   patch: { quantity?: string; note?: string; checked?: boolean }
 ) {
+  await requireUser();
+
   const item = await prisma.shoppingItem.update({
     where: { id: itemId },
     data: {
@@ -239,12 +260,16 @@ export async function updateShoppingItemAction(
 }
 
 export async function deleteShoppingItemAction(itemId: string) {
+  await requireUser();
+
   const item = await prisma.shoppingItem.delete({ where: { id: itemId } });
   revalidatePath(`/inventario/compras/${item.listId}`);
   return { ok: true };
 }
 
 export async function finishShoppingListAction(listId: string) {
+  await requireUser();
+
   const list = await prisma.shoppingList.update({
     where: { id: listId },
     data: { doneAt: new Date() },
@@ -255,6 +280,8 @@ export async function finishShoppingListAction(listId: string) {
 }
 
 export async function reopenShoppingListAction(listId: string) {
+  await requireUser();
+
   await prisma.shoppingList.update({
     where: { id: listId },
     data: { doneAt: null },
@@ -265,6 +292,8 @@ export async function reopenShoppingListAction(listId: string) {
 }
 
 export async function deleteShoppingListAction(listId: string) {
+  await requireUser();
+
   await prisma.shoppingList.delete({ where: { id: listId } });
   revalidatePath("/inventario/compras");
   redirect("/inventario/compras");

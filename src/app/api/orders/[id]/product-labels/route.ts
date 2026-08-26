@@ -4,6 +4,7 @@ import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import { pdfOrPngResponse } from "@/lib/pdf-response";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,11 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // El PDF lleva nombre, teléfono y dirección del cliente impresos.
+  // No sale sin sesión.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   const format = req.nextUrl.searchParams.get("format");
   const { id } = await params;
   const offsetXmm = parseFloat(req.nextUrl.searchParams.get("offsetX") ?? "0") || 0;

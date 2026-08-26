@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
 // Acepta ?ids=id1,id2,id3 y devuelve un resumen por pedido para el wizard
 // de impresión por lote.
 export async function GET(req: NextRequest) {
+  // Resumen de varios pedidos a la vez: lleva datos de cada cliente.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   const idsParam = req.nextUrl.searchParams.get("ids") ?? "";
   const ids = idsParam.split(",").filter(Boolean);
   if (ids.length === 0) {

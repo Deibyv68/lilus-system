@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { packSchema } from "@/lib/schemas";
 import { saveUpload } from "@/lib/uploads";
+import { requireUser } from "@/lib/guard";
 
 function parseItems(formData: FormData): { productId: string; quantity: number }[] {
   const raw = formData.get("items");
@@ -18,6 +19,8 @@ function parseItems(formData: FormData): { productId: string; quantity: number }
 }
 
 export async function createPackAction(formData: FormData) {
+  await requireUser();
+
   const items = parseItems(formData);
   const parsed = packSchema.safeParse({
     sku: formData.get("sku"),
@@ -73,6 +76,8 @@ export async function createPackAction(formData: FormData) {
 }
 
 export async function updatePackAction(id: string, formData: FormData) {
+  await requireUser();
+
   const items = parseItems(formData);
   const parsed = packSchema.safeParse({
     sku: formData.get("sku"),
@@ -133,6 +138,8 @@ export async function updatePackAction(id: string, formData: FormData) {
 }
 
 export async function deletePackAction(id: string) {
+  await requireUser();
+
   await prisma.pack.delete({ where: { id } });
   revalidatePath("/packs");
   redirect("/packs");

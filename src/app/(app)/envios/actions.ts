@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/guard";
 
 export async function upsertRateAction(formData: FormData) {
+  await requireUser();
+
   const zoneId = String(formData.get("zoneId") ?? "");
   const carrierId = String(formData.get("carrierId") ?? "");
   const price = Number(formData.get("price") ?? 0);
@@ -20,6 +23,8 @@ export async function upsertRateAction(formData: FormData) {
 }
 
 export async function createZoneAction(formData: FormData) {
+  await requireUser();
+
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { ok: false, error: "Nombre requerido" };
   try {
@@ -32,6 +37,8 @@ export async function createZoneAction(formData: FormData) {
 }
 
 export async function createCarrierAction(formData: FormData) {
+  await requireUser();
+
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { ok: false, error: "Nombre requerido" };
   try {
@@ -44,11 +51,15 @@ export async function createCarrierAction(formData: FormData) {
 }
 
 export async function deleteZoneAction(id: string) {
+  await requireUser();
+
   await prisma.shippingZone.delete({ where: { id } });
   revalidatePath("/envios");
 }
 
 export async function deleteCarrierAction(id: string) {
+  await requireUser();
+
   await prisma.carrier.delete({ where: { id } });
   revalidatePath("/envios");
 }

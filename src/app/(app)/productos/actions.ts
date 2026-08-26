@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { productSchema } from "@/lib/schemas";
 import { DEFAULT_SHELF_LIFE_MONTHS } from "@/lib/constants";
 import { saveUpload } from "@/lib/uploads";
+import { requireUser } from "@/lib/guard";
 
 function pickString(v: FormDataEntryValue | null): string | undefined {
   if (typeof v !== "string") return undefined;
@@ -14,6 +15,8 @@ function pickString(v: FormDataEntryValue | null): string | undefined {
 }
 
 export async function createProductAction(formData: FormData) {
+  await requireUser();
+
   const parsed = productSchema.safeParse({
     sku: formData.get("sku"),
     name: formData.get("name"),
@@ -87,6 +90,8 @@ export async function createProductAction(formData: FormData) {
 }
 
 export async function updateProductAction(id: string, formData: FormData) {
+  await requireUser();
+
   const parsed = productSchema.safeParse({
     sku: formData.get("sku"),
     name: formData.get("name"),
@@ -162,6 +167,8 @@ export async function updateProductAction(id: string, formData: FormData) {
 }
 
 export async function deleteProductAction(id: string) {
+  await requireUser();
+
   await prisma.product.delete({ where: { id } });
   revalidatePath("/productos");
   redirect("/productos");

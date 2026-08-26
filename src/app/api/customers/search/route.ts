@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  // Con dos letras esto devolvía nombre, cédula, teléfono, correo y
+  // dirección de las clientas. Era la fuga más grave del sistema.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
   if (q.length < 2) return NextResponse.json([]);
 

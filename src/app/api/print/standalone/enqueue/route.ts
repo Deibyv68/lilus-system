@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,10 @@ const MM_TO_PT = 2.83464567;
 // Usado por la sección de etiquetas sueltas.
 // Body: { kind: "product-labels" | "box-logo", productId?, copies, offsetX?, offsetY? }
 export async function POST(req: NextRequest) {
+  // Sin esto, un desconocido podía mandar cosas a imprimir a la casa.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   let body: {
     kind?: "product-labels" | "box-logo";
     productId?: string;

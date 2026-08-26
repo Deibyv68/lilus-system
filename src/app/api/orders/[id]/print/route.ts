@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enqueuePrintJob, type PrintKind } from "@/lib/print-queue";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Encola impresión de un pedido real. Solo desde adentro.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   const { id } = await params;
   let body: {
     kind?: PrintKind;

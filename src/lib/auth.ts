@@ -2,12 +2,15 @@ import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
+import { SESSION_COOKIE, DEVICE_COOKIE } from "./constants";
 
 // ──────────────────────────────────────────────────────────
 // Constantes
 // ──────────────────────────────────────────────────────────
-export const SESSION_COOKIE = "lilus_session";
-export const DEVICE_COOKIE = "lilus_device";
+// Los nombres de las cookies viven en `constants.ts` para que `proxy.ts`
+// pueda leerlos sin importar este módulo (que arrastra Prisma y bcrypt).
+// Se re-exportan aquí porque este sigue siendo el módulo de auth.
+export { SESSION_COOKIE, DEVICE_COOKIE };
 
 const SESSION_DAYS = 7;
 const DEVICE_DAYS = 90;

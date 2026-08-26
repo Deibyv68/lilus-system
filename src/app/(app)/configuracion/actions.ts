@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/guard";
 
 const ALLOWED_KEYS = new Set([
   "brand_name",
@@ -19,6 +20,8 @@ const ALLOWED_KEYS = new Set([
 ]);
 
 export async function saveSettingsAction(formData: FormData) {
+  await requireAdmin();
+
   for (const [k, v] of formData.entries()) {
     if (!ALLOWED_KEYS.has(k) || typeof v !== "string") continue;
     await prisma.setting.upsert({
@@ -36,6 +39,8 @@ export async function savePrintAgentSettingsAction(args: {
   token: string;
   printer: string;
 }) {
+  await requireAdmin();
+
   await prisma.setting.upsert({
     where: { key: "print_agent_enabled" },
     update: { value: args.enabled ? "true" : "false" },

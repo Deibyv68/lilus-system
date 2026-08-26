@@ -4,6 +4,7 @@ import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import { pdfOrPngResponse } from "@/lib/pdf-response";
+import { denyIfAnonymous } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,10 @@ const MM_TO_PT = 2.83464567;
 // (sin necesidad de un pedido). Usado por la sección de etiquetas sueltas.
 // Acepta: ?productId=X&copies=N&offsetX=mm&offsetY=mm
 export async function GET(req: NextRequest) {
+  // Sin esto, un desconocido podía mandar cosas a imprimir a la casa.
+  const denegado = await denyIfAnonymous();
+  if (denegado) return denegado;
+
   const format = req.nextUrl.searchParams.get("format");
   const productId = req.nextUrl.searchParams.get("productId");
   if (!productId) {
