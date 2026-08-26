@@ -278,6 +278,17 @@
 }
 
 /*
+  Se detiene cuando lo que se desplaza se puede pulsar. `focus-within`
+  además de `hover` no es un extra: quien llega con el tabulador tampoco
+  puede perseguir una tarjeta en movimiento, y no tiene cursor con el que
+  detenerla.
+*/
+.marquesina-pausable:hover,
+.marquesina-pausable:focus-within {
+  animation-play-state: paused;
+}
+
+/*
   Un texto que se desplaza sin parar es de las cosas que peor sientan a
   quien tiene sensibilidad al movimiento, y encima no se puede pausar.
   Con «reducir movimiento» activado se queda quieto: se lee la primera

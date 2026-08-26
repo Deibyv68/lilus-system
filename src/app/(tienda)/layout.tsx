@@ -85,40 +85,85 @@ export default async function TiendaLayout({
       <main className="flex-1">{children}</main>
 
       <footer className="mt-32 border-t border-tienda-linea">
-        <div className="mx-auto max-w-[1440px] px-6 sm:px-10 py-16 space-y-4 text-sm text-tienda-tenue">
-          <p className="font-display text-3xl tracking-[0.02em] text-tienda-texto">
-            {marca}
-          </p>
-          <p>Hechos en Ecuador. Enviamos a todo el país por Servientrega.</p>
+        <div className="mx-auto max-w-[1440px] px-6 py-20 sm:px-10">
+          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
+            {/* La marca y lo que hay que decir del producto */}
+            <div className="lg:col-span-2">
+              <p className="font-display text-4xl tracking-[0.02em] text-white">
+                {marca}
+              </p>
+              <p className="mt-4 max-w-xs text-sm leading-relaxed text-tienda-tenue">
+                Jabones y cosmética artesanal hechos a mano en Ecuador.
+                Enviamos a todo el país por Servientrega.
+              </p>
 
-          {(contacto.whatsapp || contacto.instagram) && (
-            <p className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
-              {contacto.whatsapp && (
-                <Externo href={contacto.whatsapp}>
-                  Escríbenos por WhatsApp
-                </Externo>
+              {(contacto.whatsapp || contacto.instagram) && (
+                <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                  {contacto.whatsapp && (
+                    <Externo href={contacto.whatsapp}>WhatsApp</Externo>
+                  )}
+                  {contacto.instagram && (
+                    <Externo href={contacto.instagram}>
+                      @{contacto.instagramUsuario}
+                    </Externo>
+                  )}
+                </div>
               )}
-              {contacto.instagram && (
-                <Externo href={contacto.instagram}>
-                  @{contacto.instagramUsuario}
-                </Externo>
-              )}
+            </div>
+
+            <ColumnaPie titulo="Navegar">
+              <Interno href="/">Inicio</Interno>
+              <Interno href="/tienda">Tienda</Interno>
+              <Interno href="/nosotros">Nosotros</Interno>
+              <Interno href="/contacto">Contacto</Interno>
+            </ColumnaPie>
+
+            <ColumnaPie titulo="Legal">
+              <Interno href="/legal/terminos">Condiciones de compra</Interno>
+              <Interno href="/legal/devoluciones">Cambios y devoluciones</Interno>
+              <Interno href="/legal/privacidad">Tus datos</Interno>
+            </ColumnaPie>
+          </div>
+
+          <div className="mt-16 border-t border-tienda-linea pt-8">
+            <p className="max-w-2xl text-xs leading-relaxed text-tienda-tenue/70">
+              Nuestros productos son cosméticos de higiene y cuidado personal.
+              No son medicamentos y no tratan ni curan ninguna enfermedad. Si
+              tienes una condición en la piel, consulta a un profesional de la
+              salud.
             </p>
-          )}
-
-          <p className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
-            <Interno href="/legal/terminos">Condiciones de compra</Interno>
-            <Interno href="/legal/devoluciones">Cambios y devoluciones</Interno>
-            <Interno href="/legal/privacidad">Tus datos</Interno>
-          </p>
-
-          <p className="max-w-lg pt-4 text-xs leading-relaxed text-tienda-tenue/70">
-            Nuestros productos son cosméticos de higiene y cuidado personal. No
-            son medicamentos y no tratan ni curan ninguna enfermedad. Si tienes
-            una condición en la piel, consulta a un profesional de la salud.
-          </p>
+            <p className="mt-6 text-xs text-tienda-tenue/70">
+              {marca} © {new Date().getFullYear()} · Hecho en Ecuador
+            </p>
+          </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function ColumnaPie({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-[0.12em] text-tienda-tenue/60">
+        {titulo}
+      </p>
+      <ul className="mt-5 space-y-3 text-sm">
+        {/*
+          Cada enlace en su <li>. Un pie es una lista de enlaces, y
+          anunciarla como tal le dice a quien usa lector de pantalla
+          cuántos hay antes de recorrerlos.
+        */}
+        {Array.isArray(children)
+          ? children.map((hijo, i) => <li key={i}>{hijo}</li>)
+          : <li>{children}</li>}
+      </ul>
     </div>
   );
 }
