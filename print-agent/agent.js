@@ -72,37 +72,63 @@ function getPrinterStatus(printerName) {
     const escapedName = printerName.replace(/'/g, "''");
     const psScript = `
       $ErrorActionPreference = 'SilentlyContinue';
+      $nombre = '${escapedName}';
 
-      # ── Paso 1: Detección PnP (siempre funciona sin login) ──
-      $pnp = Get-PnpDevice | Where-Object { $_.FriendlyName -like '*MUNBYN*' -or $_.FriendlyName -like '*Munbyn*' } | Select-Object -First 1;
-      if (-not $pnp) { Write-Output 'offline'; exit; }
-      if ($pnp.Status -eq 'Error') { Write-Output 'error'; exit; }
-      if ($pnp.Status -eq 'Degraded') { Write-Output 'error'; exit; }
-      if ($pnp.Status -ne 'OK') {
-        # 'Unknown', 'Disabled', etc.
-        Write-Output 'offline'; exit;
+      $cola = Get-Printer -Name $nombre;
+      if (-not $cola) { Write-Output "not_installed|no existe la cola '$nombre' en Windows"; exit; }
+      $puerto = [string]$cola.PortName;
+
+      # El hardware que está REALMENTE enchufado ahora.
+      #
+      # -PresentOnly es la clave: sin él la lista incluye todo lo que
+      # alguna vez estuvo conectado. Y se excluye SWD\\, que es la cola de
+      # software: esa figura presente y OK aunque la impresora esté
+      # desconectada y hasta sin corriente. Era justo lo que hacía que el
+      # sistema dijera "lista" con el cable afuera.
+      #
+      # Se acepta tanto un dispositivo de impresión USB estándar como
+      # cualquier cosa presente que lleve el nombre de la impresora,
+      # porque no todos los modelos se registran igual.
+      $candidatos = @(Get-PnpDevice -PresentOnly | Where-Object {
+        $_.InstanceId -notlike 'SWD\\*' -and (
+          $_.InstanceId -like 'USBPRINT\\*' -or
+          ($_.FriendlyName -and (
+            $nombre -like ('*' + $_.FriendlyName + '*') -or
+            $_.FriendlyName -like ('*' + $nombre + '*')
+          ))
+        )
+      });
+
+      $detalle = "puerto=$puerto presentes=" + $candidatos.Count;
+      if ($candidatos.Count -gt 0) {
+        $detalle = $detalle + " [" + (($candidatos | ForEach-Object { $_.FriendlyName + '/' + $_.Status }) -join ', ') + "]";
       }
 
-      # ── Paso 2: Detalle vía Win32_Printer (puede no funcionar sin login) ──
-      $p = Get-CimInstance -ClassName Win32_Printer -Filter "Name='${escapedName}'";
-      if (-not $p) {
-        # PnP la ve pero el driver no está disponible — probablemente
-        # falta sesión activa. Confiamos en PnP: está físicamente OK.
-        Write-Output 'ok'; exit;
+      if ($puerto -notlike 'USB*') {
+        # No es USB (red, archivo, virtual). No se puede usar presencia
+        # física, así que se cree lo que diga la cola.
+        if ($cola.PrinterStatus -eq 'Error') { Write-Output "error|$detalle no-usb"; exit; }
+        Write-Output "ok|$detalle no-usb"; exit;
       }
 
-      # Si Win32 dice offline pero PnP la ve presente: ignoramos el
-      # Win32 (suele ser falso positivo por falta de sesión).
-      if ($p.WorkOffline -eq $true) { Write-Output 'ok'; exit; }
-
-      switch ($p.PrinterStatus) {
-        3 { Write-Output 'ok' }
-        4 { Write-Output 'printing' }
-        5 { Write-Output 'ok' }
-        6 { Write-Output 'stopped' }
-        7 { Write-Output 'ok' }
-        default { Write-Output 'ok' }
+      if ($candidatos.Count -eq 0) {
+        Write-Output "offline|$detalle - nada enchufado con ese nombre"; exit;
       }
+
+      $malos = @($candidatos | Where-Object { $_.Status -eq 'Error' -or $_.Status -eq 'Degraded' });
+      if ($malos.Count -gt 0) { Write-Output "error|$detalle dispositivo en estado $($malos[0].Status)"; exit; }
+
+      $vivos = @($candidatos | Where-Object { $_.Status -eq 'OK' });
+      if ($vivos.Count -eq 0) {
+        Write-Output "offline|$detalle presente pero en estado $($candidatos[0].Status)"; exit;
+      }
+
+      # Está físicamente conectada. El driver solo se usa para afinar, nunca
+      # para contradecir: Windows informa "lista" de impresoras que no están.
+      $p = Get-CimInstance -ClassName Win32_Printer -Filter "Name='$nombre'";
+      if ($p -and $p.PrinterStatus -eq 4) { Write-Output "printing|$detalle"; exit; }
+      if ($p -and $p.PrinterStatus -eq 6) { Write-Output "stopped|$detalle detenida"; exit; }
+      Write-Output "ok|$detalle";
     `.trim();
     execFile(
       "powershell.exe",
@@ -121,11 +147,18 @@ function getPrinterStatus(printerName) {
       { timeout: 8000 },
       (err, stdout) => {
         if (err) {
-          resolve("error");
+          resolve({ estado: "error", detalle: `no se pudo consultar: ${err.message}` });
           return;
         }
-        const out = (stdout || "").trim().toLowerCase();
-        resolve(out || "unknown");
+        // La consulta devuelve "estado|por qué". El motivo se guarda para
+        // poder escribirlo en el log: sin él, un "offline" no dice si es
+        // que la desenchufaron o que el nombre está mal escrito.
+        const linea = (stdout || "").trim().split(/\r?\n/).pop() ?? "";
+        const [estado, detalle] = linea.split("|");
+        return resolve({
+          estado: (estado || "unknown").trim().toLowerCase(),
+          detalle: (detalle || "").trim(),
+        });
       }
     );
   });
@@ -247,16 +280,21 @@ async function maybeCheckPrinter() {
   lastPrinterCheck = now;
   if (!cachedPrinterName) return;
   const antes = cachedPrinterStatus;
+  let detalle = "";
   try {
-    cachedPrinterStatus = await getPrinterStatus(cachedPrinterName);
-  } catch {
+    const r = await getPrinterStatus(cachedPrinterName);
+    cachedPrinterStatus = r.estado;
+    detalle = r.detalle;
+  } catch (e) {
     cachedPrinterStatus = "error";
+    detalle = e.message;
   }
   // Se avisa el cambio porque es justo lo que se mira al pasar el cable
   // de una PC a la otra: acá se ve cuál de las dos quedó a cargo.
   if (cachedPrinterStatus !== antes) {
     const tomo = ["ok", "printing"].includes(cachedPrinterStatus);
     const teniaAntes = ["ok", "printing"].includes(antes);
+    console.log(`   [${cachedPrinterStatus}] ${detalle}`);
     if (tomo && !teniaAntes) {
       console.log(`🖨  Impresora conectada aquí — esta PC toma los trabajos.`);
     } else if (!tomo && teniaAntes) {
@@ -323,6 +361,60 @@ async function tick() {
   } finally {
     running = false;
   }
+}
+
+// Modo diagnóstico: una foto de lo que ve Windows y se corta.
+//
+// Sirve para comprobar con la impresora enchufada y desenchufada sin
+// tener que leer el log ni esperar los 10 segundos del ciclo normal.
+//
+//   node agent.js --diagnostico
+if (process.argv.includes("--diagnostico")) {
+  (async () => {
+    console.log("\n═══ Diagnóstico de impresora ═══\n");
+    console.log(` PC:        ${AGENT_NAME}`);
+    console.log(` Servidor:  ${SERVER_URL}`);
+    await maybeRefreshConfig();
+    console.log(` Impresora configurada en LILUS: ${cachedPrinterName ?? "(no se pudo consultar)"}`);
+    if (!cachedPrinterName) {
+      console.log("\n No se pudo leer la configuración del servidor.");
+      console.log(" Revisá la URL y el token del archivo .env.\n");
+      process.exit(1);
+    }
+    const r = await getPrinterStatus(cachedPrinterName);
+    console.log("");
+    console.log(` Resultado: ${r.estado.toUpperCase()}`);
+    console.log(` Por qué:   ${r.detalle}`);
+    console.log("");
+
+    // Volcado crudo: si la detección se equivoca, esto es lo que hace
+    // falta para saber cómo se registra esta impresora en esta PC.
+    await new Promise((listo) => {
+      execFile(
+        "powershell.exe",
+        [
+          "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
+          "$ErrorActionPreference='SilentlyContinue';" +
+            "Write-Output ' Enchufado ahora mismo (sin las colas de software):';" +
+            "Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -notlike 'SWD\\*' -and " +
+            "($_.Class -in @('Printer','USBPrint','USB') -or $_.InstanceId -like 'USBPRINT\\*') } | " +
+            "Format-Table -AutoSize Status, Class, FriendlyName | Out-String -Width 120",
+        ],
+        { timeout: 10000 },
+        (e, out) => {
+          if (out) console.log(out);
+          listo();
+        }
+      );
+    });
+    console.log(
+      ["ok", "printing"].includes(r.estado)
+        ? " → Esta PC recibiría los trabajos de impresión.\n"
+        : " → Esta PC NO recibiría trabajos. Los toma la otra.\n"
+    );
+    process.exit(0);
+  })();
+  return;
 }
 
 console.log("════════════════════════════════════════════");

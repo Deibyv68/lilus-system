@@ -227,7 +227,17 @@ function Invoke-Instalacion {
     # acepte el token. Es mejor fallar acá con un mensaje claro que dejar un
     # servicio instalado que no imprime y hay que ir a leer en el log.
     Write-Host "  Probando conexion con el servidor..."
-    $nombreReal = if ($NombrePc) { $NombrePc } else { $env:COMPUTERNAME }
+
+    # El nombre se le pregunta a Node, que es lo que va a usar el agente
+    # despues. $env:COMPUTERNAME devuelve lo mismo pero en mayusculas, y
+    # como para el servidor "ANDREA" y "Andrea" son dos nombres distintos,
+    # la PC aparecia duplicada en la lista de computadoras.
+    $nombreReal = $NombrePc
+    if (-not $nombreReal) {
+        $nombreReal = (& node -e "console.log(require('os').hostname())" 2>$null | Select-Object -First 1)
+    }
+    if (-not $nombreReal) { $nombreReal = $env:COMPUTERNAME }
+    $nombreReal = $nombreReal.Trim()
     $prueba = "$ServidorUrl/api/print-queue" +
     "?token=$([uri]::EscapeDataString($Token))" +
     "&agent=$([uri]::EscapeDataString($nombreReal))&printer=instalando"

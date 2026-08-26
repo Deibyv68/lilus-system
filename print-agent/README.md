@@ -198,6 +198,7 @@ Verás los logs en vivo. `Ctrl+C` para detenerlo.
 | "No imprime en ninguna PC" | Ninguna ve la impresora | Mirar Configuración: si están las dos en ámbar, el cable no hace contacto o la MUNBYN está apagada |
 | "El trabajo salió fallido solo" | Esperó más de 15 min sin impresora | Es a propósito, para que no salgan mañana las etiquetas de hoy. Volver a imprimir con la impresora ya conectada |
 | "npm.ps1 ... la ejecución de scripts está deshabilitada" | Política de ejecución restringida en esa PC | Ya está resuelto: el instalador llama a `npm.cmd`, que no pasa por PowerShell. Volvé a correr el comando |
+| "Dice impresora lista con el cable afuera" | Detección vieja del agente | Ya está resuelto. Comprobalo con `node C:\lilus-system\print-agentgent.js --diagnostico` |
 | "Las dos PCs con el mismo nombre" | Hostnames iguales en Windows | Poner `LILUS_AGENT_NAME` distinto en el `.env` de cada una |
 | "Error contactando servidor" y Tailscale instalado | Las dos máquinas en redes distintas | `ping 100.92.162.24` desde la PC de la impresora. Si no responde, revisar que Tailscale esté conectado con la misma cuenta en ambas |
 | "PDF sale con escala raro" | Tamaño de papel no concuerda | El agente usa `scale: noscale` — verifica que la cola Windows tenga el tamaño 4x6 o 2x1 según el caso |
