@@ -6,16 +6,16 @@ import { getCurrentUser, getTrustedDevice } from "@/lib/auth";
 import type { Metadata } from "next";
 
 /**
- * El titulo y el `noindex` viven aqui y no en el layout raiz porque ese
- * ahora lo comparten el panel y la tienda. Lo que se ponga alli lo hereda
- * la web de cara al publico.
+ * El título y el `noindex` viven aquí y no en el layout raíz porque ese
+ * ahora lo comparten el panel y la tienda. Lo que se ponga allí lo hereda
+ * la web de cara al público.
  *
  * El `noindex` repite lo que ya manda el proxy por cabecera. Es a
- * proposito: son dos mecanismos distintos y cuesta nada tener los dos.
+ * propósito: son dos mecanismos distintos y no cuesta nada tener los dos.
  */
 export const metadata: Metadata = {
   title: {
-    default: "LILUS — Gestion de ventas",
+    default: "LILUS — Gestión de ventas",
     template: "%s · LILUS",
   },
   robots: { index: false, follow: false },

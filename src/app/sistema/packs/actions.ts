@@ -29,6 +29,7 @@ export async function createPackAction(formData: FormData) {
     price: formData.get("price"),
     productionCost: formData.get("productionCost") ?? 0,
     isActive: formData.get("isActive") === "on",
+    isPublic: formData.get("isPublic") === "on",
     items,
   });
   if (!parsed.success) {
@@ -55,6 +56,7 @@ export async function createPackAction(formData: FormData) {
         price: data.price,
         productionCost: data.productionCost,
         isActive: data.isActive,
+        isPublic: data.isPublic,
         imageUrl,
         items: {
           create: data.items.map((i) => ({
@@ -86,6 +88,7 @@ export async function updatePackAction(id: string, formData: FormData) {
     price: formData.get("price"),
     productionCost: formData.get("productionCost") ?? 0,
     isActive: formData.get("isActive") === "on",
+    isPublic: formData.get("isPublic") === "on",
     items,
   });
   if (!parsed.success) {
@@ -115,6 +118,7 @@ export async function updatePackAction(id: string, formData: FormData) {
           price: data.price,
           productionCost: data.productionCost,
           isActive: data.isActive,
+        isPublic: data.isPublic,
           ...(imageUrl ? { imageUrl } : {}),
           items: {
             create: data.items.map((i) => ({

@@ -5,12 +5,17 @@
  *   npx tsx scripts/preparar-tienda.ts           # muestra lo que haría
  *   npx tsx scripts/preparar-tienda.ts --aplicar # lo guarda
  *
- * ── Lo que NO hace ──
+ * ── Publicar ──
  *
- * No pone nada en `isPublic`. Un producto sin fotos buenas no tiene por
- * qué aparecer en la tienda, y las fotos que hay hoy son las de trabajo
- * interno. Publicar es un gesto aparte y a conciencia: se hace desde el
- * panel cuando el producto está listo, no de corrido por un script.
+ * Por defecto no toca `isPublic`. Publicar es un gesto a conciencia y se
+ * hace desde el panel, producto por producto, cuando cada uno tiene sus
+ * fotos: hay un interruptor «Publicado en la tienda» al lado de «Activo».
+ *
+ * La excepción es tener algo que mirar mientras se construye la tienda.
+ * Para eso está `--publicar-todo`, que es a propósito una bandera aparte
+ * y de nombre incómodo: sirve para desarrollo, no para el día a día.
+ *
+ *   npx tsx scripts/preparar-tienda.ts --aplicar --publicar-todo
  *
  * ── Sobre las direcciones ──
  *
@@ -75,7 +80,14 @@ const TAGLINES: Record<string, string> = {
   "LIL-PACK-VIA": "Los esenciales, en formato de viaje",
 };
 
-type Fila = { id: string; sku: string; name: string; slug: string | null; tagline: string | null };
+type Fila = {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string | null;
+  tagline: string | null;
+  isPublic: boolean;
+};
 
 /** Devuelve un slug que todavía no esté usado, agregándole -2, -3… si hace falta. */
 function slugLibre(base: string, tomados: Set<string>): string {
@@ -88,14 +100,15 @@ function slugLibre(base: string, tomados: Set<string>): string {
 
 async function main() {
   const aplicar = process.argv.includes("--aplicar");
+  const publicarTodo = process.argv.includes("--publicar-todo");
 
   const productos = (await prisma.product.findMany({
     orderBy: { sku: "asc" },
-    select: { id: true, sku: true, name: true, slug: true, tagline: true },
+    select: { id: true, sku: true, name: true, slug: true, tagline: true, isPublic: true },
   })) as Fila[];
   const packs = (await prisma.pack.findMany({
     orderBy: { sku: "asc" },
-    select: { id: true, sku: true, name: true, slug: true, tagline: true },
+    select: { id: true, sku: true, name: true, slug: true, tagline: true, isPublic: true },
   })) as Fila[];
 
   // Productos y packs comparten espacio de direcciones: los dos van a
@@ -114,17 +127,19 @@ async function main() {
     for (const f of filas) {
       const slug = f.slug ?? slugLibre(slugificar(f.name), tomados);
       const tagline = f.tagline ?? TAGLINES[f.sku] ?? null;
+      const isPublic = publicarTodo ? true : f.isPublic;
 
-      if (slug === f.slug && tagline === f.tagline) continue;
+      if (slug === f.slug && tagline === f.tagline && isPublic === f.isPublic) continue;
       cambios++;
 
       console.log(`\n${f.sku}  ${f.name}`);
       if (slug !== f.slug) console.log(`   dirección: /${slug}`);
       if (tagline !== f.tagline) console.log(`   línea:     ${tagline ?? "(sin definir)"}`);
+      if (isPublic !== f.isPublic) console.log(`   publicado:  ${isPublic ? "sí" : "no"}`);
       if (!TAGLINES[f.sku]) console.log(`   ⚠ sin línea escrita para este ${tipo}`);
 
       if (aplicar) {
-        const data = { slug, tagline };
+        const data = { slug, tagline, isPublic };
         if (tipo === "producto") {
           await prisma.product.update({ where: { id: f.id }, data });
         } else {
@@ -137,7 +152,9 @@ async function main() {
   console.log(`\n${cambios} registro(s) a completar.`);
   console.log(
     aplicar
-      ? "Guardado. Ninguno quedó publicado: eso se hace producto por producto."
+      ? publicarTodo
+        ? "Guardado, y todo quedó publicado. Para produccion, despublica lo que no tenga fotos."
+        : "Guardado. Ninguno quedó publicado: eso se hace desde el panel."
       : "Nada guardado todavía. Corre con --aplicar para escribirlo."
   );
 }

@@ -23,6 +23,7 @@ export const productSchema = z.object({
     .default(DEFAULT_SHELF_LIFE_MONTHS),
   stock: z.coerce.number().int().min(0).default(0),
   isActive: z.coerce.boolean().default(true),
+  isPublic: z.coerce.boolean().default(false),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
@@ -34,6 +35,7 @@ export const packSchema = z.object({
   price: z.coerce.number().min(0),
   productionCost: z.coerce.number().min(0).default(0),
   isActive: z.coerce.boolean().default(true),
+  isPublic: z.coerce.boolean().default(false),
   items: z
     .array(
       z.object({

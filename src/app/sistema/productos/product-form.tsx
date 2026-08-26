@@ -27,6 +27,7 @@ type ProductFormValues = {
   shelfLifeMonths?: number | null;
   stock?: number;
   isActive?: boolean;
+  isPublic?: boolean;
   imageUrl?: string | null;
   labelPdfUrl?: string | null;
 };
@@ -35,6 +36,7 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [active, setActive] = useState(initial?.isActive ?? true);
+  const [publico, setPublico] = useState(initial?.isPublic ?? false);
   const [imgPreview, setImgPreview] = useState<string | null>(initial?.imageUrl ?? null);
   const [labelName, setLabelName] = useState<string | null>(
     initial?.labelPdfUrl ? initial.labelPdfUrl.split("/").pop() ?? null : null
@@ -44,6 +46,9 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
 
   async function onSubmit(formData: FormData) {
     formData.set("isActive", active ? "on" : "");
+    // Dado de baja no puede quedar publicado: el switch se deshabilita,
+    // pero el estado guardado podria venir en true de antes.
+    formData.set("isPublic", active && publico ? "on" : "");
 
     startTransition(async () => {
       const action = isEdit
@@ -211,6 +216,27 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
                 id="isActive"
                 checked={active}
                 onCheckedChange={setActive}
+              />
+            </div>
+
+            {/*
+              Dos interruptores y no uno. "Activo" es si esto todavía se
+              vende; "Publicado" es si además se muestra en la web. Se
+              separan porque algo se sigue vendiendo por WhatsApp mientras
+              todavía no tiene fotos buenas para publicarlo.
+            */}
+            <div className="flex items-start justify-between gap-4 pt-4 border-t">
+              <div>
+                <Label htmlFor="isPublic">Publicado en la tienda</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Visible para cualquiera que entre a la web.
+                </p>
+              </div>
+              <Switch
+                id="isPublic"
+                checked={publico}
+                onCheckedChange={setPublico}
+                disabled={!active}
               />
             </div>
           </CardContent>

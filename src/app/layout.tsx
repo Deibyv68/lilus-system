@@ -15,13 +15,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * Este layout lo comparten la tienda y el panel, asi que aca no va ni
+ * titulo ni descripcion: cada uno pone el suyo.
+ *
+ * Cuando el titulo vivia aca, la plantilla "%s · LILUS" se le aplicaba
+ * tambien al titulo propio de la tienda y salia "LILUS — Jabones
+ * artesanales · LILUS", con la marca repetida.
+ */
 export const metadata: Metadata = {
-  title: {
-    default: "LILUS — Gestión de ventas",
-    template: "%s · LILUS",
-  },
-  description:
-    "Sistema de gestión de ventas de jabones artesanales LILUS.",
   applicationName: "LILUS",
   appleWebApp: {
     capable: true,

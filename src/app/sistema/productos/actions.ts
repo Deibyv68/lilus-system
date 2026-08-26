@@ -31,6 +31,7 @@ export async function createProductAction(formData: FormData) {
       formData.get("shelfLifeMonths") ?? DEFAULT_SHELF_LIFE_MONTHS,
     stock: formData.get("stock") ?? 0,
     isActive: formData.get("isActive") === "on",
+    isPublic: formData.get("isPublic") === "on",
   });
 
   if (!parsed.success) {
@@ -74,6 +75,7 @@ export async function createProductAction(formData: FormData) {
         shelfLifeMonths: data.shelfLifeMonths,
         stock: data.stock,
         isActive: data.isActive,
+        isPublic: data.isPublic,
         imageUrl,
         labelPdfUrl,
       },
@@ -106,6 +108,7 @@ export async function updateProductAction(id: string, formData: FormData) {
       formData.get("shelfLifeMonths") ?? DEFAULT_SHELF_LIFE_MONTHS,
     stock: formData.get("stock") ?? 0,
     isActive: formData.get("isActive") === "on",
+    isPublic: formData.get("isPublic") === "on",
   });
 
   if (!parsed.success) {
@@ -150,6 +153,7 @@ export async function updateProductAction(id: string, formData: FormData) {
         shelfLifeMonths: data.shelfLifeMonths,
         stock: data.stock,
         isActive: data.isActive,
+        isPublic: data.isPublic,
         ...(imageUrl ? { imageUrl } : {}),
         ...(labelPdfUrl ? { labelPdfUrl } : {}),
       },
