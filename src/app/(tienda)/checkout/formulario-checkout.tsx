@@ -219,10 +219,28 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
             </p>
           )}
 
+          {/*
+            El aviso va pegado al boton y no escondido en el pie. Es el
+            momento en que la persona entrega su direccion y su telefono:
+            si va a saber que existe una politica, tiene que ser aqui.
+          */}
+          <p className="mt-5 text-xs leading-relaxed text-stone-500">
+            Al enviar el pedido aceptas las{" "}
+            <Link href="/legal/terminos" className="underline underline-offset-2">
+              condiciones de compra
+            </Link>{" "}
+            y que tratemos tus datos para enviarte el pedido, como se explica
+            en{" "}
+            <Link href="/legal/privacidad" className="underline underline-offset-2">
+              tus datos
+            </Link>
+            .
+          </p>
+
           <button
             type="submit"
             disabled={enviando}
-            className="mt-5 w-full rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700 disabled:opacity-60"
+            className="mt-3 w-full rounded-full bg-stone-900 px-5 py-3 text-sm font-medium text-stone-50 transition-colors hover:bg-stone-700 disabled:opacity-60"
           >
             {enviando ? "Creando tu pedido…" : "Confirmar pedido"}
           </button>

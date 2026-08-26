@@ -311,3 +311,33 @@ export async function datosDeContacto() {
     instagramUsuario: instagram || null,
   };
 }
+
+/**
+ * Quién vende.
+ *
+ * Sale de Configuración y no de una constante en el código: hoy es una
+ * persona natural con cédula, y en cuanto salga el RUC hay que poder
+ * cambiarlo sin tocar un archivo ni volver a desplegar.
+ *
+ * Lo que no esté cargado se devuelve como null y la página se calla en vez
+ * de imprimir un hueco. Una ficha de vendedor a medias da menos confianza
+ * que una corta.
+ */
+export async function identidadDelVendedor() {
+  const filas = await prisma.setting.findMany({
+    where: {
+      key: {
+        in: ["sender_name", "sender_cedula", "sender_city", "sender_province", "sender_email"],
+      },
+    },
+  });
+  const m = Object.fromEntries(filas.map((f) => [f.key, f.value.trim()]));
+  const ciudad = [m.sender_city, m.sender_province].filter(Boolean).join(", ");
+
+  return {
+    nombre: m.sender_name || "LILUS",
+    cedula: m.sender_cedula || null,
+    ciudad: ciudad || null,
+    email: m.sender_email || null,
+  };
+}

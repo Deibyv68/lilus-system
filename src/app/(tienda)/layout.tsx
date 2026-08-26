@@ -89,6 +89,18 @@ export default async function TiendaLayout({
               )}
             </p>
           )}
+          <p className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+            <Link href="/legal/terminos" className="underline underline-offset-4 hover:text-stone-900 transition-colors">
+              Condiciones de compra
+            </Link>
+            <Link href="/legal/devoluciones" className="underline underline-offset-4 hover:text-stone-900 transition-colors">
+              Cambios y devoluciones
+            </Link>
+            <Link href="/legal/privacidad" className="underline underline-offset-4 hover:text-stone-900 transition-colors">
+              Tus datos
+            </Link>
+          </p>
+
           <p className="text-xs leading-relaxed max-w-lg">
             Nuestros productos son cosméticos de higiene y cuidado personal. No
             son medicamentos y no tratan ni curan ninguna enfermedad. Si tienes
