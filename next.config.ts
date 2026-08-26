@@ -17,6 +17,26 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  /*
+   * Poder abrir el sitio de desarrollo desde el teléfono, por Tailscale.
+   *
+   * Next 16 bloquea por defecto las peticiones a los recursos de
+   * desarrollo que no vengan del mismo origen con el que arrancó el
+   * servidor (localhost). Sin esto la página carga pero el recargado en
+   * caliente no conecta, y el síntoma —«edito y no se actualiza»— no
+   * apunta a su causa por ningún lado.
+   *
+   * Solo afecta a `next dev`. En producción no se lee.
+   *
+   * Va la IP y también el nombre: la IP no cambia, pero escribir
+   * `emed.tailb43ebc.ts.net:3000` en el teléfono es bastante más fácil
+   * que doce dígitos.
+   */
+  allowedDevOrigins: [
+    "100.92.238.29",
+    "emed.tailb43ebc.ts.net",
+    "*.tailb43ebc.ts.net",
+  ],
   // Silencia el warning de "multiple lockfiles" anclando el root a este proyecto.
   turbopack: {
     root: __dirname,
