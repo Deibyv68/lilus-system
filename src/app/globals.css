@@ -403,3 +403,55 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
 }
+
+/* ── Las piezas de un pack ──
+   Ver src/components/tienda/pieza-del-pack.tsx. */
+
+/* Sin el triangulito nativo, que cada navegador dibuja distinto. */
+.pieza summary::-webkit-details-marker { display: none; }
+.pieza summary::marker { content: ""; }
+
+/*
+  Animar de `0fr` a `1fr` es lo que permite abrir algo cuya altura no se
+  sabe de antemano. `height: auto` no se puede animar, y un `max-height`
+  inventado o corta el texto largo o deja un tiron al final.
+*/
+.pieza-cuerpo {
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 500ms var(--ease-tienda);
+}
+
+.pieza[open] .pieza-cuerpo {
+  grid-template-rows: 1fr;
+}
+
+.pieza-signo {
+  transition:
+    transform 500ms var(--ease-tienda),
+    background-color 400ms var(--ease-tienda),
+    border-color 400ms var(--ease-tienda),
+    color 400ms var(--ease-tienda);
+}
+
+/* 45° convierte el «+» en «×» sin cambiar de icono: la transicion es
+   continua en vez de un salto entre dos dibujos. */
+.pieza[open] .pieza-signo {
+  transform: rotate(45deg);
+  background-color: var(--color-tienda-texto);
+  border-color: var(--color-tienda-texto);
+  color: var(--color-tienda-fondo);
+}
+
+@media (hover: hover) {
+  .pieza summary:hover .pieza-signo {
+    border-color: var(--color-tienda-texto);
+    color: #fff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pieza-cuerpo,
+  .pieza-signo {
+    transition: none;
+  }
+}

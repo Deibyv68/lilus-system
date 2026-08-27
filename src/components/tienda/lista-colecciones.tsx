@@ -7,6 +7,10 @@ import { Revelar } from "@/components/tienda/revelar";
 /**
  * Las colecciones, como lista que se abre al pasar el cursor.
  *
+ * Cada fila lleva a la presentación del pack (/packs/…), no a la ficha de
+ * compra: quien está mirando nombres todavía no decidió, y la
+ * presentación es la que cuenta qué es cada uno. Desde ahí se compra.
+ *
  * Es la sección de la referencia que se me pasó: yo la había sustituido
  * por una cuadrícula de tarjetas, y no es lo mismo. Una cuadrícula enseña
  * cinco cosas a la vez y obliga a compararlas; esta lista enseña los
@@ -64,7 +68,7 @@ export function ListaColecciones({
           {packs.map((p, i) => (
             <Revelar as="li" key={p.id} retardo={i * 60}>
               <Link
-                href={`/tienda/${p.slug}`}
+                href={`/packs/${p.slug}`}
                 className="fila-coleccion group relative block overflow-hidden border-b border-tienda-linea"
               >
                 {/*

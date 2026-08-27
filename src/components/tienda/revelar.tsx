@@ -21,7 +21,12 @@ import { useEffect, useRef, useState } from "react";
  *
  *   subir     opacidad + 10 px hacia arriba. El más frecuente.
  *   enfocar   además desenfoca 10 px y va enfocando. Para títulos.
- *   inclinar  entra girada 3° desde abajo-izquierda. Para tarjetas.
+ *   inclinar  entra girada 3° desde abajo-izquierda
+ *
+ * ⚠ Las inclinadas se salen de su caja mientras esperan ocultas: se
+ * desplazan hasta 30 px y giran. En un elemento pegado al borde de la
+ * página eso ensancha el documento y aparece barra horizontal. Para
+ * esos, usar `subir` o `enfocar`.. Para tarjetas.
  *
  * ── Que no desaparezca el contenido ──
  *

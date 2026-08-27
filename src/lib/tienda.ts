@@ -43,6 +43,9 @@ const RESUMEN = {
   name: true,
   tagline: true,
   price: true,
+  // La miniatura de trabajo interno. Se usa solo como respaldo: ver
+  // `aResumen`.
+  imageUrl: true,
   storeImages: {
     orderBy: { sortOrder: "asc" },
     take: 1,
@@ -68,6 +71,7 @@ function aResumen(
     name: string;
     tagline: string | null;
     price: number;
+    imageUrl?: string | null;
     storeImages: { url: string; alt: string | null }[];
   }
 ): ArticuloResumen {
@@ -78,7 +82,14 @@ function aResumen(
     nombre: fila.name,
     tagline: fila.tagline,
     precio: fila.price,
-    imagen: fila.storeImages[0]?.url ?? null,
+    /*
+      La foto de tienda manda. Si no hay, se cae a la miniatura interna
+      del panel: no es la definitiva —está hecha para reconocer el
+      producto en una lista, no para vender— pero enseñar el producto mal
+      iluminado es mejor que enseñar un hueco. En cuanto se suba la buena,
+      esta deja de usarse sola.
+    */
+    imagen: fila.storeImages[0]?.url ?? fila.imageUrl ?? null,
     imagenAlt: fila.storeImages[0]?.alt ?? null,
   };
 }
@@ -415,4 +426,131 @@ export async function listarDestacados(): Promise<ArticuloResumen[]> {
     take: 3,
   });
   return filas.map((f) => aResumen("producto", f));
+}
+
+/** Un producto dentro de un pack, con lo que se muestra en la presentación. */
+export type ProductoDelPack = {
+  id: string;
+  slug: string | null;
+  nombre: string;
+  tagline: string | null;
+  /** Texto ya revisado para cumplir la Decisión 516. */
+  ingredientes: string | null;
+  precio: number;
+  cantidad: number;
+  imagen: string | null;
+};
+
+export type PackPresentacion = {
+  id: string;
+  slug: string;
+  nombre: string;
+  tagline: string | null;
+  descripcion: string | null;
+  precio: number;
+  /** Lo que costaría comprando cada cosa por separado. */
+  precioSuelto: number;
+  ahorro: number;
+  imagenes: { url: string; alt: string | null }[];
+  contenido: ProductoDelPack[];
+};
+
+/**
+ * Todo lo que necesita la página de presentación de un pack.
+ *
+ * ── Lo que NO trae, a propósito ──
+ *
+ * Los beneficios del recetario. Ese texto está escrito para quien fabrica
+ * y dice cosas como «antimicrobiano» o «ayuda a la regeneración», que son
+ * justo los claims que la Decisión 516 prohíbe en publicidad. Sacarlos a
+ * la web sería publicar de rebote lo que ya se limpió a mano.
+ *
+ * Lo público es `ingredients` y `tagline`, que ya pasaron esa revisión.
+ */
+export async function obtenerPackPresentacion(
+  slug: string
+): Promise<PackPresentacion | null> {
+  const pack = await prisma.pack.findFirst({
+    where: { ...VISIBLE, slug },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      tagline: true,
+      description: true,
+      price: true,
+      imageUrl: true,
+      storeImages: { orderBy: { sortOrder: "asc" }, select: { url: true, alt: true } },
+      items: {
+        select: {
+          quantity: true,
+          product: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              tagline: true,
+              ingredients: true,
+              price: true,
+              imageUrl: true,
+              isPublic: true,
+              storeImages: {
+                orderBy: { sortOrder: "asc" },
+                take: 1,
+                select: { url: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!pack) return null;
+
+  const contenido: ProductoDelPack[] = pack.items.map((i) => ({
+    id: i.product.id,
+    // Solo se enlaza lo que también está publicado: un enlace a un producto
+    // despublicado lleva a un 404 y parece un error del sitio.
+    slug: i.product.isPublic ? i.product.slug : null,
+    nombre: i.product.name,
+    tagline: i.product.tagline,
+    ingredientes: i.product.ingredients,
+    precio: i.product.price,
+    cantidad: i.quantity,
+    imagen: i.product.storeImages[0]?.url ?? i.product.imageUrl ?? null,
+  }));
+
+  const precioSuelto = contenido.reduce((a, c) => a + c.precio * c.cantidad, 0);
+
+  // Si el pack tiene fotos de tienda se usan; si no, la interna sirve de
+  // referencia mientras llegan las buenas.
+  const imagenes = pack.storeImages.length
+    ? pack.storeImages
+    : pack.imageUrl
+      ? [{ url: pack.imageUrl, alt: null }]
+      : [];
+
+  return {
+    id: pack.id,
+    slug: pack.slug!,
+    nombre: pack.name,
+    tagline: pack.tagline,
+    descripcion: pack.description,
+    precio: pack.price,
+    precioSuelto,
+    ahorro: Math.max(0, precioSuelto - pack.price),
+    imagenes,
+    contenido,
+  };
+}
+
+/** Los otros packs, para el cierre de una presentación. */
+export async function otrosPacks(slugActual: string): Promise<ArticuloResumen[]> {
+  const filas = await prisma.pack.findMany({
+    where: { ...VISIBLE, slug: { not: slugActual } },
+    select: RESUMEN,
+    orderBy: { price: "asc" },
+  });
+  return filas.map((f) => aResumen("pack", f));
 }

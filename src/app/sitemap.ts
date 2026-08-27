@@ -32,5 +32,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: a.tipo === "pack" ? 0.8 : 0.6,
   }));
 
-  return [...fijas, ...articulos];
+  // Las presentaciones de pack son las paginas que mas conviene que
+  // encuentre alguien buscando: cuentan que es el pack, no solo su precio.
+  const presentaciones: MetadataRoute.Sitemap = packs.map((p) => ({
+    url: `${base}/packs/${p.slug}`,
+    changeFrequency: "monthly",
+    priority: 0.9,
+  }));
+
+  return [...fijas, ...presentaciones, ...articulos];
 }
