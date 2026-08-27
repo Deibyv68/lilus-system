@@ -78,3 +78,4 @@ __pycache__/
 /app-movil/ios/
 /app-movil/.expo/
 /app-movil/google-services.json
+/app-movil/dist/
