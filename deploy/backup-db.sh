@@ -115,3 +115,29 @@ if [[ -d "$UPLOADS" ]]; then
 else
   echo "  (todavía no hay archivos subidos que respaldar)"
 fi
+
+# ─────────────────────────────────────────────────────────────
+# Los comprobantes de pago
+#
+# Viven junto a la base y NO en public/uploads, porque llevan el nombre y
+# la cuenta bancaria de quien pagó y no pueden quedar en una carpeta que
+# el servidor sirva sola. Ver src/lib/comprobantes.ts.
+#
+# Eso significa que el bloque de arriba no los alcanza, y perderlos sería
+# perder la prueba de pagos que ya se confirmaron. Mismo baúl, mismas
+# reglas: se copia sin borrar nunca.
+# ─────────────────────────────────────────────────────────────
+COMPROBANTES="$(dirname "$DB_PATH")/comprobantes"
+VAULT_COMP="$BACKUP_ROOT/comprobantes"
+
+if [[ -d "$COMPROBANTES" ]]; then
+  mkdir -p "$VAULT_COMP"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a "$COMPROBANTES/" "$VAULT_COMP/"
+  else
+    cp -rn "$COMPROBANTES/." "$VAULT_COMP/" 2>/dev/null || true
+  fi
+  echo "✓ comprobantes: $(find "$VAULT_COMP" -type f | wc -l) en $VAULT_COMP"
+else
+  echo "  (todavía no hay comprobantes que respaldar)"
+fi

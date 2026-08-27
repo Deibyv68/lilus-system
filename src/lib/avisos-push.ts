@@ -190,3 +190,25 @@ export async function avisarVentaNueva(p: {
 
   return web + app;
 }
+
+/**
+ * Alguien subió su comprobante.
+ *
+ * Es el aviso que de verdad hace avanzar un pedido: significa que hay
+ * algo que mirar y una venta que se puede confirmar. Va por los dos
+ * caminos, igual que la venta nueva.
+ */
+export async function avisarComprobante(p: {
+  orderNumber: string;
+  clienteNombre: string;
+}): Promise<number> {
+  const titulo = "Comprobante recibido";
+  const cuerpo = `${p.clienteNombre} subió el suyo · ${p.orderNumber}. Revísalo y confirma el pago.`;
+
+  const [web, app] = await Promise.all([
+    avisarPorPush({ titulo, cuerpo, url: "/sistema/pedidos", grupo: "comprobante" }),
+    avisarAppsMoviles({ titulo, cuerpo, ruta: "/pedidos", grupo: "comprobante" }),
+  ]);
+
+  return web + app;
+}

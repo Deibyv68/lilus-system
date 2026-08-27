@@ -23,6 +23,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Truck } from "lucide-react";
 import { updateOrderStatusAction, markAsShippedAction } from "../actions";
+import {
+  buildStatusMessage,
+  buildTrackingUrl,
+  normalizePhoneForWhatsApp,
+  pickWhatsAppPhone,
+  type ShareableOrder,
+} from "@/lib/share-message";
 
 const OPTIONS = [
   { value: "PENDING", label: "Pendiente" },
@@ -40,16 +47,65 @@ export function StatusSelector({
   status,
   carrierName,
   existingTracking,
+  pedido,
+  telefono,
+  telefonoContacto,
+  plantillaGuia,
 }: {
   id: string;
   status: string;
   carrierName: string | null;
   existingTracking: string | null;
+  /** Para poder ofrecer el aviso al cliente en el mismo gesto. */
+  pedido: ShareableOrder;
+  telefono: string | null;
+  telefonoContacto: string | null;
+  plantillaGuia: string | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
   const [tracking, setTracking] = useState(existingTracking ?? "");
+
+  /*
+    Cambiar el estado y avisar al cliente son el mismo gesto.
+
+    Antes eran dos: se cambiaba el estado arriba y el botón de avisar
+    estaba más abajo, esperando a que alguien se acordara. Y avisar es lo
+    que le importa a quien compró — el estado en la base no lo ve nadie.
+
+    Se ofrece en un aviso con botón en vez de abrir WhatsApp solo. Abrirlo
+    sin preguntar secuestraría la pantalla cada vez que se corrige un
+    estado mal puesto, y hay veces que no hay nada que avisar.
+  */
+  function ofrecerAviso(nuevoEstado: Status) {
+    const conGuia: ShareableOrder = {
+      ...pedido,
+      trackingNumber: pedido.trackingNumber ?? existingTracking,
+      trackingUrl: buildTrackingUrl(
+        plantillaGuia,
+        pedido.trackingNumber ?? existingTracking
+      ),
+    };
+    const mensaje = buildStatusMessage(conGuia, nuevoEstado);
+    const numero = normalizePhoneForWhatsApp(
+      pickWhatsAppPhone(telefonoContacto, telefono)
+    );
+    const url = numero
+      ? `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
+      : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+    toast.success("Estado actualizado", {
+      description: numero
+        ? "¿Le avisas al cliente?"
+        : "Sin teléfono guardado: se abrirá WhatsApp para elegir el chat.",
+      duration: 12000,
+      action: {
+        label: "Avisar",
+        onClick: () => window.open(url, "_blank", "noopener"),
+      },
+    });
+  }
 
   function handleChange(value: string) {
     // Si va a SHIPPED y aún no tiene guía, abrimos el diálogo
@@ -60,7 +116,7 @@ export function StatusSelector({
     startTransition(async () => {
       try {
         await updateOrderStatusAction(id, value as Status);
-        toast.success("Estado actualizado");
+        ofrecerAviso(value as Status);
         router.refresh();
       } catch {
         toast.error("No se pudo actualizar");
@@ -80,7 +136,7 @@ export function StatusSelector({
         toast.error(res.error ?? "Error");
         return;
       }
-      toast.success("Pedido marcado como enviado");
+      ofrecerAviso("SHIPPED");
       setShipDialogOpen(false);
       router.refresh();
     });

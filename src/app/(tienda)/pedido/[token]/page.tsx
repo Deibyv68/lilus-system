@@ -7,7 +7,8 @@ import {
   datosDeContacto,
 } from "@/lib/tienda";
 import { qrComoDataUri } from "@/lib/qr";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { SubirComprobante } from "./subir-comprobante";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 
 /**
  * El pedido, visto por quien lo hizo.
@@ -200,6 +201,19 @@ export default async function PaginaPedido({
               número {pedido.orderNumber}.
             </p>
           )}
+
+          {/*
+            Subir el comprobante aquí es el camino corto: llega pegado a
+            este pedido, sin que nadie tenga que adivinar de cuál es.
+          */}
+          <SubirComprobante
+            token={token}
+            yaSubidos={pedido.comprobantes.map((c) => ({
+              id: c.id,
+              esPdf: c.tipo === "application/pdf",
+              cuando: formatDateTime(c.createdAt),
+            }))}
+          />
 
           {/*
             El mensaje lleva el número de pedido ya escrito. Sin eso, quien

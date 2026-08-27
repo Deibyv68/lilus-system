@@ -10,7 +10,7 @@ import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
 import { buildTrackingUrl } from "@/lib/share-message";
-import { ArrowLeft, Truck, Printer, MapPin } from "lucide-react";
+import { ArrowLeft, Truck, Printer, MapPin, Paperclip } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +29,7 @@ export default async function OrderDetailPage({
       zone: true,
       items: true,
       productionUnits: { include: { product: true } },
+      comprobantes: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!order) notFound();
@@ -52,6 +53,50 @@ export default async function OrderDetailPage({
     where: { key: "print_agent_enabled" },
   });
   const agentEnabled = agentEnabledSetting?.value === "true";
+
+  /*
+    Los datos del pedido para los mensajes, armados una vez.
+
+    El selector de estado y el botón de compartir mandan el MISMO mensaje,
+    así que comparten la misma fuente. Con dos objetos escritos aparte, el
+    día que se añada un dato al mensaje solo lo tendría uno de los dos y
+    nadie se enteraría hasta que un cliente recibiera media información.
+  */
+  const enlaceBase = (process.env.APP_URL ?? "").trim().replace(/\/+$/, "");
+
+  const paraMensaje = {
+    orderNumber: order.orderNumber,
+    customerName: order.customer.name,
+    items: order.items.map((it) => ({
+      quantity: it.quantity,
+      itemName: it.itemName,
+    })),
+    total: order.total,
+    shippingCost: order.shippingCost,
+    carrierName: order.carrier?.name ?? null,
+    trackingNumber: order.trackingNumber,
+    trackingUrl: null,
+    /*
+      El enlace solo si hay dirección pública configurada.
+
+      Sin `APP_URL` saldría «/pedido/abc…», una ruta relativa — que en un
+      mensaje de WhatsApp no es un enlace, es texto que no lleva a ningún
+      lado. Mejor un mensaje sin enlace que uno con un enlace roto: el
+      segundo hace que quien lo recibe piense que el sistema está mal
+      hecho, y encima escribe para preguntar.
+    */
+    enlacePedido: enlaceBase && order.publicToken
+      ? `${enlaceBase}/pedido/${order.publicToken}`
+      : null,
+    address: order.shippingAddress
+      ? {
+          address: order.shippingAddress.address,
+          city: order.shippingAddress.city,
+          province: order.shippingAddress.province,
+          reference: order.shippingAddress.reference,
+        }
+      : null,
+  };
 
   return (
     <>
@@ -152,6 +197,10 @@ export default async function OrderDetailPage({
                 status={order.status}
                 carrierName={order.carrier?.name ?? null}
                 existingTracking={order.trackingNumber}
+                pedido={paraMensaje}
+                telefono={order.customer.phone}
+                telefonoContacto={order.customer.contactPhone}
+                plantillaGuia={order.carrier?.trackingUrlTemplate ?? null}
               />
 
               {order.trackingNumber && (
@@ -180,28 +229,49 @@ export default async function OrderDetailPage({
                 </div>
               )}
 
+              {/*
+                El comprobante va junto al selector de estado y no en otra
+                tarjeta al final de la página.
+
+                Es el gesto completo: mirar la foto del banco y marcar
+                «Pagado». Separarlos obligaría a bajar, mirar, subir y
+                acordarse — que es donde se cuela el error de confirmar el
+                pedido equivocado.
+              */}
+              {order.comprobantes.length > 0 && (
+                <div className="rounded-md border bg-muted/40 p-2.5 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Paperclip className="size-3.5" />
+                    <span className="font-medium">
+                      {order.comprobantes.length === 1
+                        ? "Comprobante subido"
+                        : `${order.comprobantes.length} comprobantes subidos`}
+                    </span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {order.comprobantes.map((c) => (
+                      <li key={c.id}>
+                        <a
+                          href={`/api/comprobante/${c.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-between gap-2 text-xs text-primary hover:underline"
+                        >
+                          <span>
+                            {c.tipo === "application/pdf" ? "Ver el PDF" : "Ver la foto"}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {formatDateTime(c.createdAt)}
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <ShareButton
-                order={{
-                  orderNumber: order.orderNumber,
-                  customerName: order.customer.name,
-                  items: order.items.map((it) => ({
-                    quantity: it.quantity,
-                    itemName: it.itemName,
-                  })),
-                  total: order.total,
-                  shippingCost: order.shippingCost,
-                  carrierName: order.carrier?.name ?? null,
-                  trackingNumber: order.trackingNumber,
-                  trackingUrl: null,
-                  address: order.shippingAddress
-                    ? {
-                        address: order.shippingAddress.address,
-                        city: order.shippingAddress.city,
-                        province: order.shippingAddress.province,
-                        reference: order.shippingAddress.reference,
-                      }
-                    : null,
-                }}
+                order={paraMensaje}
                 status={order.status as never}
                 customerPhone={order.customer.phone}
                 customerContactPhone={order.customer.contactPhone}

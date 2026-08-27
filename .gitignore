@@ -79,3 +79,4 @@ __pycache__/
 /app-movil/.expo/
 /app-movil/google-services.json
 /app-movil/dist/
+/prisma/comprobantes/

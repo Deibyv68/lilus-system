@@ -60,7 +60,18 @@ const REQUIERE_SESION = ["/sistema", "/api"];
  * Que estén en esta lista NO significa que sean públicas: significa que
  * su puerta está un paso más adentro.
  */
-const CON_TOKEN_PROPIO = ["/api/agent", "/api/print-queue", "/api/movil"];
+const CON_TOKEN_PROPIO = [
+  "/api/agent",
+  "/api/print-queue",
+  "/api/movil",
+  /*
+    El comprobante de pago decide por su cuenta: lo abre quien tiene
+    sesión en el panel, o quien trae el token del pedido —la clienta
+    mirando el que ella misma subió, desde su página—. El chequeo de
+    aquí abajo solo sabe de cookies y le cerraría la puerta a ella.
+  */
+  "/api/comprobante",
+];
 
 function empiezaPor(pathname: string, rutas: string[]): boolean {
   return rutas.some((r) => pathname === r || pathname.startsWith(`${r}/`));

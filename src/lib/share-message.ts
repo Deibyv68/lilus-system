@@ -15,6 +15,14 @@ export type ShareableOrder = {
   carrierName: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+  /**
+   * La página del pedido, con su enlace secreto.
+   *
+   * Es lo que convierte el mensaje en algo consultable: quien lo recibe
+   * ya no tiene que preguntar «¿cómo va?» — abre y ve. Y desde ahí sube
+   * su comprobante, que llega pegado al pedido correcto.
+   */
+  enlacePedido?: string | null;
   address: {
     address: string;
     city: string;
@@ -119,6 +127,23 @@ export function buildStatusMessage(
     if (order.address.reference) {
       lines.push(`Ref: ${order.address.reference}`);
     }
+    lines.push("");
+  }
+
+  /*
+    El enlace de seguimiento, en todos los estados menos cancelado.
+
+    En «pendiente» es además donde se paga y donde se sube el
+    comprobante, así que ahí va con otra frase: no es «mira cómo va», es
+    «haz lo que falta».
+  */
+  if (order.enlacePedido && status !== "CANCELLED") {
+    if (status === "PENDING") {
+      lines.push("Aquí puedes pagar y subir tu comprobante:");
+    } else {
+      lines.push("Sigue tu pedido aquí:");
+    }
+    lines.push(order.enlacePedido);
     lines.push("");
   }
 

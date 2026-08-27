@@ -308,6 +308,7 @@ model Order {
   carrier         Carrier?         @relation(fields: [carrierId], references: [id])
   zone            ShippingZone?    @relation(fields: [zoneId], references: [id])
   items           OrderItem[]
+  comprobantes    ComprobanteDePago[]
   productionUnits ProductionUnit[]
 }
 
@@ -815,4 +816,33 @@ model MensajeDeContacto {
   createdAt DateTime @default(now())
 
   @@index([leido, createdAt])
+}
+
+/// El comprobante de pago que sube quien compró.
+///
+/// ── Por qué varios por pedido ──
+///
+/// La primera foto sale movida, o se paga en dos partes, o se manda el
+/// comprobante equivocado y después el bueno. Permitir uno solo obligaría
+/// a borrar el anterior, y borrar la prueba de un pago para poner otra es
+/// exactamente lo que no se quiere poder hacer sin querer.
+///
+/// ── Por qué el archivo no está en `public` ──
+///
+/// Lleva el nombre y la cuenta de quien pagó. Vive junto a la base y se
+/// sirve por una ruta que comprueba quién pide. El porqué largo está en
+/// `src/lib/comprobantes.ts`.
+model ComprobanteDePago {
+  id      String @id @default(cuid())
+  orderId String
+  /// Solo el nombre del archivo. La carpeta la decide el servidor.
+  archivo String
+  tipo    String
+  bytes   Int
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }

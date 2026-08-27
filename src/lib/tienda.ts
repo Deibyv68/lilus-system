@@ -326,6 +326,10 @@ export async function buscarPedidoPorToken(token: string) {
       items: {
         select: { itemName: true, quantity: true, unitPrice: true, lineTotal: true },
       },
+      comprobantes: {
+        orderBy: { createdAt: "desc" },
+        select: { id: true, tipo: true, createdAt: true },
+      },
     },
   });
 
