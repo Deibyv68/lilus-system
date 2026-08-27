@@ -244,26 +244,58 @@ export default async function OrderDetailPage({
                     <Paperclip className="size-3.5" />
                     <span className="font-medium">
                       {order.comprobantes.length === 1
-                        ? "Comprobante subido"
-                        : `${order.comprobantes.length} comprobantes subidos`}
+                        ? "Comprobante"
+                        : `${order.comprobantes.length} comprobantes`}
                     </span>
                   </div>
-                  <ul className="space-y-1.5">
+
+                  {/*
+                    La imagen se ve aquí, no detrás de un enlace.
+
+                    Quien mira esto está comparando una cifra con el banco
+                    abierto en otra pestaña. Obligarla a abrir una pestaña
+                    más, mirar, volver y acordarse del número es pedirle
+                    que haga de memoria lo único que importa de la
+                    pantalla.
+
+                    Se sirve por `/api/comprobante`, que comprueba la
+                    sesión: aquí la hay, así que la imagen carga sola.
+                  */}
+                  <ul className="space-y-2">
                     {order.comprobantes.map((c) => (
                       <li key={c.id}>
                         <a
                           href={`/api/comprobante/${c.id}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center justify-between gap-2 text-xs text-primary hover:underline"
+                          className="block group"
+                          title="Abrir en tamaño completo"
                         >
-                          <span>
-                            {c.tipo === "application/pdf" ? "Ver el PDF" : "Ver la foto"}
-                          </span>
-                          <span className="text-muted-foreground">
-                            {formatDateTime(c.createdAt)}
-                          </span>
+                          {c.tipo === "application/pdf" ? (
+                            <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-4 text-sm group-hover:border-primary/50">
+                              <Paperclip className="size-4 text-muted-foreground" />
+                              Comprobante en PDF · tócalo para abrirlo
+                            </div>
+                          ) : (
+                            /*
+                              Con <img> y no con next/image: el optimizador
+                              pediría la imagen desde el servidor, sin la
+                              cookie de sesión, y la ruta le respondería
+                              404. Aquí la pide el navegador, que sí la
+                              lleva.
+                            */
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={`/api/comprobante/${c.id}`}
+                              alt="Comprobante de pago"
+                              className="w-full rounded-md border bg-white object-contain group-hover:border-primary/50"
+                              style={{ maxHeight: 420 }}
+                            />
+                          )}
                         </a>
+                        <p className="mt-1 text-2xs text-muted-foreground">
+                          Subido el {formatDateTime(c.createdAt)}
+                        </p>
                       </li>
                     ))}
                   </ul>

@@ -3,7 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
-import { PlusCircle, ShoppingCart, Package, Boxes, Globe } from "lucide-react";
+import {
+  PlusCircle,
+  ShoppingCart,
+  Package,
+  Boxes,
+  Globe,
+  Paperclip,
+} from "lucide-react";
 import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
 import { AvisoDePago, HaceCuanto } from "./pedidos/espera";
 import { AgentStatusBadge } from "@/components/agent-status-badge";
@@ -19,7 +26,10 @@ export default async function DashboardPage() {
       prisma.order.findMany({
         take: 5,
         orderBy: { createdAt: "desc" },
-        include: { customer: true, _count: { select: { items: true } } },
+        include: {
+          customer: true,
+          _count: { select: { items: true, comprobantes: true } },
+        },
       }),
       prisma.order.aggregate({
         _sum: { total: true },
@@ -143,6 +153,20 @@ export default async function DashboardPage() {
                         {o.source}
                       </Badge>
                     )}
+                    {/* La misma etiqueta que en la lista, por lo mismo. */}
+                    {o.status === "PENDING" &&
+                      (o._count.comprobantes > 0 ? (
+                        <Badge className="text-3xs bg-sky-600 hover:bg-sky-600">
+                          <Paperclip className="size-2.5" /> Comprobante
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-3xs text-muted-foreground"
+                        >
+                          Sin comprobante
+                        </Badge>
+                      ))}
                     <span className="text-3xs text-muted-foreground ml-auto">
                       {o._count.items} {o._count.items === 1 ? "ítem" : "ítems"}
                     </span>

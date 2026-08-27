@@ -24,6 +24,7 @@ import {
   Trash2,
   AlertTriangle,
   Globe,
+  Paperclip,
 } from "lucide-react";
 import { deleteOrdersAction } from "./actions";
 import { AvisoDePago, HaceCuanto } from "./espera";
@@ -38,7 +39,7 @@ type Order = {
   source: string | null;
   customer: { name: string };
   carrier: { name: string } | null;
-  _count: { items: number };
+  _count: { items: number; comprobantes: number };
 };
 
 export function OrderList({ orders }: { orders: Order[] }) {
@@ -301,6 +302,25 @@ function OrderCardContent({ o }: { o: Order }) {
               {o.source}
             </Badge>
           )}
+          {/*
+            Si tiene comprobante o no.
+
+            Es lo único que decide si ese pedido se puede confirmar ahora
+            o hay que seguir esperando, y sin la etiqueta hay que entrar a
+            cada uno para averiguarlo. Solo se pinta en los pendientes:
+            después de confirmado el pago la pregunta ya no existe, y una
+            etiqueta que no sirve para decidir es ruido.
+          */}
+          {o.status === "PENDING" &&
+            (o._count.comprobantes > 0 ? (
+              <Badge className="text-3xs bg-sky-600 hover:bg-sky-600">
+                <Paperclip className="size-2.5" /> Comprobante
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-3xs text-muted-foreground">
+                Sin comprobante
+              </Badge>
+            ))}
           {o.carrier && (
             <Badge variant="outline" className="text-3xs">
               {o.carrier.name}

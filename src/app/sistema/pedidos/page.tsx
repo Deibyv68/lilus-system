@@ -16,7 +16,7 @@ export default async function OrdersPage() {
     include: {
       customer: { select: { name: true } },
       carrier: { select: { name: true } },
-      _count: { select: { items: true } },
+      _count: { select: { items: true, comprobantes: true } },
     },
   });
 
@@ -59,7 +59,10 @@ export default async function OrdersPage() {
             source: o.source,
             customer: { name: o.customer.name },
             carrier: o.carrier ? { name: o.carrier.name } : null,
-            _count: { items: o._count.items },
+            _count: {
+              items: o._count.items,
+              comprobantes: o._count.comprobantes,
+            },
           }))}
         />
       )}
