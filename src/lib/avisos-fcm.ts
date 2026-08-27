@@ -87,7 +87,10 @@ export async function avisarAppsMoviles(aviso: AvisoApp): Promise<number> {
   }
 
   const dispositivos = await prisma.dispositivoMovil.findMany();
-  if (dispositivos.length === 0) return 0;
+  if (dispositivos.length === 0) {
+    console.log("[fcm] No hay ningún teléfono registrado — no se mandó nada.");
+    return 0;
+  }
 
   let token: string | null | undefined;
   try {
@@ -179,6 +182,24 @@ export async function avisarAppsMoviles(aviso: AvisoApp): Promise<number> {
     });
     console.log(`[fcm] ${muertos.length} token(s) caducado(s) borrado(s).`);
   }
+
+  /*
+    Se registra también cuando sale bien, y no solo cuando falla.
+
+    El silencio era ambiguo: no saber si el aviso ni se intentó, o si se
+    mandó y Firebase lo aceptó, deja el diagnóstico a ciegas justo cuando
+    alguien dice «no me llegó nada». Una línea por venta no le hace daño
+    a ningún log.
+
+    Ojo con lo que significa «aceptado»: Firebase se hizo cargo del
+    mensaje. Que además aparezca en la pantalla del teléfono depende del
+    sistema —canal, permisos, y si el fabricante dejó viva la app— y eso
+    ya no se ve desde aquí.
+  */
+  console.log(
+    `[fcm] «${aviso.titulo}» → ${entregados} de ${dispositivos.length} ` +
+      `aparato(s) aceptado(s) por Firebase.`
+  );
 
   return entregados;
 }
