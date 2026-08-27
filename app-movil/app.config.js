@@ -45,7 +45,16 @@ module.exports = {
     web: { favicon: "./assets/favicon.png" },
     plugins: [
       "expo-secure-store",
-      ["expo-notifications", { color: "#1c1917" }],
+      /*
+        `defaultChannel` le dice a Android a qué canal mandar un aviso que
+        no traiga uno propio. Sin esto, un mensaje sin `channel_id` cae en
+        un canal genérico que la persona nunca configuró —y en MIUI esos
+        salen silenciados por defecto—.
+      */
+      [
+        "expo-notifications",
+        { color: "#1c1917", defaultChannel: "ventas" },
+      ],
       "./plugins/firma",
     ],
   },

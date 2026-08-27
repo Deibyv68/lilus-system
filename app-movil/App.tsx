@@ -13,7 +13,7 @@ import * as Notifications from "expo-notifications";
 import { PantallaEntrar } from "./src/PantallaEntrar";
 import { PantallaPedidos } from "./src/PantallaPedidos";
 import { PantallaPanel } from "./src/PantallaPanel";
-import { activarAvisos } from "./src/avisos";
+import { activarAvisos, prepararCanal } from "./src/avisos";
 import { salir, sesionActual, type Usuario } from "./src/servidor";
 import { C } from "./src/tema";
 
@@ -36,7 +36,22 @@ export default function App() {
   const [verPanel, setVerPanel] = useState(false);
   const [avisoTokenFcm, setAvisoTokenFcm] = useState<string | null>(null);
   const [avisoProblema, setAvisoProblema] = useState<string | null>(null);
+  const [ultimoAviso, setUltimoAviso] = useState<string | null>(null);
   const refrescar = useRef(0);
+
+  /*
+    El canal se crea al arrancar, antes de cualquier login.
+
+    Estaba dentro de `activarAvisos`, que solo corre después de entrar. Y
+    Android 8 en adelante DESCARTA en silencio cualquier aviso que apunte
+    a un canal que no existe: si el servidor mandaba algo antes de que
+    alguien hubiera entrado en ese teléfono, se perdía sin dejar rastro.
+    Crear el canal no pide permisos ni molesta a nadie, así que no hay
+    razón para esperar.
+  */
+  useEffect(() => {
+    prepararCanal().catch(() => {});
+  }, []);
 
   // ¿Sigue viva la sesión de la última vez?
   useEffect(() => {
@@ -65,11 +80,36 @@ export default function App() {
     lista de hace un rato, sin esa venta, el aviso quedaría como mentira.
   */
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+    const tocada = Notifications.addNotificationResponseReceivedListener(() => {
       setVerPanel(false);
       refrescar.current += 1;
     });
-    return () => sub.remove();
+
+    /*
+      Deja constancia de que llegó un aviso.
+
+      Es diagnóstico y se queda: cuando alguien dice «no me llegan las
+      notificaciones» hay dos preguntas distintas —¿no llegan al teléfono,
+      o llegan y no se ven?— y sin esto no se pueden separar. Si aquí
+      aparece una hora, el mensaje sí cruzó Firebase y lo que falla es que
+      el sistema no lo pinta.
+
+      Solo alcanza a los que llegan con la app viva; los que llegan con
+      ella cerrada los pinta Android sin pasar por aquí.
+    */
+    const recibida = Notifications.addNotificationReceivedListener((n) => {
+      const titulo = n.request.content.title ?? "sin título";
+      const hora = new Date().toLocaleTimeString("es-EC", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setUltimoAviso(`${hora} · ${titulo}`);
+    });
+
+    return () => {
+      tocada.remove();
+      recibida.remove();
+    };
   }, []);
 
   const onSalir = useCallback(() => {
@@ -125,6 +165,14 @@ export default function App() {
               </View>
             )}
 
+            {ultimoAviso && (
+              <View style={estilos.recibido}>
+                <Text style={estilos.recibidoTexto}>
+                  Último aviso recibido: {ultimoAviso}
+                </Text>
+              </View>
+            )}
+
             <PantallaPedidos
               key={refrescar.current}
               onAbrirPanel={() => setVerPanel(true)}
@@ -168,4 +216,15 @@ const estilos = StyleSheet.create({
     padding: 12,
   },
   problemaTexto: { color: "#92400e", fontSize: 13, lineHeight: 19 },
+  recibido: {
+    marginHorizontal: 14,
+    marginTop: 12,
+    backgroundColor: "#f0fdf4",
+    borderColor: "#86efac",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  recibidoTexto: { color: "#166534", fontSize: 12 },
 });
