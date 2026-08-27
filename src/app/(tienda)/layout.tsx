@@ -80,7 +80,7 @@ export default async function TiendaLayout({
       */}
       {promo && <BarraPromo texto={promo.texto} enlace={promo.enlace} />}
 
-      <Cabecera marca={marca} />
+      <Cabecera marca={marca} contacto={contacto} />
 
       <main className="flex-1">{children}</main>
 

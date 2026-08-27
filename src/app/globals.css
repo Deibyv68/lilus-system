@@ -465,3 +465,59 @@
     transition: none;
   }
 }
+
+/* ── Las capas a pantalla completa: menu y buscador ── */
+
+/*
+  Se oculta con opacidad, no con `visibility`.
+
+  Con `visibility: hidden` el campo del buscador no se podia enfocar al
+  abrir: un elemento invisible no acepta el foco, y la llamada llegaba
+  antes de que la capa terminara de hacerse visible. El foco se quedaba en
+  el body y habia que tocar el campo a mano — justo lo que un buscador que
+  se abre solo tiene que evitar.
+
+  Lo que de verdad la saca de circulacion cuando esta cerrada es `inert`,
+  que el componente pone en el elemento: quita el tabulador, los lectores
+  de pantalla y los toques, sin impedir el foco cuando toca.
+*/
+.capa-pantalla {
+  opacity: 0;
+  transition: opacity 400ms var(--ease-tienda);
+}
+
+.capa-pantalla.capa-abierta {
+  opacity: 1;
+}
+
+/*
+  Lo de dentro entra un poco despues que el fondo y desde mas abajo. Que
+  todo aparezca a la vez se lee como un corte; escalonarlo se lee como que
+  la capa se abre y despues coloca su contenido.
+
+  El retardo de cada uno lo pone quien la usa con --retardo, que es lo que
+  produce el efecto de cascada en la lista de enlaces.
+*/
+.capa-item {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 500ms var(--ease-tienda),
+    transform 500ms var(--ease-tienda);
+}
+
+.capa-abierta .capa-item {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(120ms + var(--retardo, 0ms));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capa-pantalla,
+  .capa-item {
+    transition-duration: 1ms;
+  }
+  .capa-abierta .capa-item {
+    transition-delay: 0ms;
+  }
+}

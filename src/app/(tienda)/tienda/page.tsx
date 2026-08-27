@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listarCatalogo, type ArticuloResumen } from "@/lib/tienda";
 import { Revelar } from "@/components/tienda/revelar";
 import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
@@ -15,40 +16,90 @@ import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
  * por instinto, y es justo lo que hace que se vea caro.
  */
 
+/*
+  Sin cachear cuando hay búsqueda: cada `?q=` distinto es una página
+  distinta y no tiene sentido guardarlas todas. Sin `q` sigue siendo la
+  misma página de siempre.
+*/
 export const revalidate = 1800;
 
-export default async function Catalogo() {
-  const { packs, productos } = await listarCatalogo();
-  const vacio = packs.length === 0 && productos.length === 0;
+/**
+ * Busca por nombre y por la línea del catálogo, sin tildes.
+ *
+ * Sin normalizar, buscar «jabon» no encontraría «Jabón» — y escribir sin
+ * tildes en el teléfono es lo normal, no la excepción.
+ */
+function normalizar(t: string): string {
+  return t
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+export default async function Catalogo({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const [{ packs, productos }, { q }] = await Promise.all([
+    listarCatalogo(),
+    searchParams,
+  ]);
+
+  const busqueda = (q ?? "").trim();
+  const filtrar = (lista: ArticuloResumen[]) => {
+    if (!busqueda) return lista;
+    const agujas = normalizar(busqueda).split(/\s+/).filter(Boolean);
+    return lista.filter((a) => {
+      const pajar = normalizar(`${a.nombre} ${a.tagline ?? ""}`);
+      // Todas las palabras tienen que aparecer: «jabon lavanda» no debería
+      // devolver todos los jabones.
+      return agujas.every((x) => pajar.includes(x));
+    });
+  };
+
+  const packsVisibles = filtrar(packs);
+  const productosVisibles = filtrar(productos);
+  const vacio = packsVisibles.length === 0 && productosVisibles.length === 0;
 
   return (
     <div className="mx-auto max-w-[1440px] px-6 sm:px-10">
       <section className="py-[120px] sm:py-[200px]">
         <Revelar className="max-w-3xl">
           <h1 className="font-display text-6xl sm:text-8xl leading-[0.95] tracking-[-0.02em] text-white text-balance">
-            Un respiro para tu piel
+            {busqueda ? `«${busqueda}»` : "Un respiro para tu piel"}
           </h1>
           <p className="mt-8 max-w-xl text-base leading-[1.6] tracking-[-0.01em] text-tienda-tenue text-pretty">
-            Trabajamos con glicerina vegetal, aceites y recetas propias que se
-            fueron corrigiendo con los años. Cada barra se corta y se etiqueta a
-            mano, con su lote y su fecha.
+            {busqueda
+              ? `${packsVisibles.length + productosVisibles.length} resultado${
+                  packsVisibles.length + productosVisibles.length === 1 ? "" : "s"
+                }.`
+              : "Trabajamos con glicerina vegetal, aceites y recetas propias que se fueron corrigiendo con los años. Cada barra se corta y se etiqueta a mano, con su lote y su fecha."}
           </p>
+          {busqueda && (
+            <Link
+              href="/tienda"
+              className="mt-6 inline-block py-2 text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
+            >
+              Ver todo el catálogo
+            </Link>
+          )}
         </Revelar>
       </section>
 
       {vacio ? (
-        <SinCatalogo />
+        <SinCatalogo busqueda={busqueda} />
       ) : (
         <>
-          {packs.length > 0 && (
+          {packsVisibles.length > 0 && (
             <Seccion
               titulo="Packs"
               nota="Salen mejor que comprar lo mismo por separado."
-              articulos={packs}
+              articulos={packsVisibles}
             />
           )}
-          {productos.length > 0 && (
-            <Seccion titulo="Productos" articulos={productos} />
+          {productosVisibles.length > 0 && (
+            <Seccion titulo="Productos" articulos={productosVisibles} />
           )}
         </>
       )}
@@ -104,12 +155,13 @@ function Seccion({
  * público. Es un estado real y transitorio, no un error, así que se dice
  * en voz normal en vez de mostrar una pantalla rota.
  */
-function SinCatalogo() {
+function SinCatalogo({ busqueda }: { busqueda: string }) {
   return (
     <div className="border-t border-tienda-linea py-20">
       <p className="text-tienda-tenue">
-        Estamos terminando de preparar el catálogo. Mientras tanto seguimos
-        tomando pedidos por WhatsApp e Instagram, como siempre.
+        {busqueda
+          ? "No encontramos nada con esa palabra. Prueba con el nombre del jabón o del ingrediente."
+          : "Estamos terminando de preparar el catálogo. Mientras tanto seguimos tomando pedidos por WhatsApp e Instagram, como siempre."}
       </p>
     </div>
   );

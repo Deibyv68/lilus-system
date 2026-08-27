@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { Search, ShoppingBag, Menu, X } from "lucide-react";
 import { useCarrito, totalUnidades } from "@/lib/carrito";
 import { PanelCarrito } from "@/components/tienda/panel-carrito";
+import { MenuPantalla } from "@/components/tienda/menu-pantalla";
+import { Buscador } from "@/components/tienda/buscador";
 
 /**
  * La cabecera de la tienda.
@@ -27,15 +29,20 @@ const ENLACES = [
   { href: "/contacto", texto: "Contacto" },
 ];
 
-const SECUNDARIOS = [
-  { href: "/legal/terminos", texto: "Condiciones de compra" },
-  { href: "/legal/devoluciones", texto: "Cambios y devoluciones" },
-  { href: "/legal/privacidad", texto: "Tus datos" },
-];
-
-export function Cabecera({ marca }: { marca: string }) {
+export function Cabecera({
+  marca,
+  contacto,
+}: {
+  marca: string;
+  contacto: {
+    whatsapp: string | null;
+    instagram: string | null;
+    instagramUsuario: string | null;
+  };
+}) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [carritoAbierto, setCarritoAbierto] = useState(false);
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
 
   /*
     Uno u otro, nunca los dos.
@@ -47,12 +54,20 @@ export function Cabecera({ marca }: { marca: string }) {
   */
   function abrirCarrito() {
     setMenuAbierto(false);
+    setBuscadorAbierto(false);
     setCarritoAbierto(true);
   }
 
   function alternarMenu() {
     setCarritoAbierto(false);
+    setBuscadorAbierto(false);
     setMenuAbierto((v) => !v);
+  }
+
+  function abrirBuscador() {
+    setCarritoAbierto(false);
+    setMenuAbierto(false);
+    setBuscadorAbierto(true);
   }
   const pathname = usePathname();
 
@@ -121,13 +136,16 @@ export function Cabecera({ marca }: { marca: string }) {
             linea del contenido.
           */}
           <div className="-mr-3 flex items-center gap-0 justify-self-end sm:gap-1">
-            <Link
-              href="/tienda"
+            <button
+              type="button"
+              onClick={abrirBuscador}
+              aria-haspopup="dialog"
+              aria-expanded={buscadorAbierto}
               aria-label="Buscar en la tienda"
               className="p-3 transition-colors duration-[400ms] ease-tienda hover:text-white"
             >
               <Search className="size-5" strokeWidth={1.5} />
-            </Link>
+            </button>
 
             {/*
               Abre el panel en vez de navegar. La página /carrito sigue
@@ -175,7 +193,7 @@ export function Cabecera({ marca }: { marca: string }) {
               type="button"
               onClick={alternarMenu}
               aria-expanded={menuAbierto}
-              aria-controls="menu-tienda"
+              aria-haspopup="dialog"
               aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
               className="p-3 transition-colors duration-[400ms] ease-tienda hover:text-white"
             >
@@ -188,52 +206,23 @@ export function Cabecera({ marca }: { marca: string }) {
           </div>
         </div>
 
-        {/*
-          El panel se despliega bajo la cabecera en vez de taparlo todo. En
-          una tienda, cubrir la pantalla entera para mostrar cinco enlaces
-          desorienta más de lo que ayuda.
-        */}
-        <div
-          id="menu-tienda"
-          hidden={!menuAbierto}
-          className="border-t border-tienda-linea bg-tienda-fondo"
-        >
-          <nav className="mx-auto max-w-[1440px] px-6 py-8 sm:px-10">
-            <ul className="space-y-4 lg:hidden">
-              {ENLACES.map((e) => (
-                <li key={e.href}>
-                  <Link
-                    href={e.href}
-                    onClick={() => setMenuAbierto(false)}
-                    className="font-display text-3xl leading-none tracking-[-0.01em] text-white"
-                  >
-                    {e.texto}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <ul className="flex flex-col gap-3 pt-6 text-sm text-tienda-tenue lg:flex-row lg:gap-10 lg:pt-0">
-              {SECUNDARIOS.map((e) => (
-                <li key={e.href}>
-                  <Link
-                    href={e.href}
-                    onClick={() => setMenuAbierto(false)}
-                    className="inline-block py-2 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
-                  >
-                    {e.texto}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-
       </header>
 
       <PanelCarrito
         abierto={carritoAbierto}
         onCerrar={() => setCarritoAbierto(false)}
+      />
+
+      <MenuPantalla
+        abierto={menuAbierto}
+        onCerrar={() => setMenuAbierto(false)}
+        marca={marca}
+        contacto={contacto}
+      />
+
+      <Buscador
+        abierto={buscadorAbierto}
+        onCerrar={() => setBuscadorAbierto(false)}
       />
     </>
   );
