@@ -287,19 +287,6 @@ export async function buscarPedidoPorToken(token: string) {
 }
 
 /**
- * Cómo se paga. Lo escribe la dueña en Configuración.
- *
- * Si no está cargado, la tienda no inventa un número de cuenta: dice que
- * los datos llegan por WhatsApp. Mostrar una cuenta equivocada sería mucho
- * peor que no mostrar ninguna.
- */
-export async function datosDeTransferencia(): Promise<string | null> {
-  const ajuste = await prisma.setting.findUnique({ where: { key: "bank_details" } });
-  const valor = ajuste?.value?.trim();
-  return valor ? valor : null;
-}
-
-/**
  * Por dónde nos escribe el cliente.
  *
  * Devuelve enlaces ya armados, no números sueltos. El número de WhatsApp
@@ -566,4 +553,30 @@ export async function listarFeed() {
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     select: { id: true, url: true, alt: true, enlace: true },
   });
+}
+
+/**
+ * Cómo se cobra: el enlace de DeUna y los datos de la cuenta.
+ *
+ * ── Por qué el enlace no lleva el monto ──
+ *
+ * Porque hoy no se puede. DeUna sí permite un QR con el monto ya puesto,
+ * pero eso exige la integración por API, que a su vez exige cuenta de
+ * negocio con RUC y aprobación. Los enlaces de cobro de una cuenta
+ * personal se generan a mano en la app, uno por uno: no hay forma de
+ * pedirle uno nuevo por cada pedido.
+ *
+ * Así que se usa un enlace fijo y el monto se muestra en grande al lado,
+ * para que la persona lo escriba. Cuando haya RUC y API, este mismo sitio
+ * devolverá un enlace por pedido y la página no cambia.
+ */
+export async function datosDeCobro() {
+  const filas = await prisma.setting.findMany({
+    where: { key: { in: ["deuna_enlace", "bank_details"] } },
+  });
+  const m = Object.fromEntries(filas.map((f) => [f.key, f.value.trim()]));
+  return {
+    deuna: m.deuna_enlace || null,
+    banco: m.bank_details || null,
+  };
 }

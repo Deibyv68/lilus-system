@@ -34,6 +34,7 @@ export default async function SettingsPage() {
                 sender_province: map.sender_province ?? "Pichincha",
                 sender_address: map.sender_address ?? "",
                 bank_details: map.bank_details ?? "",
+                deuna_enlace: map.deuna_enlace ?? "",
                 contact_whatsapp: map.contact_whatsapp ?? "",
                 contact_instagram: map.contact_instagram ?? "",
                 contact_tiktok: map.contact_tiktok ?? "",

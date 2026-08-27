@@ -44,11 +44,14 @@ function baseUrl(): string {
 
 async function ajustes() {
   const filas = await prisma.setting.findMany({
-    where: { key: { in: ["bank_details", "contact_whatsapp"] } },
+    where: {
+      key: { in: ["bank_details", "deuna_enlace", "contact_whatsapp"] },
+    },
   });
   const mapa = Object.fromEntries(filas.map((f) => [f.key, f.value]));
   return {
     banco: mapa.bank_details?.trim() || null,
+    deuna: mapa.deuna_enlace?.trim() || null,
     whatsapp: mapa.contact_whatsapp?.replace(/\D/g, "") || null,
   };
 }
@@ -84,16 +87,39 @@ function escapar(s: string): string {
 export async function avisarAlCliente(p: PedidoParaAviso): Promise<boolean> {
   if (!p.clienteEmail) return false;
 
-  const { banco, whatsapp } = await ajustes();
+  const { banco, deuna, whatsapp } = await ajustes();
   const enlace = `${baseUrl()}/pedido/${p.publicToken}`;
   const primerNombre = escapar(p.clienteNombre.split(" ")[0]);
 
-  const comoPagar = banco
-    ? `<p style="margin:0 0 8px;font-size:14px">Para completarlo, transfiere
+  /*
+    El botón de DeUna va como enlace, no como QR.
+
+    Un QR en un correo se manda como imagen incrustada, y Gmail —entre
+    otros— bloquea las imágenes hasta que quien lee las autorice. Un
+    código que no se ve no sirve para nada. El enlace se abre de un toque
+    desde el teléfono, que es donde se lee el correo; el QR está en la
+    página del pedido, para quien esté en el computador.
+  */
+  const botonDeuna = deuna
+    ? `<p style="margin:0 0 16px">
+         <a href="${escapar(deuna)}" style="display:inline-block;padding:12px 24px;background:#1c1917;color:#fff;border-radius:999px;font-size:14px;text-decoration:none">Pagar ${formatCurrency(p.total)} con DeUna</a>
+       </p>
+       <p style="margin:0 0 12px;font-size:13px;color:#78716c">Escribe
+         <strong>${formatCurrency(p.total)}</strong> como monto y
+         <strong>${escapar(p.orderNumber)}</strong> como referencia.</p>`
+    : "";
+
+  const porTransferencia = banco
+    ? `<p style="margin:0 0 8px;font-size:14px">${deuna ? "O transfiere" : "Para completarlo, transfiere"}
          <strong>${formatCurrency(p.total)}</strong> a:</p>
        <p style="margin:0 0 12px;padding:12px;background:#faf9f7;border-radius:8px;font-size:14px;white-space:pre-line">${escapar(banco)}</p>`
-    : `<p style="margin:0 0 12px;font-size:14px">Te escribimos con los datos de la
-         cuenta para transferir <strong>${formatCurrency(p.total)}</strong>.</p>`;
+    : "";
+
+  const comoPagar =
+    botonDeuna || porTransferencia
+      ? botonDeuna + porTransferencia
+      : `<p style="margin:0 0 12px;font-size:14px">Te escribimos con los datos de la
+           cuenta para transferir <strong>${formatCurrency(p.total)}</strong>.</p>`;
 
   const avisoComprobante = whatsapp
     ? `<p style="margin:0 0 16px;font-size:14px">Cuando la hagas, mándanos el

@@ -15,6 +15,7 @@ const ALLOWED_KEYS = new Set([
   "sender_address",
   "order_prefix",
   "bank_details",
+  "deuna_enlace",
   "contact_whatsapp",
   "contact_instagram",
   "contact_tiktok",

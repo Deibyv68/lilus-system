@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   buscarPedidoPorToken,
-  datosDeTransferencia,
+  datosDeCobro,
   datosDeContacto,
 } from "@/lib/tienda";
+import { qrComoDataUri } from "@/lib/qr";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 /**
@@ -65,13 +66,19 @@ export default async function PaginaPedido({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [pedido, banco, contacto] = await Promise.all([
+  const [pedido, cobro, contacto] = await Promise.all([
     buscarPedidoPorToken(token),
-    datosDeTransferencia(),
+    datosDeCobro(),
     datosDeContacto(),
   ]);
 
   if (!pedido) notFound();
+
+  // El QR solo hace falta mientras esté por pagar.
+  const qr =
+    pedido.status === "PENDING" && cobro.deuna
+      ? await qrComoDataUri(cobro.deuna)
+      : null;
 
   const estado = ESTADOS[pedido.status] ?? ESTADOS.PENDING;
   const primerNombre = pedido.customer.name.split(" ")[0];
@@ -87,51 +94,107 @@ export default async function PaginaPedido({
       <p className="mt-3 text-tienda-tenue text-pretty">{estado.detalle}</p>
 
       {pedido.status === "PENDING" && (
-        <section className="mt-8 rounded-xl border border-tienda-linea bg-tienda-fondo-alt p-5">
+        <section className="mt-8 rounded-xl border border-tienda-linea bg-tienda-fondo-alt p-6">
           <h2 className="text-sm font-medium uppercase tracking-wide text-tienda-tenue">
             Cómo pagar
           </h2>
 
-          {banco ? (
-            <>
+          {/*
+            El monto va primero y en grande, antes que el QR.
+
+            No es jerarquía visual porque sí: el enlace de DeUna NO lleva
+            el monto puesto —eso exige la API de comercios, que a su vez
+            exige RUC— así que la persona tiene que escribirlo a mano. Si
+            el número está escondido, lo escribe mal.
+          */}
+          <p className="mt-4 font-display text-5xl leading-none text-white">
+            {formatCurrency(pedido.total)}
+          </p>
+          <p className="mt-2 text-sm text-tienda-tenue">
+            Pon <strong className="font-medium text-tienda-texto">{pedido.orderNumber}</strong>{" "}
+            como referencia.
+          </p>
+
+          {cobro.deuna && (
+            <div className="mt-6 border-t border-tienda-linea pt-6">
+              {/*
+                El botón va antes que el QR a propósito.
+
+                Casi todo el mundo abre esto en el teléfono, y desde el
+                teléfono no se puede escanear un código que está en esa
+                misma pantalla. El botón abre DeUna directamente; el QR es
+                para quien esté en el computador.
+              */}
+              <a
+                href={cobro.deuna}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-full bg-tienda-acento px-6 py-4 text-center text-sm font-medium text-tienda-fondo transition-[background-color,transform] duration-[400ms] ease-tienda hover:bg-tienda-texto active:scale-[0.98] active:duration-100"
+              >
+                Pagar con DeUna
+              </a>
+
+              {qr && (
+                <div className="mt-6 flex flex-col items-center">
+                  <p className="mb-3 text-xs text-tienda-tenue">
+                    O escanéalo desde otro teléfono
+                  </p>
+                  {/*
+                    El QR es un PNG generado en el servidor y va como data
+                    URI. Con <img> y no con next/image: el optimizador no
+                    tiene nada que optimizar aquí y reescalar un código
+                    solo lo puede volver ilegible.
+                  */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qr}
+                    alt={`Código QR para pagar con DeUna el pedido ${pedido.orderNumber}`}
+                    width={180}
+                    height={180}
+                    className="rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {cobro.banco && (
+            <div className="mt-6 border-t border-tienda-linea pt-6">
+              <p className="text-xs uppercase tracking-wide text-tienda-tenue">
+                {cobro.deuna ? "O por transferencia" : "Transferencia"}
+              </p>
               {/* Los datos vienen tal como los escribió la dueña, con sus
                   saltos de línea. `whitespace-pre-line` los respeta sin que
                   haya que guardar HTML en la base. */}
               <p className="mt-3 whitespace-pre-line text-sm leading-relaxed">
-                {banco}
+                {cobro.banco}
               </p>
-              <p className="mt-4 text-sm text-tienda-tenue">
-                Transfiere{" "}
-                <strong className="font-medium">
-                  {formatCurrency(pedido.total)}
-                </strong>{" "}
-                y mándanos el comprobante poniendo el número{" "}
-                <strong className="font-medium">{pedido.orderNumber}</strong>.
-              </p>
+            </div>
+          )}
 
-              {/*
-                El botón lleva el número de pedido ya escrito en el mensaje.
-                Sin eso, quien recibe el comprobante tiene que adivinar de
-                cuál de los pedidos pendientes es.
-              */}
-              {contacto.whatsapp && (
-                <a
-                  href={`${contacto.whatsapp}?text=${encodeURIComponent(
-                    `Hola, acabo de hacer el pedido ${pedido.orderNumber}. Les mando el comprobante.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-block rounded-full bg-tienda-texto px-5 py-2.5 text-sm font-medium text-tienda-fondo transition-colors hover:bg-tienda-acento"
-                >
-                  Enviar comprobante por WhatsApp
-                </a>
-              )}
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-tienda-tenue">
-              Te escribimos por WhatsApp con los datos de la cuenta y el total a
-              transferir. Ten a mano el número {pedido.orderNumber}.
+          {!cobro.deuna && !cobro.banco && (
+            <p className="mt-4 text-sm text-tienda-tenue">
+              Te escribimos por WhatsApp con los datos para pagar. Ten a mano el
+              número {pedido.orderNumber}.
             </p>
+          )}
+
+          {/*
+            El mensaje lleva el número de pedido ya escrito. Sin eso, quien
+            recibe el comprobante tiene que adivinar de cuál de los pedidos
+            pendientes es.
+          */}
+          {contacto.whatsapp && (
+            <a
+              href={`${contacto.whatsapp}?text=${encodeURIComponent(
+                `Hola, acabo de hacer el pedido ${pedido.orderNumber}. Les mando el comprobante.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 block rounded-full border border-tienda-linea px-6 py-3 text-center text-sm text-tienda-texto transition-colors duration-[400ms] ease-tienda hover:border-tienda-texto hover:text-white"
+            >
+              Ya pagué — enviar comprobante
+            </a>
           )}
         </section>
       )}

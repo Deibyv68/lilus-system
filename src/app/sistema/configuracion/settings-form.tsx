@@ -126,6 +126,14 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
           Cobro de la tienda
         </h3>
+        <Field
+          label="Enlace de cobro de DeUna"
+          value={values.deuna_enlace ?? ""}
+          onChange={(v) => update("deuna_enlace", v)}
+          placeholder="https://…"
+          hint="En la app DeUna: «Envía un link de cobro», sin monto, y pega el enlace aquí. La tienda lo convierte en un QR y en un botón para pagar."
+        />
+
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">Datos para la transferencia</Label>
           <Textarea
