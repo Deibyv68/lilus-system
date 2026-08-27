@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { deleteOrdersAction } from "./actions";
 import { AvisoDePago, HaceCuanto } from "./espera";
+import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
 
 type Order = {
   id: string;
@@ -38,24 +39,6 @@ type Order = {
   customer: { name: string };
   carrier: { name: string } | null;
   _count: { items: number };
-};
-
-const statusLabel: Record<string, string> = {
-  PENDING: "Pendiente",
-  PAID: "Pagado",
-  PACKED: "Empaquetado",
-  SHIPPED: "Enviado",
-  DELIVERED: "Entregado",
-  CANCELLED: "Cancelado",
-};
-
-const statusColor: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-  PAID: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-  PACKED: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200",
-  SHIPPED: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200",
-  DELIVERED: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
 };
 
 export function OrderList({ orders }: { orders: Order[] }) {
@@ -297,11 +280,11 @@ function OrderCardContent({ o }: { o: Order }) {
       <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
-            className={`text-2xs px-2 py-0.5 rounded-md font-medium ${
-              statusColor[o.status] ?? "bg-muted text-muted-foreground"
-            }`}
+            className={`text-2xs px-2 py-0.5 rounded-md font-medium ${colorDeEstado(
+              o.status
+            )}`}
           >
-            {statusLabel[o.status] ?? o.status}
+            {etiquetaDeEstado(o.status)}
           </span>
           {/*
             El pedido web se marca distinto y no como una etiqueta gris mas.

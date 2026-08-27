@@ -3,19 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/format";
-import { PlusCircle, ShoppingCart, Package, Boxes } from "lucide-react";
+import { PlusCircle, ShoppingCart, Package, Boxes, Globe } from "lucide-react";
+import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
+import { AvisoDePago, HaceCuanto } from "./pedidos/espera";
 import { AgentStatusBadge } from "@/components/agent-status-badge";
 
 export const dynamic = "force-dynamic";
-
-const statusLabel: Record<string, string> = {
-  PENDING: "Pendiente",
-  PAID: "Pagado",
-  PACKED: "Empaquetado",
-  SHIPPED: "Enviado",
-  DELIVERED: "Entregado",
-  CANCELLED: "Cancelado",
-};
 
 export default async function DashboardPage() {
   const [productCount, packCount, pendingOrders, recentOrders, todaySales] =
@@ -26,7 +19,7 @@ export default async function DashboardPage() {
       prisma.order.findMany({
         take: 5,
         orderBy: { createdAt: "desc" },
-        include: { customer: true },
+        include: { customer: true, _count: { select: { items: true } } },
       }),
       prisma.order.aggregate({
         _sum: { total: true },
@@ -106,22 +99,56 @@ export default async function DashboardPage() {
               <li key={o.id}>
                 <Link
                   href={`/sistema/pedidos/${o.id}`}
-                  className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-card hover:bg-accent active:scale-[0.99] transition-all"
+                  className="block p-3 rounded-xl border bg-card hover:bg-accent active:scale-[0.99] transition-all"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold truncate">{o.customer.name}</p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {o.orderNumber}
-                    </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold truncate">{o.customer.name}</p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        {o.orderNumber}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-sm font-bold tabular-nums">
+                        {formatCurrency(o.total)}
+                      </span>
+                      <span className="text-3xs text-muted-foreground">
+                        <HaceCuanto fecha={o.createdAt} />
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <Badge variant="outline" className="text-3xs">
-                      {statusLabel[o.status] ?? o.status}
-                    </Badge>
-                    <span className="text-sm font-bold tabular-nums">
-                      {formatCurrency(o.total)}
+
+                  {/*
+                    Las mismas etiquetas que en la lista de pedidos, y con
+                    los mismos colores. Es la primera pantalla que se abre
+                    en la mañana: si aquí el estado se pinta distinto que
+                    allá, hay que traducir mentalmente entre dos pantallas
+                    de la misma app.
+                  */}
+                  <div className="flex items-center gap-1.5 flex-wrap mt-2.5 pt-2.5 border-t">
+                    <span
+                      className={`text-2xs px-2 py-0.5 rounded-md font-medium ${
+                        colorDeEstado(o.status)
+                      }`}
+                    >
+                      {etiquetaDeEstado(o.status)}
+                    </span>
+                    {o.source === "Web" && (
+                      <Badge className="text-3xs bg-emerald-600 hover:bg-emerald-600">
+                        <Globe className="size-2.5" /> Web
+                      </Badge>
+                    )}
+                    {o.source && o.source !== "Web" && (
+                      <Badge variant="secondary" className="text-3xs">
+                        {o.source}
+                      </Badge>
+                    )}
+                    <span className="text-3xs text-muted-foreground ml-auto">
+                      {o._count.items} {o._count.items === 1 ? "ítem" : "ítems"}
                     </span>
                   </div>
+
+                  <AvisoDePago estado={o.status} creadoEn={o.createdAt} />
                 </Link>
               </li>
             ))}

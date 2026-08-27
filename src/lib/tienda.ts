@@ -572,11 +572,20 @@ export async function listarFeed() {
  */
 export async function datosDeCobro() {
   const filas = await prisma.setting.findMany({
-    where: { key: { in: ["deuna_enlace", "bank_details"] } },
+    where: { key: { in: ["deuna_enlace", "deuna_qr", "bank_details"] } },
   });
   const m = Object.fromEntries(filas.map((f) => [f.key, f.value.trim()]));
   return {
     deuna: m.deuna_enlace || null,
+    /*
+      La imagen que subió la dueña desde la app del banco.
+
+      Cuando está, manda sobre el código que sabríamos generar a partir
+      del enlace: ese sale de una cadena que no tiene por qué ser la misma
+      que el QR real que emite la red de pagos, y un código que escanea
+      distinto no sirve de nada.
+    */
+    qrSubido: m.deuna_qr || null,
     banco: m.bank_details || null,
   };
 }

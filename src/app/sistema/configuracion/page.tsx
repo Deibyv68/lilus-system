@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "./settings-form";
 import { PrintAgentSettings } from "./print-agent-settings";
+import { QrDeuna } from "./qr-deuna";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,15 @@ export default async function SettingsPage() {
                 promo_enlace: map.promo_enlace ?? "",
               }}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>QR de DeUna</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QrDeuna actual={map.deuna_qr ?? null} />
           </CardContent>
         </Card>
 

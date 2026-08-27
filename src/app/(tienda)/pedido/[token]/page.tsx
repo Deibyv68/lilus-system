@@ -74,11 +74,24 @@ export default async function PaginaPedido({
 
   if (!pedido) notFound();
 
-  // El QR solo hace falta mientras esté por pagar.
+  /*
+    El QR solo hace falta mientras esté por pagar.
+
+    Si la dueña subió la captura del código desde la app del banco, se usa
+    esa. Solo si no hay imagen se genera uno a partir del enlace, que es
+    una aproximación: el QR que emite la red de pagos no tiene por qué
+    codificar la misma cadena que el enlace de compartir.
+  */
   const qr =
-    pedido.status === "PENDING" && cobro.deuna
-      ? await qrComoDataUri(cobro.deuna)
-      : null;
+    pedido.status !== "PENDING"
+      ? null
+      : cobro.qrSubido
+        ? { src: cobro.qrSubido, propio: true }
+        : cobro.deuna
+          ? await qrComoDataUri(cobro.deuna).then((d) =>
+              d ? { src: d, propio: false } : null
+            )
+          : null;
 
   const estado = ESTADOS[pedido.status] ?? ESTADOS.PENDING;
   const primerNombre = pedido.customer.name.split(" ")[0];
@@ -115,7 +128,7 @@ export default async function PaginaPedido({
             como referencia.
           </p>
 
-          {cobro.deuna && (
+          {(cobro.deuna || qr) && (
             <div className="mt-6 border-t border-tienda-linea pt-6">
               {/*
                 El botón va antes que el QR a propósito.
@@ -125,19 +138,23 @@ export default async function PaginaPedido({
                 misma pantalla. El botón abre DeUna directamente; el QR es
                 para quien esté en el computador.
               */}
-              <a
-                href={cobro.deuna}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-full bg-tienda-acento px-6 py-4 text-center text-sm font-medium text-tienda-fondo transition-[background-color,transform] duration-[400ms] ease-tienda hover:bg-tienda-texto active:scale-[0.98] active:duration-100"
-              >
-                Pagar con DeUna
-              </a>
+              {cobro.deuna && (
+                <a
+                  href={cobro.deuna}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-full bg-tienda-acento px-6 py-4 text-center text-sm font-medium text-tienda-fondo transition-[background-color,transform] duration-[400ms] ease-tienda hover:bg-tienda-texto active:scale-[0.98] active:duration-100"
+                >
+                  Pagar con DeUna
+                </a>
+              )}
 
               {qr && (
-                <div className="mt-6 flex flex-col items-center">
+                <div className={`flex flex-col items-center ${cobro.deuna ? "mt-6" : ""}`}>
                   <p className="mb-3 text-xs text-tienda-tenue">
-                    O escanéalo desde otro teléfono
+                    {cobro.deuna
+                      ? "O escanéalo desde otro teléfono"
+                      : "Escanea este código con la app de tu banco"}
                   </p>
                   {/*
                     El QR es un PNG generado en el servidor y va como data
@@ -147,11 +164,16 @@ export default async function PaginaPedido({
                   */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={qr}
-                    alt={`Código QR para pagar con DeUna el pedido ${pedido.orderNumber}`}
-                    width={180}
-                    height={180}
-                    className="rounded-lg"
+                    src={qr.src}
+                    alt={`Código QR para pagar el pedido ${pedido.orderNumber}`}
+                    width={200}
+                    height={200}
+                    /*
+                      `bg-white` y `object-contain`: la captura que sube la
+                      dueña puede venir con fondo claro y proporción rara, y
+                      un QR recortado o sobre fondo oscuro deja de leerse.
+                    */
+                    className="h-[200px] w-[200px] rounded-lg bg-white object-contain p-2"
                   />
                 </div>
               )}
