@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Camera } from "lucide-react";
 import { Revelar } from "@/components/tienda/revelar";
 
 /**
@@ -36,6 +37,13 @@ export function FeedSocial({
   // Si una foto no trae su publicación, lleva al perfil. Y si tampoco hay
   // perfil, no es un enlace: mejor una foto que un enlace muerto.
   const porDefecto = perfiles.instagram ?? perfiles.tiktok;
+
+  // Lo que se lee encima de la foto. Sin cuenta cargada no se inventa nada.
+  const etiqueta = perfiles.instagramUsuario
+    ? `@${perfiles.instagramUsuario}`
+    : perfiles.tiktokUsuario
+      ? `@${perfiles.tiktokUsuario}`
+      : null;
 
   return (
     <section>
@@ -80,15 +88,34 @@ export function FeedSocial({
       <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-6 pb-2 sm:px-10">
         {imagenes.map((img, i) => {
           const destino = img.enlace ?? porDefecto;
+          /*
+            El nombre de la cuenta se revela encima de la foto al pasarle
+            el mouse, como en la referencia.
+
+            Va como `group` sobre el contenedor y no sobre la imagen: si
+            el hover se escuchara en la imagen, el velo que aparece encima
+            se lo robaría y el efecto parpadearía al mover el cursor.
+
+            En el móvil no hay hover, así que el velo se queda invisible y
+            no estorba: ahí el nombre ya está arriba, junto al título.
+          */
           const foto = (
-            <span className="relative block aspect-[4/5] w-[60vw] overflow-hidden rounded-tienda-sm bg-tienda-velo sm:w-[38vw] lg:w-[22vw]">
+            <span className="group relative block aspect-[4/5] w-[60vw] overflow-hidden rounded-tienda-sm bg-tienda-velo sm:w-[38vw] lg:w-[22vw]">
               <Image
                 src={img.url}
                 alt={img.alt ?? ""}
                 fill
                 sizes="(max-width: 640px) 60vw, (max-width: 1024px) 38vw, 22vw"
-                className="object-cover transition-transform duration-700 ease-tienda hover:scale-[1.04]"
+                className="object-cover transition-transform duration-700 ease-tienda group-hover:scale-[1.04]"
               />
+              {etiqueta && (
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-[400ms] ease-tienda group-hover:opacity-100">
+                  <span className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.14em] text-white">
+                    <Camera className="size-4" />
+                    {etiqueta}
+                  </span>
+                </span>
+              )}
             </span>
           );
 
