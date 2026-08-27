@@ -24,6 +24,7 @@ export const productSchema = z.object({
   stock: z.coerce.number().int().min(0).default(0),
   isActive: z.coerce.boolean().default(true),
   isPublic: z.coerce.boolean().default(false),
+  destacado: z.coerce.boolean().default(false),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

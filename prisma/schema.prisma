@@ -40,6 +40,14 @@ model Product {
   tagline         String?  // una línea, se lee debajo del nombre en el catálogo
   isPublic        Boolean  @default(false)
 
+  /// Aparece en la selección de tres de la portada.
+  ///
+  /// Existe porque el criterio automático no sirve: sin esto salían los
+  /// tres primeros por orden alfabético, y en una marca de jabones eso
+  /// ponía el acondicionador y el agua micelar de cara. Cuáles merecen
+  /// esa vitrina es una decisión de quien vende, no de un ORDER BY.
+  destacado       Boolean  @default(false)
+
   variants        ProductVariant[]
   packItems       PackItem[]
   orderItems      OrderItem[]

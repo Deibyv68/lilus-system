@@ -28,6 +28,7 @@ type ProductFormValues = {
   stock?: number;
   isActive?: boolean;
   isPublic?: boolean;
+  destacado?: boolean;
   imageUrl?: string | null;
   labelPdfUrl?: string | null;
 };
@@ -37,6 +38,7 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
   const [isPending, startTransition] = useTransition();
   const [active, setActive] = useState(initial?.isActive ?? true);
   const [publico, setPublico] = useState(initial?.isPublic ?? false);
+  const [destacado, setDestacado] = useState(initial?.destacado ?? false);
   const [imgPreview, setImgPreview] = useState<string | null>(initial?.imageUrl ?? null);
   const [labelName, setLabelName] = useState<string | null>(
     initial?.labelPdfUrl ? initial.labelPdfUrl.split("/").pop() ?? null : null
@@ -49,6 +51,9 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
     // Dado de baja no puede quedar publicado: el switch se deshabilita,
     // pero el estado guardado podria venir en true de antes.
     formData.set("isPublic", active && publico ? "on" : "");
+    // Destacar algo que no esta publicado no tiene sentido: la
+    // vitrina de la portada solo muestra lo que se ve en la tienda.
+    formData.set("destacado", active && publico && destacado ? "on" : "");
 
     startTransition(async () => {
       const action = isEdit
@@ -237,6 +242,22 @@ export function ProductForm({ initial }: { initial?: ProductFormValues }) {
                 checked={publico}
                 onCheckedChange={setPublico}
                 disabled={!active}
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4 pt-4 border-t">
+              <div>
+                <Label htmlFor="destacado">En la portada</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Sale en la selección de tres de la página principal. Elige
+                  los que mejor representen la marca.
+                </p>
+              </div>
+              <Switch
+                id="destacado"
+                checked={destacado}
+                onCheckedChange={setDestacado}
+                disabled={!active || !publico}
               />
             </div>
           </CardContent>

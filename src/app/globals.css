@@ -393,3 +393,13 @@
     transition: none;
   }
 }
+
+/* ── Testimonios ──
+   El desvanecido de abajo da la sensacion de que la seccion sigue mas
+   alla de lo que se ve. Con `mask-image`, que solo afecta al pintado: el
+   texto sigue completo en la pagina para un lector de pantalla y para un
+   buscador. Recortarlo con `overflow` si lo habria quitado de verdad. */
+.testimonios-desvanecidos {
+  -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+}

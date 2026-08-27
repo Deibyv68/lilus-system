@@ -33,6 +33,7 @@ export async function createProductAction(formData: FormData) {
     stock: formData.get("stock") ?? 0,
     isActive: formData.get("isActive") === "on",
     isPublic: formData.get("isPublic") === "on",
+    destacado: formData.get("destacado") === "on",
   });
 
   if (!parsed.success) {
@@ -77,6 +78,7 @@ export async function createProductAction(formData: FormData) {
         stock: data.stock,
         isActive: data.isActive,
         isPublic: data.isPublic,
+        destacado: data.destacado,
         imageUrl,
         labelPdfUrl,
       },
@@ -111,6 +113,7 @@ export async function updateProductAction(id: string, formData: FormData) {
     stock: formData.get("stock") ?? 0,
     isActive: formData.get("isActive") === "on",
     isPublic: formData.get("isPublic") === "on",
+    destacado: formData.get("destacado") === "on",
   });
 
   if (!parsed.success) {
@@ -156,6 +159,7 @@ export async function updateProductAction(id: string, formData: FormData) {
         stock: data.stock,
         isActive: data.isActive,
         isPublic: data.isPublic,
+        destacado: data.destacado,
         ...(imageUrl ? { imageUrl } : {}),
         ...(labelPdfUrl ? { labelPdfUrl } : {}),
       },

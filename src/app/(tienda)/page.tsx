@@ -1,7 +1,14 @@
 import Link from "next/link";
-import { listarCatalogo, listarPacksConDescripcion } from "@/lib/tienda";
+import {
+  listarCatalogo,
+  listarPacksConDescripcion,
+  listarDestacados,
+} from "@/lib/tienda";
 import { Revelar } from "@/components/tienda/revelar";
 import { ListaColecciones } from "@/components/tienda/lista-colecciones";
+import { SeleccionDestacada } from "@/components/tienda/seleccion-destacada";
+import { Testimonios } from "@/components/tienda/testimonios";
+import { TESTIMONIOS_DE_MUESTRA } from "@/lib/testimonios";
 import { CarruselProductos } from "@/components/tienda/carrusel-productos";
 import { CintaTexto } from "@/components/tienda/cinta-texto";
 
@@ -21,9 +28,10 @@ import { CintaTexto } from "@/components/tienda/cinta-texto";
 export const revalidate = 1800;
 
 export default async function Portada() {
-  const [{ productos }, packs] = await Promise.all([
+  const [{ productos }, packs, destacados] = await Promise.all([
     listarCatalogo(),
     listarPacksConDescripcion(),
+    listarDestacados(),
   ]);
 
   return (
@@ -106,6 +114,16 @@ export default async function Portada() {
         </section>
       </div>
 
+      {destacados.length > 0 && (
+        <div className="mx-auto max-w-[1440px] px-6 pb-[120px] sm:px-10">
+          <SeleccionDestacada
+            articulos={destacados}
+            titulo="Se nota al usarlo"
+            entrada="No prometemos milagros: un jabón está treinta segundos en la piel. Lo que sí controlamos es qué lleva, en qué proporción y por qué — y eso está escrito en cada ficha."
+          />
+        </div>
+      )}
+
       {/*
         El carrusel va a sangre, sin el margen del contenido: la fila tiene
         que salirse por los dos lados para que se lea como algo que sigue
@@ -135,6 +153,19 @@ export default async function Portada() {
           </div>
         </section>
       )}
+
+      {/*
+        ⚠️ Los testimonios son de muestra e inventados. Ver la advertencia
+        de src/lib/testimonios.ts: hay que reemplazarlos por reales antes
+        de que la tienda salga a internet.
+      */}
+      <div className="mx-auto max-w-[1440px] px-6 pb-[120px] sm:px-10">
+        <Testimonios
+          testimonios={TESTIMONIOS_DE_MUESTRA}
+          titulo="Lo que dicen"
+          entrada="Impresiones de clientas que compraron y volvieron. Hablan de olor, textura y trato — de un jabón no se puede esperar más que eso."
+        />
+      </div>
 
       <Revelar>
         <CintaTexto texto="Hecho a mano, de a poco." />

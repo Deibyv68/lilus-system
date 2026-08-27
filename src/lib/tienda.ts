@@ -397,3 +397,22 @@ export async function listarPacksConDescripcion(): Promise<
     descripcion: p.description,
   }));
 }
+
+/**
+ * Los tres de la portada.
+ *
+ * Solo los que la dueña marcó. Si no hay ninguno, devuelve lista vacía y
+ * la sección no se pinta — a propósito: es una vitrina curada, y sin
+ * curar no hay nada que enseñar. Antes salían los tres primeros por orden
+ * alfabético, y en una marca de jabones eso ponía de cara el
+ * acondicionador y el agua micelar.
+ */
+export async function listarDestacados(): Promise<ArticuloResumen[]> {
+  const filas = await prisma.product.findMany({
+    where: { ...VISIBLE, destacado: true },
+    select: RESUMEN,
+    orderBy: { name: "asc" },
+    take: 3,
+  });
+  return filas.map((f) => aResumen("producto", f));
+}
