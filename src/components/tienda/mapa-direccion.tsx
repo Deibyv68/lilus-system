@@ -72,34 +72,141 @@ const CENTRO_POR_DEFECTO: [number, number] = [-0.1807, -78.4678];
  * devuelve `null` y queda la calle principal — que es lo que había antes
  * de todo esto.
  */
+/**
+ * Lo que ya se preguntó, para no volver a preguntarlo.
+ *
+ * La llave es el punto redondeado a cinco decimales, poco más de un
+ * metro. Alguien que tantea el mapa vuelve una y otra vez a la misma
+ * esquina, y sin esto cada vuelta gasta turno en dos servicios públicos
+ * con cupo. Vive fuera del componente para que sobreviva a cerrar y
+ * volver a abrir el mapa.
+ */
+const memoria = new Map<string, DireccionDelPunto | null>();
+const memoriaCruce = new Map<string, string | null>();
+
+function llave(lat: number, lng: number): string {
+  return `${lat.toFixed(5)},${lng.toFixed(5)}`;
+}
+
+/** Espera, para no atropellar a un servicio que acaba de decir «basta». */
+const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+type DireccionDelPunto = {
+  calle: string;
+  road: string;
+  lugares: string[];
+  provincia: string;
+};
+
+/**
+ * Qué hay en este punto, según Nominatim.
+ *
+ * Devuelve `null` solo si la consulta falló de verdad. Un punto sin calle
+ * conocida es una respuesta válida y devuelve `calle: ""` — son dos cosas
+ * distintas y quien llama necesita distinguirlas.
+ */
+async function direccionDelPunto(
+  lat: number,
+  lng: number
+): Promise<DireccionDelPunto | null> {
+  const k = llave(lat, lng);
+  if (memoria.has(k)) return memoria.get(k)!;
+
+  const corte = new AbortController();
+  const temporizador = setTimeout(() => corte.abort(), 10000);
+
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=es`,
+      { headers: { accept: "application/json" }, signal: corte.signal }
+    );
+    if (!r.ok) return null;
+
+    const j = await r.json();
+    const a = j.address ?? {};
+    const resultado: DireccionDelPunto = {
+      calle: [a.road, a.house_number].filter(Boolean).join(" "),
+      road: a.road ?? "",
+      lugares: [
+        a.city,
+        a.town,
+        a.municipality,
+        a.county,
+        a.state_district,
+        a.village,
+      ].filter((v: unknown): v is string => Boolean(v)),
+      provincia: a.state ?? "",
+    };
+
+    memoria.set(k, resultado);
+    return resultado;
+  } catch {
+    // No se guarda el fallo: si fue pasajero, la próxima vez debe volver
+    // a intentarlo en vez de recordar para siempre que no se pudo.
+    return null;
+  } finally {
+    clearTimeout(temporizador);
+  }
+}
+
 async function calleTransversal(
   lat: number,
   lng: number,
   principal: string
 ): Promise<string | null> {
+  const k = llave(lat, lng);
+  if (memoriaCruce.has(k)) return memoriaCruce.get(k)!;
+
   const consulta =
-    `[out:json][timeout:8];way(around:80,${lat},${lng})[highway][name];out tags center;`;
+    `[out:json][timeout:20];way(around:80,${lat},${lng})[highway][name];out tags center;`;
 
-  const corte = new AbortController();
-  const temporizador = setTimeout(() => corte.abort(), 6000);
+  /*
+    Dos intentos, con una espera de tres segundos en medio.
 
-  try {
-    const r = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(consulta),
-      signal: corte.signal,
-    });
-    if (!r.ok) return null;
+    Overpass reparte turnos por IP y devuelve 429 cuando no queda ninguno
+    libre. Es un rechazo pasajero —en unos segundos suele haber sitio—, y
+    rendirse al primero es justo lo que hacía que la calle secundaria
+    apareciera a ratos. También se reintenta con 504, que es su forma de
+    decir que la consulta tardó demasiado del lado de ellos.
+  */
+  for (const intento of [1, 2]) {
+    const corte = new AbortController();
+    const temporizador = setTimeout(() => corte.abort(), 12000);
 
-    const j = (await r.json()) as { elements?: ViaCercana[] };
+    try {
+      const r = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: "data=" + encodeURIComponent(consulta),
+        signal: corte.signal,
+      });
 
-    return elegirTransversal(j.elements ?? [], principal, lat, lng);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(temporizador);
+      if (r.status === 429 || r.status === 504) {
+        if (intento === 1) {
+          await esperar(3000);
+          continue;
+        }
+        return null;
+      }
+      if (!r.ok) return null;
+
+      const j = (await r.json()) as { elements?: ViaCercana[] };
+      const cruce = elegirTransversal(j.elements ?? [], principal, lat, lng);
+      memoriaCruce.set(k, cruce);
+      return cruce;
+    } catch {
+      // Un corte por tiempo agotado también merece el segundo intento.
+      if (intento === 1) {
+        await esperar(1000);
+        continue;
+      }
+      return null;
+    } finally {
+      clearTimeout(temporizador);
+    }
   }
+
+  return null;
 }
 
 export type UbicacionElegida = {
@@ -262,7 +369,23 @@ export function MapaDireccion({
         marcador.current = L.marker(inicio, { icon: icono, draggable: true }).addTo(m);
       }
 
-      async function poner(lat: number, lng: number) {
+      /*
+        El marcador se mueve al instante; las consultas esperan.
+
+        Antes se preguntaba a Nominatim y a Overpass en CADA clic. Los dos
+        son servicios públicos y gratuitos con límite por IP —Nominatim
+        pide como mucho una petición por segundo, Overpass reparte turnos
+        y devuelve 429 cuando se acaban—, así que quien tanteaba el mapa
+        con varios clics seguidos agotaba el cupo y la dirección dejaba de
+        completarse. Funcionaba a ratos, que es la peor forma de fallar.
+
+        Ahora se espera a que el punto se quede quieto. Mover el marcador
+        cinco veces gasta una consulta, no cinco.
+      */
+      let tareaPendiente: ReturnType<typeof setTimeout> | null = null;
+      let generacion = 0;
+
+      function poner(lat: number, lng: number) {
         if (marcador.current) {
           marcador.current.setLatLng([lat, lng]);
         } else {
@@ -273,65 +396,26 @@ export function MapaDireccion({
           });
         }
 
-        // Se entrega el punto de inmediato. La dirección, si llega, llega
-        // después: nunca se hace esperar por algo que puede fallar.
+        // El punto se entrega ya. La dirección llega cuando llegue: nunca
+        // se hace esperar por algo que puede fallar.
         alElegir.current({ lat, lng });
-
-        setBuscando(true);
         setAviso(null);
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=es`,
-            { headers: { accept: "application/json" } }
-          );
-          if (!r.ok) throw new Error(String(r.status));
-          const j = await r.json();
-          const a = j.address ?? {};
-          const calle = [a.road, a.house_number].filter(Boolean).join(" ");
-          const lugares = [
-            a.city,
-            a.town,
-            a.municipality,
-            a.county,
-            a.state_district,
-            a.village,
-          ].filter((v): v is string => Boolean(v));
-          if (!vivo) return;
-          if (!calle) {
-            setAviso(
-              "El mapa no conoce el nombre de esta calle. Escríbela abajo tú."
-            );
-          }
-          /*
-            Se entrega ya la calle principal, y la transversal se busca
-            después. Nadie tiene que esperar a un servicio que puede
-            tardar seis segundos para ver su dirección aparecer.
-          */
-          alElegir.current({
-            lat,
-            lng,
-            calle,
-            lugares,
-            provincia: a.state ?? "",
-            recibioRespuesta: true,
-          });
+        setBuscando(true);
 
-          if (a.road) {
-            const cruce = await calleTransversal(lat, lng, a.road);
-            if (!vivo) return;
-            if (cruce) {
-              alElegir.current({
-                lat,
-                lng,
-                calle: `${calle} y ${cruce}`,
-                lugares,
-                provincia: a.state ?? "",
-                recibioRespuesta: true,
-              });
-            }
-          }
-        } catch {
-          if (vivo) {
+        // Cualquier resultado de un punto anterior deja de valer.
+        const mio = ++generacion;
+        if (tareaPendiente) clearTimeout(tareaPendiente);
+        tareaPendiente = setTimeout(() => resolver(lat, lng, mio), 700);
+      }
+
+      async function resolver(lat: number, lng: number, mio: number) {
+        const vigente = () => vivo && mio === generacion;
+
+        try {
+          const direccion = await direccionDelPunto(lat, lng);
+          if (!vigente()) return;
+
+          if (!direccion) {
             setAviso("No se pudo leer la dirección. El punto sí quedó marcado.");
             /*
               El servicio falló: no sabemos si hay calle o no. Se avisa sin
@@ -339,9 +423,40 @@ export function MapaDireccion({
               escrito basándose en una consulta que ni llegó.
             */
             alElegir.current({ lat, lng });
+            return;
           }
+
+          const { calle, lugares, provincia, road } = direccion;
+          if (!calle) {
+            setAviso(
+              "El mapa no conoce el nombre de esta calle. Escríbela abajo tú."
+            );
+          }
+
+          alElegir.current({
+            lat,
+            lng,
+            calle,
+            lugares,
+            provincia,
+            recibioRespuesta: true,
+          });
+
+          if (!road) return;
+
+          const cruce = await calleTransversal(lat, lng, road);
+          if (!vigente() || !cruce) return;
+
+          alElegir.current({
+            lat,
+            lng,
+            calle: `${calle} y ${cruce}`,
+            lugares,
+            provincia,
+            recibioRespuesta: true,
+          });
         } finally {
-          if (vivo) setBuscando(false);
+          if (vigente()) setBuscando(false);
         }
       }
 
@@ -350,6 +465,7 @@ export function MapaDireccion({
       mapa.current = m;
       setListo(true);
       limpiar = () => {
+        if (tareaPendiente) clearTimeout(tareaPendiente);
         el.removeEventListener("mouseenter", encender);
         el.removeEventListener("mouseleave", apagar);
         el.removeEventListener("wheel", cortarScroll);
