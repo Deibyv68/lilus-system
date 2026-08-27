@@ -43,145 +43,169 @@ export function Cabecera({ marca }: { marca: string }) {
   const unidades = totalUnidades(lineas);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md">
-      <div className="mx-auto grid max-w-[1440px] grid-cols-[1fr_auto] items-center gap-4 px-6 py-5 sm:px-10 lg:grid-cols-3">
-        {/* Marca */}
-        <Link href="/" className="group flex items-baseline gap-1.5 justify-self-start">
-          <span className="font-display text-3xl leading-none tracking-[0.02em] text-white transition-colors duration-[400ms] ease-tienda group-hover:text-tienda-acento">
-            {marca}
-          </span>
-          {/*
-            El símbolo va pequeño y arriba, como en la referencia. Es
-            decorativo: un lector de pantalla que lo lea letra por letra
-            solo entorpece el nombre de la marca.
-          */}
-          <span aria-hidden="true" className="text-xs text-tienda-tenue">
-            ®
-          </span>
-        </Link>
-
-        {/* Navegación: solo en pantalla grande */}
-        <nav className="hidden justify-center gap-10 lg:flex">
-          {ENLACES.map((e) => {
-            const activo = pathname === e.href || pathname.startsWith(`${e.href}/`);
-            return (
-              <Link
-                key={e.href}
-                href={e.href}
-                aria-current={activo ? "page" : undefined}
-                className={`text-sm font-medium uppercase tracking-[0.12em] transition-colors duration-[400ms] ease-tienda ${
-                  activo ? "text-white" : "text-tienda-texto hover:text-white"
-                }`}
-              >
-                {e.texto}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Acciones */}
-        <div className="flex items-center gap-5 justify-self-end sm:gap-6">
+    /*
+      El panel del carrito va FUERA de <header>, como hermano.
+      
+      No es orden: el `backdrop-blur` de la cabecera la convierte en el
+      marco de referencia de sus descendientes `fixed`. Con el panel
+      dentro, su `inset-0` no medía la pantalla sino la cabecera — 88 px
+      de alto en un teléfono— y el velo oscuro solo cubría esa franja.
+      Sacándolo, vuelve a medir contra la ventana.
+    */
+    <>
+      <header className="sticky top-0 z-50 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md">
+        <div className="mx-auto grid max-w-[1440px] grid-cols-[1fr_auto] items-center gap-4 px-6 py-5 sm:px-10 lg:grid-cols-3">
+          {/* Marca */}
+          {/* py-2 no es aire decorativo: sube la zona tactil de 30 a 46 px. */}
           <Link
-            href="/tienda"
-            aria-label="Buscar en la tienda"
-            className="transition-colors duration-[400ms] ease-tienda hover:text-white"
+            href="/"
+            className="group flex items-baseline gap-1.5 justify-self-start py-2"
           >
-            <Search className="size-5" strokeWidth={1.5} />
+            <span className="font-display text-3xl leading-none tracking-[0.02em] text-white transition-colors duration-[400ms] ease-tienda group-hover:text-tienda-acento">
+              {marca}
+            </span>
+            {/*
+              El símbolo va pequeño y arriba, como en la referencia. Es
+              decorativo: un lector de pantalla que lo lea letra por letra
+              solo entorpece el nombre de la marca.
+            */}
+            <span aria-hidden="true" className="text-xs text-tienda-tenue">
+              ®
+            </span>
           </Link>
 
+          {/* Navegación: solo en pantalla grande */}
+          <nav className="hidden justify-center gap-10 lg:flex">
+            {ENLACES.map((e) => {
+              const activo = pathname === e.href || pathname.startsWith(`${e.href}/`);
+              return (
+                <Link
+                  key={e.href}
+                  href={e.href}
+                  aria-current={activo ? "page" : undefined}
+                  className={`text-sm font-medium uppercase tracking-[0.12em] transition-colors duration-[400ms] ease-tienda ${
+                    activo ? "text-white" : "text-tienda-texto hover:text-white"
+                  }`}
+                >
+                  {e.texto}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Acciones */}
           {/*
-            Abre el panel en vez de navegar. La página /carrito sigue
-            existiendo y se llega desde dentro del panel: el vistazo no
-            debería costar salir de donde uno estaba.
+            Separacion chica y relleno grande, en vez de al reves. Cada icono
+            mide 20 px: con `gap-5` y sin relleno, la zona que responde al
+            dedo eran esos 20 px y fallar el toque era lo normal. Con `p-3`
+            cada uno pasa a 44 px —el minimo comodo— y el hueco visible entre
+            ellos queda parecido. El margen negativo devuelve el ultimo a la
+            linea del contenido.
           */}
-          <button
-            type="button"
-            onClick={() => setCarritoAbierto(true)}
-            aria-haspopup="dialog"
-            aria-expanded={carritoAbierto}
-            aria-label={
-              listo && unidades > 0
-                ? `Carrito, ${unidades} ${unidades === 1 ? "artículo" : "artículos"}`
-                : "Carrito, vacío"
-            }
-            className="relative transition-colors duration-[400ms] ease-tienda hover:text-white"
-          >
-            <ShoppingBag className="size-5" strokeWidth={1.5} />
+          <div className="-mr-3 flex items-center gap-0 justify-self-end sm:gap-1">
+            <Link
+              href="/tienda"
+              aria-label="Buscar en la tienda"
+              className="p-3 transition-colors duration-[400ms] ease-tienda hover:text-white"
+            >
+              <Search className="size-5" strokeWidth={1.5} />
+            </Link>
+
             {/*
-              El contador espera a que el carrito se lea del navegador. El
-              servidor no sabe qué hay guardado ahí y manda cero: pintarlo
-              haría que quien vuelve con tres cosas viera un cero que salta
-              a tres, y eso se lee como que se perdió el pedido.
+              Abre el panel en vez de navegar. La página /carrito sigue
+              existiendo y se llega desde dentro del panel: el vistazo no
+              debería costar salir de donde uno estaba.
             */}
-            {listo && unidades > 0 && (
-              <span className="absolute -bottom-1.5 -left-2 grid size-5 place-items-center rounded-full bg-tienda-acento text-[10px] font-medium tabular-nums text-tienda-fondo">
-                {unidades}
-              </span>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => setCarritoAbierto(true)}
+              aria-haspopup="dialog"
+              aria-expanded={carritoAbierto}
+              aria-label={
+                listo && unidades > 0
+                  ? `Carrito, ${unidades} ${unidades === 1 ? "artículo" : "artículos"}`
+                  : "Carrito, vacío"
+              }
+              className="relative p-3 transition-colors duration-[400ms] ease-tienda hover:text-white"
+            >
+              <ShoppingBag className="size-5" strokeWidth={1.5} />
+              {/*
+                El contador espera a que el carrito se lea del navegador. El
+                servidor no sabe qué hay guardado ahí y manda cero: pintarlo
+                haría que quien vuelve con tres cosas viera un cero que salta
+                a tres, y eso se lee como que se perdió el pedido.
+              */}
+              {listo && unidades > 0 && (
+                <span className="absolute bottom-1.5 left-1 grid size-5 place-items-center rounded-full bg-tienda-acento text-[10px] font-medium tabular-nums text-tienda-fondo">
+                  {unidades}
+                </span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setMenuAbierto((v) => !v)}
-            aria-expanded={menuAbierto}
-            aria-controls="menu-tienda"
-            aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
-            className="transition-colors duration-[400ms] ease-tienda hover:text-white"
-          >
-            {menuAbierto ? (
-              <X className="size-6" strokeWidth={1.5} />
-            ) : (
-              <Menu className="size-6" strokeWidth={1.5} />
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => setMenuAbierto((v) => !v)}
+              aria-expanded={menuAbierto}
+              aria-controls="menu-tienda"
+              aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+              className="p-3 transition-colors duration-[400ms] ease-tienda hover:text-white"
+            >
+              {menuAbierto ? (
+                <X className="size-6" strokeWidth={1.5} />
+              ) : (
+                <Menu className="size-6" strokeWidth={1.5} />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/*
-        El panel se despliega bajo la cabecera en vez de taparlo todo. En
-        una tienda, cubrir la pantalla entera para mostrar cinco enlaces
-        desorienta más de lo que ayuda.
-      */}
-      <div
-        id="menu-tienda"
-        hidden={!menuAbierto}
-        className="border-t border-tienda-linea bg-tienda-fondo"
-      >
-        <nav className="mx-auto max-w-[1440px] px-6 py-8 sm:px-10">
-          <ul className="space-y-4 lg:hidden">
-            {ENLACES.map((e) => (
-              <li key={e.href}>
-                <Link
-                  href={e.href}
-                  onClick={() => setMenuAbierto(false)}
-                  className="font-display text-3xl leading-none tracking-[-0.01em] text-white"
-                >
-                  {e.texto}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {/*
+          El panel se despliega bajo la cabecera en vez de taparlo todo. En
+          una tienda, cubrir la pantalla entera para mostrar cinco enlaces
+          desorienta más de lo que ayuda.
+        */}
+        <div
+          id="menu-tienda"
+          hidden={!menuAbierto}
+          className="border-t border-tienda-linea bg-tienda-fondo"
+        >
+          <nav className="mx-auto max-w-[1440px] px-6 py-8 sm:px-10">
+            <ul className="space-y-4 lg:hidden">
+              {ENLACES.map((e) => (
+                <li key={e.href}>
+                  <Link
+                    href={e.href}
+                    onClick={() => setMenuAbierto(false)}
+                    className="font-display text-3xl leading-none tracking-[-0.01em] text-white"
+                  >
+                    {e.texto}
+                  </Link>
+                </li>
+              ))}
+            </ul>
 
-          <ul className="flex flex-col gap-3 pt-6 text-sm text-tienda-tenue lg:flex-row lg:gap-10 lg:pt-0">
-            {SECUNDARIOS.map((e) => (
-              <li key={e.href}>
-                <Link
-                  href={e.href}
-                  onClick={() => setMenuAbierto(false)}
-                  className="transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
-                >
-                  {e.texto}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
+            <ul className="flex flex-col gap-3 pt-6 text-sm text-tienda-tenue lg:flex-row lg:gap-10 lg:pt-0">
+              {SECUNDARIOS.map((e) => (
+                <li key={e.href}>
+                  <Link
+                    href={e.href}
+                    onClick={() => setMenuAbierto(false)}
+                    className="inline-block py-2 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
+                  >
+                    {e.texto}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+
+      </header>
 
       <PanelCarrito
         abierto={carritoAbierto}
         onCerrar={() => setCarritoAbierto(false)}
       />
-    </header>
+    </>
   );
 }

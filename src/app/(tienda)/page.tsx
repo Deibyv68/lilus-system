@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { listarCatalogo, type ArticuloResumen } from "@/lib/tienda";
-import { formatCurrency } from "@/lib/format";
-import { ImagenArticulo } from "@/components/tienda/imagen-articulo";
-import { BotonAgregar } from "@/components/tienda/boton-agregar";
+import { listarCatalogo } from "@/lib/tienda";
 import { Revelar } from "@/components/tienda/revelar";
+import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
 import { CarruselProductos } from "@/components/tienda/carrusel-productos";
 import { CintaTexto } from "@/components/tienda/cinta-texto";
 
@@ -89,8 +87,9 @@ export default async function Portada() {
                   key={`${a.tipo}:${a.id}`}
                   variante={i % 2 === 0 ? "inclinar" : "inclinar-derecha"}
                   retardo={(i % 3) * 80}
+                  className="min-w-0"
                 >
-                  <Tarjeta articulo={a} prioridad={i < 3} />
+                  <TarjetaArticulo articulo={a} prioridad={i < 3} />
                 </Revelar>
               ))}
             </ul>
@@ -124,7 +123,7 @@ export default async function Portada() {
               </p>
               <Link
                 href="/nosotros"
-                className="inline-block text-sm text-tienda-texto underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-acento"
+                className="inline-block py-2 text-sm text-tienda-texto underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-acento"
               >
                 Cómo trabajamos
               </Link>
@@ -168,7 +167,7 @@ export default async function Portada() {
         <div className="mx-auto max-w-[1440px] px-6 text-center sm:px-10">
           <Link
             href="/nosotros"
-            className="text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
+            className="inline-block py-2 text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
           >
             Conoce el taller
           </Link>
@@ -201,42 +200,3 @@ function Boton({
   );
 }
 
-function Tarjeta({
-  articulo,
-  prioridad,
-}: {
-  articulo: ArticuloResumen;
-  prioridad: boolean;
-}) {
-  return (
-    <article className="flex h-full flex-col">
-      <Link href={`/tienda/${articulo.slug}`} className="group">
-        <div className="relative aspect-square overflow-hidden rounded-tienda-sm bg-tienda-velo sm:rounded-tienda">
-          <ImagenArticulo
-            url={articulo.imagen}
-            alt={articulo.imagenAlt}
-            nombre={articulo.nombre}
-            prioridad={prioridad}
-            className="transition-transform duration-700 ease-tienda group-hover:scale-[1.04]"
-          />
-        </div>
-        <h3 className="mt-5 font-display text-2xl leading-tight tracking-[-0.02em] text-white transition-colors duration-[400ms] ease-tienda group-hover:text-tienda-acento">
-          {articulo.nombre}
-        </h3>
-      </Link>
-
-      {articulo.tagline && (
-        <p className="mt-1.5 text-sm leading-snug text-pretty text-tienda-tenue">
-          {articulo.tagline}
-        </p>
-      )}
-
-      <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-        <span className="tabular-nums text-tienda-texto">
-          {formatCurrency(articulo.precio)}
-        </span>
-        <BotonAgregar articulo={articulo} />
-      </div>
-    </article>
-  );
-}

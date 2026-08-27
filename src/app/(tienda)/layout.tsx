@@ -154,7 +154,7 @@ function ColumnaPie({
       <p className="text-xs font-medium uppercase tracking-[0.12em] text-tienda-tenue/60">
         {titulo}
       </p>
-      <ul className="mt-5 space-y-3 text-sm">
+      <ul className="mt-4 space-y-0.5 text-sm">
         {/*
           Cada enlace en su <li>. Un pie es una lista de enlaces, y
           anunciarla como tal le dice a quien usa lector de pantalla
@@ -168,9 +168,18 @@ function ColumnaPie({
   );
 }
 
-/** Los enlaces usan la transición de color de 400 ms de la referencia. */
+/**
+ * Los enlaces del pie.
+ *
+ * `inline-block py-2` sube la zona tactil de 17 px a 33. Un enlace de 17
+ * px de alto en un telefono se falla la mitad de las veces, y en el pie
+ * van siete seguidos: fallar ahi significa acabar en la pagina
+ * equivocada, no simplemente no pasar nada.
+ *
+ * La transicion de color de 400 ms es la de la referencia.
+ */
 const claseEnlace =
-  "transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto";
+  "inline-block py-2 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto";
 
 function Interno({ href, children }: { href: string; children: React.ReactNode }) {
   return (

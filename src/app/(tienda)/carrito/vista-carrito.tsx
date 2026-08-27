@@ -58,7 +58,7 @@ export function VistaCarrito() {
               <div className="flex items-start justify-between gap-3">
                 <Link
                   href={`/tienda/${l.slug}`}
-                  className="font-medium leading-snug hover:underline underline-offset-4"
+                  className="inline-block py-1 font-medium leading-snug underline-offset-4 hover:underline"
                 >
                   {l.nombre}
                 </Link>
@@ -66,7 +66,7 @@ export function VistaCarrito() {
                   type="button"
                   onClick={() => quitar(l)}
                   aria-label={`Quitar ${l.nombre} del carrito`}
-                  className="shrink-0 rounded-full p-1 text-tienda-tenue transition-colors hover:bg-tienda-velo hover:text-white"
+                  className="-mr-2 -mt-2 shrink-0 rounded-full p-3 text-tienda-tenue transition-colors hover:bg-tienda-velo hover:text-white"
                 >
                   <X className="size-4" />
                 </button>
@@ -126,7 +126,7 @@ function Cantidad({
         type="button"
         onClick={() => onDelta(-1)}
         aria-label={`Quitar uno de ${nombre}`}
-        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-tienda-velo"
+        className="grid size-11 place-items-center rounded-full transition-colors hover:bg-tienda-velo"
       >
         <Minus className="size-3.5" />
       </button>
@@ -137,7 +137,7 @@ function Cantidad({
         type="button"
         onClick={() => onDelta(1)}
         aria-label={`Agregar uno de ${nombre}`}
-        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-tienda-velo"
+        className="grid size-11 place-items-center rounded-full transition-colors hover:bg-tienda-velo"
       >
         <Plus className="size-3.5" />
       </button>

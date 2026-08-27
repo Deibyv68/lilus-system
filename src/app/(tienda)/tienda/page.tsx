@@ -1,9 +1,6 @@
-import Link from "next/link";
 import { listarCatalogo, type ArticuloResumen } from "@/lib/tienda";
-import { formatCurrency } from "@/lib/format";
-import { ImagenArticulo } from "@/components/tienda/imagen-articulo";
-import { BotonAgregar } from "@/components/tienda/boton-agregar";
 import { Revelar } from "@/components/tienda/revelar";
+import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
 
 /**
  * El catálogo.
@@ -89,8 +86,9 @@ function Seccion({
               el último tardara segundos en aparecer.
             */
             retardo={(i % 3) * 80}
+            className="min-w-0"
           >
-            <Tarjeta articulo={a} prioridad={i < 3} />
+            <TarjetaArticulo articulo={a} prioridad={i < 3} />
           </Revelar>
         ))}
       </ul>
@@ -98,52 +96,6 @@ function Seccion({
   );
 }
 
-function Tarjeta({
-  articulo,
-  prioridad,
-}: {
-  articulo: ArticuloResumen;
-  prioridad: boolean;
-}) {
-  return (
-    <article className="flex h-full flex-col">
-      {/*
-        La foto y el nombre son un solo enlace. Que sean dos destinos
-        distintos hacia el mismo sitio no ayuda a nadie y estorba a quien
-        navega con teclado o lector de pantalla.
-      */}
-      <Link href={`/tienda/${articulo.slug}`} className="group">
-        <div className="relative aspect-square overflow-hidden rounded-tienda-sm sm:rounded-tienda bg-tienda-velo">
-          <ImagenArticulo
-            url={articulo.imagen}
-            alt={articulo.imagenAlt}
-            nombre={articulo.nombre}
-            prioridad={prioridad}
-            className="transition-transform duration-700 ease-tienda group-hover:scale-[1.04]"
-          />
-        </div>
-
-        <h3 className="mt-5 font-display text-2xl leading-tight tracking-[-0.02em] text-white transition-colors duration-[400ms] ease-tienda group-hover:text-tienda-acento">
-          {articulo.nombre}
-        </h3>
-      </Link>
-
-      {articulo.tagline && (
-        <p className="mt-1.5 text-sm leading-snug text-tienda-tenue text-pretty">
-          {articulo.tagline}
-        </p>
-      )}
-
-      {/* mt-auto: los botones quedan alineados aunque los textos midan distinto. */}
-      <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-        <span className="tabular-nums text-tienda-texto">
-          {formatCurrency(articulo.precio)}
-        </span>
-        <BotonAgregar articulo={articulo} />
-      </div>
-    </article>
-  );
-}
 
 /**
  * Nada publicado todavía.

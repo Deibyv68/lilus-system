@@ -87,7 +87,25 @@ export function PanelCarrito({
   const vacio = listo && lineas.length === 0;
 
   return (
-    <>
+    /*
+      El envoltorio fijo con `overflow-hidden` NO es decorativo: es lo que
+      arregla que la pagina se moviera de lado en el telefono.
+      
+      Antes el panel era `fixed` y se escondia con translate hacia la
+      derecha, o sea que quedaba tumbado en x=375..750 de una pantalla de
+      375. Un elemento fijo no deberia ensanchar la pagina, pero en la
+      practica lo hacia: medido, el ancho desplazable pasaba de 375 a 750,
+      y toda la tienda se podia arrastrar de lado con el dedo.
+      
+      Ahora el panel es `absolute` dentro de este envoltorio, y el
+      `overflow-hidden` del envoltorio si lo recorta. Cerrado no ocupa
+      nada y no deja pasar toques.
+    */
+    <div
+      className={`fixed inset-0 z-50 overflow-hidden ${
+        abierto ? "" : "pointer-events-none"
+      }`}
+    >
       {/*
         El velo se pinta siempre y se desvanece, en vez de aparecer y
         desaparecer del árbol: así la transición tiene de dónde salir y
@@ -96,8 +114,8 @@ export function PanelCarrito({
       <div
         onClick={onCerrar}
         aria-hidden="true"
-        className={`fixed inset-0 z-50 bg-black/60 transition-opacity duration-[400ms] ease-tienda ${
-          abierto ? "opacity-100" : "pointer-events-none opacity-0"
+        className={`absolute inset-0 bg-black/60 transition-opacity duration-[400ms] ease-tienda ${
+          abierto ? "opacity-100" : "opacity-0"
         }`}
       />
 
@@ -113,7 +131,7 @@ export function PanelCarrito({
           como cadena vacía no lo aplica.
         */
         inert={!abierto}
-        className={`fixed right-0 top-0 z-50 flex h-dvh w-full max-w-[520px] flex-col bg-tienda-fondo-alt
+        className={`absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col bg-tienda-fondo-alt
           transition-transform duration-[620ms] ease-muelle
           ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
@@ -155,7 +173,7 @@ export function PanelCarrito({
                       <Link
                         href={`/tienda/${l.slug}`}
                         onClick={onCerrar}
-                        className="leading-snug text-tienda-texto transition-colors duration-[400ms] ease-tienda hover:text-white"
+                        className="inline-block py-1 leading-snug text-tienda-texto transition-colors duration-[400ms] ease-tienda hover:text-white"
                       >
                         {l.nombre}
                       </Link>
@@ -163,7 +181,7 @@ export function PanelCarrito({
                         type="button"
                         onClick={() => quitar(l)}
                         aria-label={`Quitar ${l.nombre} del carrito`}
-                        className="shrink-0 p-1 text-tienda-tenue transition-colors duration-[400ms] ease-tienda hover:text-white"
+                        className="-mr-2 -mt-2 shrink-0 p-3 text-tienda-tenue transition-colors duration-[400ms] ease-tienda hover:text-white"
                       >
                         <X className="size-4" />
                       </button>
@@ -219,7 +237,7 @@ export function PanelCarrito({
           <Link
             href="/carrito"
             onClick={onCerrar}
-            className="mt-4 block text-center text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
+            className="mt-3 block py-2 text-center text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
           >
             {unidades > 0
               ? `Ver el carrito completo (${unidades})`
@@ -227,7 +245,7 @@ export function PanelCarrito({
           </Link>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -241,7 +259,7 @@ function Vacio({ onCerrar }: { onCerrar: () => void }) {
       <Link
         href="/tienda"
         onClick={onCerrar}
-        className="mt-4 text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
+        className="mt-3 inline-block py-2 text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
       >
         Ver el catálogo
       </Link>
@@ -265,7 +283,7 @@ function Cantidad({
         type="button"
         onClick={() => onDelta(-1)}
         aria-label={`Quitar uno de ${nombre}`}
-        className="grid size-9 place-items-center rounded-full transition-colors duration-[400ms] ease-tienda hover:text-white"
+        className="grid size-11 place-items-center rounded-full transition-colors duration-[400ms] ease-tienda hover:text-white"
       >
         <Minus className="size-3.5" />
       </button>
@@ -276,7 +294,7 @@ function Cantidad({
         type="button"
         onClick={() => onDelta(1)}
         aria-label={`Agregar uno de ${nombre}`}
-        className="grid size-9 place-items-center rounded-full transition-colors duration-[400ms] ease-tienda hover:text-white"
+        className="grid size-11 place-items-center rounded-full transition-colors duration-[400ms] ease-tienda hover:text-white"
       >
         <Plus className="size-3.5" />
       </button>

@@ -107,7 +107,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
     <Marco>
       <Link
         href="/carrito"
-        className="inline-flex items-center gap-1.5 text-sm text-tienda-tenue hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 py-2 text-sm text-tienda-tenue transition-colors hover:text-white"
       >
         <ArrowLeft className="size-4" />
         Volver al carrito
@@ -278,7 +278,15 @@ function Campo({
         required={requerido}
         autoComplete={autoComplete}
         aria-describedby={idAyuda}
-        className="mt-1.5 w-full rounded-lg border border-tienda-linea bg-tienda-fondo-alt px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-tienda-texto"
+        /*
+          16 px en el telefono, no 14.
+          
+          Safari en iOS hace zoom sobre la pagina entera al enfocar un
+          campo con letra menor de 16 px, y despues hay que despinzar a
+          mano. En un formulario de nueve campos eso son nueve zooms.
+          Desde `sm` vuelve a 14, donde no existe ese comportamiento.
+        */
+        className="mt-1.5 w-full rounded-lg border border-tienda-linea bg-tienda-fondo-alt px-3.5 py-2.5 text-base outline-none transition-colors focus:border-tienda-texto sm:text-sm"
       />
       {ayuda && (
         <p id={idAyuda} className="mt-1 text-xs text-tienda-tenue">

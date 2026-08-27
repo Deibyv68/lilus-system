@@ -243,6 +243,24 @@
 }
 
 /*
+  En el teléfono, las variantes inclinadas suben y ya.
+  
+  No es una simplificación estética: mientras esperan ocultas se desplazan
+  30 px a un lado, y en una pantalla de 375 eso empuja la página fuera de
+  su ancho — se podía arrastrar el sitio de lado con el dedo antes
+  siquiera de haber bajado a verlas. Medido: 22 px de más en la portada.
+  
+  Y de paso no se pierde nada: una inclinación de 3° en una tarjeta de
+  160 px no se aprecia.
+*/
+@media (width < 40rem) {
+  .revelar[data-variante="inclinar"],
+  .revelar[data-variante="inclinar-derecha"] {
+    transform: translateY(10px);
+  }
+}
+
+/*
   Quien pidió menos movimiento no ve ninguno: aparece y ya. Sin esto, un
   sitio lleno de cosas que suben puede provocar mareo de verdad — no es
   una preferencia estética.

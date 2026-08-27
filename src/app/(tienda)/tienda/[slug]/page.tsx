@@ -50,7 +50,7 @@ export default async function FichaArticulo({ params }: Props) {
     <div className="mx-auto max-w-5xl px-5 py-10">
       <Link
         href="/tienda"
-        className="inline-flex items-center gap-1.5 text-sm text-tienda-tenue hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 py-2 text-sm text-tienda-tenue transition-colors hover:text-white"
       >
         <ArrowLeft className="size-4" />
         Volver al catálogo

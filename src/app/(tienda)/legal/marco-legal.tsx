@@ -27,7 +27,7 @@ export function MarcoLegal({
     <div className="mx-auto max-w-2xl px-5 py-12">
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-sm text-tienda-tenue hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 py-2 text-sm text-tienda-tenue transition-colors hover:text-white"
       >
         <ArrowLeft className="size-4" />
         Volver al catálogo
