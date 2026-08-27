@@ -8,6 +8,7 @@ import { useCarrito, subtotal } from "@/lib/carrito";
 import { formatCurrency } from "@/lib/format";
 import {
   PROVINCIAS,
+  cantonEntre,
   cantonesDe,
   cedulaValida,
   telefonoValido,
@@ -224,9 +225,13 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
         // el mapa puede devolver una de Colombia o Perú, y esa no está.
         if (p) {
           siguiente.provincia = p.nombre;
-          const c = p.cantones.find(
-            (x) => x.toLowerCase() === (u.ciudad ?? "").toLowerCase()
-          );
+          /*
+            El cantón sale de TODOS los nombres de lugar que devolvió el
+            mapa, no del primero que suene a ciudad. En Tumbaco, el mapa
+            manda «Tumbaco» como pueblo y «Distrito Metropolitano de
+            Quito» como comarca: el cantón es el segundo.
+          */
+          const c = cantonEntre(p.nombre, u.lugares ?? []);
           /*
             El cantón se limpia si el nuevo punto cayó en otra provincia:
             dejar «Quito» con la provincia ya cambiada a Manabí sería un

@@ -123,7 +123,18 @@ export type UbicacionElegida = {
   lng: number;
   /** Lo que el mapa cree que es la calle. Puede venir vacío o mal. */
   calle?: string;
-  ciudad?: string;
+  /**
+   * Todos los nombres de lugar que devolvió el mapa, del más pequeño al
+   * más grande.
+   *
+   * Se manda la lista entera y no uno elegido aquí porque cuál de ellos
+   * es el cantón depende del sitio: en Quito el cantón viene en `county`
+   * como «Distrito Metropolitano de Quito», mientras `town` trae la
+   * parroquia («Tumbaco»). En Manta el cantón viene en `city`. Quien
+   * tiene la lista de cantones es quien puede decidir, y esa vive en el
+   * formulario.
+   */
+  lugares?: string[];
   provincia?: string;
   /**
    * `true` cuando ya se consultó la dirección de este punto, aunque no
@@ -293,7 +304,14 @@ export function MapaDireccion({
           const j = await r.json();
           const a = j.address ?? {};
           const calle = [a.road, a.house_number].filter(Boolean).join(" ");
-          const ciudad = a.city || a.town || a.village || a.county || "";
+          const lugares = [
+            a.city,
+            a.town,
+            a.municipality,
+            a.county,
+            a.state_district,
+            a.village,
+          ].filter((v): v is string => Boolean(v));
           if (!vivo) return;
           if (!calle) {
             setAviso(
@@ -309,7 +327,7 @@ export function MapaDireccion({
             lat,
             lng,
             calle,
-            ciudad,
+            lugares,
             provincia: a.state ?? "",
             recibioRespuesta: true,
           });
@@ -322,7 +340,7 @@ export function MapaDireccion({
                 lat,
                 lng,
                 calle: `${calle} y ${cruce}`,
-                ciudad,
+                lugares,
                 provincia: a.state ?? "",
                 recibioRespuesta: true,
               });

@@ -162,3 +162,71 @@ export function telefonoBonito(valor: string): string {
   if (!n) return "";
   return n.startsWith("9") ? `0${n}` : `0${n}`;
 }
+
+/**
+ * Encuentra el cantón entre los nombres de lugar que devuelve un mapa.
+ *
+ * ── Por qué no basta con comparar ──
+ *
+ * OpenStreetMap no llama a los cantones como los llama la gente. Para un
+ * punto en Tumbaco devuelve:
+ *
+ *   town:   "Tumbaco"                            ← es la parroquia
+ *   county: "Distrito Metropolitano de Quito"    ← este es el cantón
+ *
+ * Tomar el primero que suene a ciudad daba «Tumbaco», que no está en la
+ * lista de cantones, y el desplegable se quedaba vacío. Y comparar letra
+ * por letra tampoco sirve: «Distrito Metropolitano de Quito» nunca va a
+ * ser igual a «Quito».
+ *
+ * Así que se prueban todos los nombres contra todos los cantones de la
+ * provincia, primero exacto y después buscando el cantón COMO PALABRA
+ * dentro del nombre. Lo de la palabra completa importa: «Manta» aparece
+ * dentro de «Santa Elena», y sin ese cuidado un pedido a Santa Elena
+ * terminaría en Manabí.
+ */
+export function cantonEntre(
+  provincia: string,
+  lugares: string[]
+): string | null {
+  const cantones = cantonesDe(provincia);
+  if (cantones.length === 0 || lugares.length === 0) return null;
+
+  const limpiar = (t: string) =>
+    t
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // fuera las tildes
+      .toLowerCase()
+      .trim();
+
+  const candidatos = lugares.map(limpiar).filter(Boolean);
+
+  // Primero exacto: es el caso normal fuera de las ciudades grandes.
+  for (const c of candidatos) {
+    const exacto = cantones.find((canton) => limpiar(canton) === c);
+    if (exacto) return exacto;
+  }
+
+  /*
+    Y si no, el cantón como palabra suelta dentro del nombre largo.
+
+    Se compara palabra por palabra en vez de con `includes`, y eso es lo
+    que evita un error caro: «Manta» está contenido dentro de «Santa
+    Elena», así que un `includes` mandaría a Manabí un pedido que va a
+    Santa Elena. Buscando la secuencia exacta de palabras, «distrito
+    metropolitano de quito» sí encuentra «quito» y «santa elena» no
+    encuentra «manta».
+  */
+  for (const c of candidatos) {
+    const palabras = c.split(/\s+/);
+    const dentro = cantones.find((canton) => {
+      const buscadas = limpiar(canton).split(/\s+/);
+      return palabras.some((_, i) =>
+        buscadas.every((p, j) => palabras[i + j] === p)
+      );
+    });
+    if (dentro) return dentro;
+  }
+
+  return null;
+}
