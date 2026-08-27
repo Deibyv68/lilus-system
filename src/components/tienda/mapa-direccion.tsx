@@ -9,6 +9,7 @@ import type { Map as MapaLeaflet, Marker } from "leaflet";
   para que solo se descargue cuando alguien abre el mapa.
 */
 import "leaflet/dist/leaflet.css";
+import { elegirTransversal, type ViaCercana } from "@/lib/vias";
 
 /**
  * Marcar en el mapa dónde entregar.
@@ -91,26 +92,9 @@ async function calleTransversal(
     });
     if (!r.ok) return null;
 
-    const j = (await r.json()) as {
-      elements?: { tags?: { name?: string }; center?: { lat: number; lon: number } }[];
-    };
+    const j = (await r.json()) as { elements?: ViaCercana[] };
 
-    const normal = (t: string) => t.trim().toLowerCase();
-    const cerca = (j.elements ?? [])
-      .filter((e) => e.tags?.name && e.center)
-      .map((e) => ({
-        nombre: e.tags!.name!,
-        // Distancia aproximada en metros. Vale de sobra para ordenar a
-        // 80 m: la curvatura de la Tierra no cambia nada a esa escala.
-        d: Math.hypot(
-          (e.center!.lat - lat) * 111320,
-          (e.center!.lon - lng) * 111320 * Math.cos((lat * Math.PI) / 180)
-        ),
-      }))
-      .filter((v) => normal(v.nombre) !== normal(principal))
-      .sort((a, b) => a.d - b.d);
-
-    return cerca[0]?.nombre ?? null;
+    return elegirTransversal(j.elements ?? [], principal, lat, lng);
   } catch {
     return null;
   } finally {
