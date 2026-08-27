@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/guard";
 import { pushConfigurado, avisarPorPush } from "@/lib/avisos-push";
+import { fcmConfigurado, avisarAppsMoviles } from "@/lib/avisos-fcm";
 
 /**
  * Alta y baja de los avisos push, por aparato.
@@ -75,19 +76,30 @@ export async function borrarSuscripcionAction(endpoint: string) {
 export async function probarAvisoAction() {
   await requireUser();
 
-  if (!pushConfigurado()) {
+  if (!pushConfigurado() && !fcmConfigurado()) {
     return {
       ok: false as const,
-      error: "Faltan las claves VAPID en el .env del servidor",
+      error:
+        "Falta configurar los avisos en el servidor: las claves VAPID para el " +
+        "navegador, o las de Firebase para la app.",
     };
   }
 
-  const cuantos = await avisarPorPush({
-    titulo: "Prueba de LILUS",
-    cuerpo: "Si ves esto, los avisos de venta nueva van a llegar igual.",
-    grupo: "prueba",
-  });
+  const titulo = "Prueba de LILUS";
+  const cuerpo = "Si ves esto, los avisos de venta nueva van a llegar igual.";
 
+  // Los dos caminos, igual que un aviso de verdad: si solo se probara uno,
+  // la prueba diría que todo va bien mientras el otro está roto.
+  const [web, app] = await Promise.all([
+    pushConfigurado()
+      ? avisarPorPush({ titulo, cuerpo, grupo: "prueba" })
+      : Promise.resolve(0),
+    fcmConfigurado()
+      ? avisarAppsMoviles({ titulo, cuerpo, grupo: "prueba" })
+      : Promise.resolve(0),
+  ]);
+
+  const cuantos = web + app;
   if (cuantos === 0) {
     return {
       ok: false as const,
@@ -95,5 +107,5 @@ export async function probarAvisoAction() {
     };
   }
 
-  return { ok: true as const, cuantos };
+  return { ok: true as const, cuantos, web, app };
 }

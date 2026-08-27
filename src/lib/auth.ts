@@ -12,7 +12,8 @@ import { SESSION_COOKIE, DEVICE_COOKIE } from "./constants";
 // Se re-exportan aquí porque este sigue siendo el módulo de auth.
 export { SESSION_COOKIE, DEVICE_COOKIE };
 
-const SESSION_DAYS = 7;
+/** Cuánto dura una sesión. Lo usa también el puente del WebView. */
+export const SESSION_DAYS = 7;
 const DEVICE_DAYS = 90;
 
 export const MAX_PIN_TRIES = 5;

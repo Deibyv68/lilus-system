@@ -9,6 +9,10 @@ import {
   type ProductoParaEtiqueta,
 } from "@/lib/order-utils";
 import { requireUser } from "@/lib/guard";
+import {
+  cambiarEstadoDePedido,
+  type EstadoPedido,
+} from "@/lib/cambiar-estado";
 
 type CreateOrderPayload = {
   customer: {
@@ -186,17 +190,11 @@ export async function deleteOrdersAction(orderIds: string[]) {
 
 export async function updateOrderStatusAction(
   orderId: string,
-  status: "PENDING" | "PAID" | "PACKED" | "SHIPPED" | "DELIVERED" | "CANCELLED"
+  status: EstadoPedido
 ) {
   await requireUser();
-
-  const data: { status: typeof status; shippedAt?: Date | null } = { status };
-  if (status === "SHIPPED") {
-    data.shippedAt = new Date();
-  }
-  await prisma.order.update({ where: { id: orderId }, data });
-  revalidatePath("/sistema/pedidos");
-  revalidatePath(`/sistema/pedidos/${orderId}`);
+  // El trabajo está en `cambiar-estado.ts`, compartido con la app.
+  await cambiarEstadoDePedido(orderId, status);
 }
 
 export async function markAsShippedAction(
@@ -210,16 +208,8 @@ export async function markAsShippedAction(
   if (trimmed.length > 60) {
     return { ok: false as const, error: "La guía es demasiado larga" };
   }
-  await prisma.order.update({
-    where: { id: orderId },
-    data: {
-      status: "SHIPPED",
-      trackingNumber: trimmed,
-      shippedAt: new Date(),
-    },
-  });
-  revalidatePath("/sistema/pedidos");
-  revalidatePath(`/sistema/pedidos/${orderId}`);
+  const r = await cambiarEstadoDePedido(orderId, "SHIPPED", { guia: trimmed });
+  if (!r.ok) return { ok: false as const, error: r.error };
   return { ok: true as const };
 }
 

@@ -1,6 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { avisarAppsMoviles } from "@/lib/avisos-fcm";
 
 /**
  * Avisos que llegan al teléfono aunque el panel esté cerrado.
@@ -146,7 +147,16 @@ export async function avisarPorPush(aviso: AvisoPush): Promise<number> {
   return entregados;
 }
 
-/** El aviso concreto de una venta nueva. */
+/**
+ * El aviso concreto de una venta nueva.
+ *
+ * Sale por los dos caminos a la vez: Web Push para la PWA y Firebase
+ * para la app de Android. Son transportes distintos —el porqué está en
+ * `avisos-fcm.ts`— y quien tenga los dos recibirá dos avisos, que es
+ * mejor que la alternativa de tener que elegir cuál falla menos.
+ *
+ * Devuelve cuántos avisos salieron, sumando ambos.
+ */
 export async function avisarVentaNueva(p: {
   orderNumber: string;
   clienteNombre: string;
@@ -158,17 +168,25 @@ export async function avisarVentaNueva(p: {
     currency: "USD",
   }).format(p.total);
 
-  return avisarPorPush({
-    titulo: `Venta nueva · ${money}`,
-    /*
-      El cuerpo dice lo que hay que hacer, no solo lo que pasó. Quien lee
-      esto en la pantalla de bloqueo no va a abrir nada si no sabe si es
-      urgente: que ponga «revisa la transferencia» lo convierte en tarea.
-    */
-    cuerpo:
-      `${p.clienteNombre} · ${p.items} ${p.items === 1 ? "ítem" : "ítems"}. ` +
-      "Falta revisar que la transferencia entró.",
-    url: "/sistema/pedidos",
-    grupo: "venta-nueva",
-  });
+  const titulo = `Venta nueva · ${money}`;
+  const cuerpo =
+    `${p.clienteNombre} · ${p.items} ${p.items === 1 ? "ítem" : "ítems"}. ` +
+    "Falta revisar que la transferencia entró.";
+
+  const [web, app] = await Promise.all([
+    avisarPorPush({
+      titulo,
+      cuerpo,
+      url: "/sistema/pedidos",
+      grupo: "venta-nueva",
+    }),
+    avisarAppsMoviles({
+      titulo,
+      cuerpo,
+      ruta: "/pedidos",
+      grupo: "venta-nueva",
+    }),
+  ]);
+
+  return web + app;
 }

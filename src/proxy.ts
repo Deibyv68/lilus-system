@@ -43,13 +43,24 @@ const REQUIERE_SESION = ["/sistema", "/api"];
 /**
  * Excepciones dentro de `/api`.
  *
- * El agente de impresión es un proceso en otra computadora, no un
- * navegador. No tiene cookies ni puede tenerlas — se identifica con
- * `?token=`, que cada una de esas rutas valida por su cuenta con
+ * Dos clientes que no son navegadores y por eso no traen cookie:
+ *
+ * El agente de impresión es un proceso en otra computadora. Se identifica
+ * con `?token=`, que cada una de esas rutas valida por su cuenta con
  * `validateAgentToken`. Si se las cierra aquí, la impresora deja de
  * recibir trabajos.
+ *
+ * La app de Android manda el token de sesión en la cabecera
+ * `Authorization: Bearer`, y `conSesion()` de `auth-movil.ts` lo valida
+ * contra la base en cada ruta. El chequeo optimista de aquí abajo solo
+ * sabe mirar cookies, así que rechazaría a la app antes de que nadie
+ * mirase su cabecera — incluida la ruta de login, que por definición
+ * todavía no tiene sesión.
+ *
+ * Que estén en esta lista NO significa que sean públicas: significa que
+ * su puerta está un paso más adentro.
  */
-const CON_TOKEN_PROPIO = ["/api/agent", "/api/print-queue"];
+const CON_TOKEN_PROPIO = ["/api/agent", "/api/print-queue", "/api/movil"];
 
 function empiezaPor(pathname: string, rutas: string[]): boolean {
   return rutas.some((r) => pathname === r || pathname.startsWith(`${r}/`));

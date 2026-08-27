@@ -70,3 +70,11 @@ next-env.d.ts
 # Python (los generadores de PDF)
 __pycache__/
 *.pyc
+
+# App de Android: lo genera `expo prebuild`, se recrea con un comando.
+# La llave de firma SÍ va al repo (app-movil/android/app/lilus.keystore):
+# sin ella, un APK nuevo no se puede instalar encima del anterior.
+/app-movil/android/
+/app-movil/ios/
+/app-movil/.expo/
+/app-movil/google-services.json

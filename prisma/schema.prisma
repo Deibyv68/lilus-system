@@ -601,6 +601,7 @@ model User {
   sessions       Session[]
   trustedDevices TrustedDevice[]
   pushSubs       PushSubscription[]
+  dispositivos   DispositivoMovil[]
 }
 
 model Session {
@@ -694,6 +695,35 @@ model PushSubscription {
   auth     String // secreto de autenticación del navegador
   /// Para que se reconozca en la lista: "Chrome en Android".
   etiqueta String?
+
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Un teléfono con la app de LILUS instalada.
+///
+/// Es el equivalente de `PushSubscription` pero para la app nativa. Se
+/// guardan por separado a propósito: viajan por tuberías distintas —el
+/// navegador por Web Push con claves VAPID, la app por Firebase— y
+/// mezclarlos obligaría a que cada fila explicara de qué tipo es.
+///
+/// El token lo da Firebase y puede cambiar solo: al reinstalar la app, al
+/// restaurar el teléfono desde una copia, o si Google decide rotarlo. Por
+/// eso la app lo vuelve a registrar cada vez que arranca, y por eso el
+/// token es la llave: registrar dos veces actualiza, no duplica.
+model DispositivoMovil {
+  id     String @id @default(cuid())
+  userId String
+  /// El registration token de Firebase.
+  token  String @unique
+  /// Para reconocerlo en la lista: "Poco X6 Pro".
+  modelo String?
+  /// Versión de la app, para saber a quién hay que actualizar.
+  version String?
 
   createdAt  DateTime @default(now())
   lastSeenAt DateTime @default(now())
