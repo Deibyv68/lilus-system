@@ -111,6 +111,16 @@
      frenar en seco. */
   --ease-muelle: linear(0, 0.0425, 0.1457, 0.2799, 0.4233, 0.5614, 0.6851, 0.7897, 0.8737, 0.9378, 0.9841, 1.0151, 1.0339, 1.0434, 1.046, 1.044, 1.0393, 1.0331, 1.0265, 1.0202, 1.0145, 1.0097, 1.0058, 1.0029, 1.0007);
 
+  /* Frena sin pasarse. Para lo que tiene que quedar pegado a un borde.
+
+     El muelle de arriba se pasa un 4,6 % antes de volver, y en un panel
+     que entra desde la derecha eso significa deslizarse 17 px MÁS ALLÁ
+     del borde: durante un instante asoma la página por detrás, a la
+     derecha del panel, y parece que hubiera dos capas. Un rebote se ve
+     bien cuando el elemento acaba flotando en medio de la pantalla; no
+     cuando tiene que encajar contra un lado. */
+  --ease-panel: cubic-bezier(0.16, 1, 0.3, 1);
+
   /* Las fuentes NO van aqui: viven en el bloque `@theme inline` de abajo.
      En un `@theme` normal el valor se resuelve en la raiz, y ahi
      `--fuente-display` todavia no existe — la define next/font sobre el

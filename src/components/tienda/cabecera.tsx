@@ -36,6 +36,24 @@ const SECUNDARIOS = [
 export function Cabecera({ marca }: { marca: string }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [carritoAbierto, setCarritoAbierto] = useState(false);
+
+  /*
+    Uno u otro, nunca los dos.
+
+    Eran independientes, así que se podía dejar el menú desplegado y abrir
+    encima el carrito: quedaban dos paneles a la vez, con el de abajo
+    asomando por detrás del velo. Parecía un fallo de pintado y era solo
+    que ninguno sabía del otro.
+  */
+  function abrirCarrito() {
+    setMenuAbierto(false);
+    setCarritoAbierto(true);
+  }
+
+  function alternarMenu() {
+    setCarritoAbierto(false);
+    setMenuAbierto((v) => !v);
+  }
   const pathname = usePathname();
 
   const lineas = useCarrito((s) => s.lineas);
@@ -118,7 +136,7 @@ export function Cabecera({ marca }: { marca: string }) {
             */}
             <button
               type="button"
-              onClick={() => setCarritoAbierto(true)}
+              onClick={abrirCarrito}
               aria-haspopup="dialog"
               aria-expanded={carritoAbierto}
               aria-label={
@@ -128,23 +146,34 @@ export function Cabecera({ marca }: { marca: string }) {
               }
               className="relative p-3 transition-colors duration-[400ms] ease-tienda hover:text-white"
             >
-              <ShoppingBag className="size-5" strokeWidth={1.5} />
               {/*
-                El contador espera a que el carrito se lea del navegador. El
-                servidor no sabe qué hay guardado ahí y manda cero: pintarlo
-                haría que quien vuelve con tres cosas viera un cero que salta
-                a tres, y eso se lee como que se perdió el pedido.
+                El contador se ancla al ICONO, no al botón.
+
+                Estaba pegado al botón, y cuando a este se le puso relleno
+                para agrandar la zona táctil a 44 px, el contador se quedó
+                donde estaba: encima de la bolsa, tapándola por la mitad.
+                Con su propio envoltorio, la posición del número ya no
+                depende de cuánto relleno tenga el botón.
               */}
-              {listo && unidades > 0 && (
-                <span className="absolute bottom-1.5 left-1 grid size-5 place-items-center rounded-full bg-tienda-acento text-[10px] font-medium tabular-nums text-tienda-fondo">
-                  {unidades}
-                </span>
-              )}
+              <span className="relative block">
+                <ShoppingBag className="size-5" strokeWidth={1.5} />
+                {/*
+                  Espera a que el carrito se lea del navegador. El servidor
+                  no sabe qué hay guardado ahí y manda cero: pintarlo haría
+                  que quien vuelve con tres cosas viera un cero que salta a
+                  tres, y eso se lee como que se perdió el pedido.
+                */}
+                {listo && unidades > 0 && (
+                  <span className="absolute -bottom-2 -left-2.5 grid size-[18px] place-items-center rounded-full bg-tienda-acento text-[10px] font-medium leading-none tabular-nums text-tienda-fondo">
+                    {unidades}
+                  </span>
+                )}
+              </span>
             </button>
 
             <button
               type="button"
-              onClick={() => setMenuAbierto((v) => !v)}
+              onClick={alternarMenu}
               aria-expanded={menuAbierto}
               aria-controls="menu-tienda"
               aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}

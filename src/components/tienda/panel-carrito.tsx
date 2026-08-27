@@ -131,8 +131,15 @@ export function PanelCarrito({
           como cadena vacía no lo aplica.
         */
         inert={!abierto}
+        /*
+          `ease-panel` y no el muelle: este panel tiene que quedar pegado
+          al borde derecho, y el muelle se pasa un 4,6 % antes de volver.
+          En una pantalla de 375 eso son 17 px de más, con la página
+          asomando por detrás a la derecha durante un instante. Se leía
+          como si hubiera dos paneles superpuestos.
+        */
         className={`absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col bg-tienda-fondo-alt
-          transition-transform duration-[620ms] ease-muelle
+          transition-transform duration-[520ms] ease-panel
           ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex items-start justify-between px-8 pt-8 sm:px-10">
