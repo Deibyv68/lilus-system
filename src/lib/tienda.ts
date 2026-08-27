@@ -629,7 +629,21 @@ export async function listarFeed() {
  */
 export async function datosDeCobro() {
   const filas = await prisma.setting.findMany({
-    where: { key: { in: ["deuna_enlace", "deuna_qr", "bank_details"] } },
+    where: {
+      key: {
+        in: [
+          "deuna_enlace",
+          "deuna_qr",
+          "bank_details",
+          "pago_banco",
+          "pago_tipo_cuenta",
+          "pago_numero_cuenta",
+          "pago_titular",
+          "pago_cedula",
+          "pago_correo",
+        ],
+      },
+    },
   });
   const m = Object.fromEntries(filas.map((f) => [f.key, f.value.trim()]));
   return {
@@ -643,7 +657,27 @@ export async function datosDeCobro() {
       distinto no sirve de nada.
     */
     qrSubido: m.deuna_qr || null,
+    /*
+      El texto libre de siempre. Se queda como nota adicional para lo que
+      no encaje en los campos de abajo — «solo transferencias, no
+      depósitos», por ejemplo.
+    */
     banco: m.bank_details || null,
+    /*
+      Y los datos uno por uno, para poder copiarlos por separado.
+
+      Quien va a transferir pega el número en un campo y el nombre en
+      otro. Darle el bloque entero le obliga a borrar lo que sobra cada
+      vez, que es justo el momento en que se cuela un dígito de menos.
+    */
+    cuenta: {
+      banco: m.pago_banco || null,
+      tipo: m.pago_tipo_cuenta || null,
+      numero: m.pago_numero_cuenta || null,
+      titular: m.pago_titular || null,
+      cedula: m.pago_cedula || null,
+      correo: m.pago_correo || null,
+    },
   };
 }
 

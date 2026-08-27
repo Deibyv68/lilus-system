@@ -8,6 +8,7 @@ import {
 } from "@/lib/tienda";
 import { qrComoDataUri } from "@/lib/qr";
 import { SubirComprobante } from "./subir-comprobante";
+import { DatoCopiable } from "./dato-copiable";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 
 /**
@@ -93,6 +94,8 @@ export default async function PaginaPedido({
               d ? { src: d, propio: false } : null
             )
           : null;
+
+  const hayCuenta = Object.values(cobro.cuenta).some(Boolean);
 
   const estado = ESTADOS[pedido.status] ?? ESTADOS.PENDING;
   const primerNombre = pedido.customer.name.split(" ")[0];
@@ -181,17 +184,65 @@ export default async function PaginaPedido({
             </div>
           )}
 
-          {cobro.banco && (
+          {(hayCuenta || cobro.banco) && (
             <div className="mt-6 border-t border-tienda-linea pt-6">
               <p className="text-xs uppercase tracking-wide text-tienda-tenue">
                 {cobro.deuna ? "O por transferencia" : "Transferencia"}
               </p>
-              {/* Los datos vienen tal como los escribió la dueña, con sus
-                  saltos de línea. `whitespace-pre-line` los respeta sin que
-                  haya que guardar HTML en la base. */}
-              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed">
-                {cobro.banco}
-              </p>
+
+              {/*
+                Cada dato con su botón de copiar, y no un bloque de texto.
+
+                Quien transfiere tiene el formulario del banco delante: el
+                número va en un campo, el nombre en otro, el monto en otro.
+                Copiar todo junto obliga a pegar y borrar lo que sobra cinco
+                veces, y ahí es donde se pierde un dígito de la cuenta.
+
+                El monto y la referencia van primero porque son los que más
+                se equivocan, y son los que hacen que un pago tarde días en
+                identificarse.
+              */}
+              <div className="mt-3">
+                <DatoCopiable
+                  etiqueta="Monto"
+                  valor={pedido.total.toFixed(2)}
+                  destacado
+                />
+                <DatoCopiable
+                  etiqueta="Referencia"
+                  valor={pedido.orderNumber}
+                  destacado
+                  ayuda="Ponlo en el concepto o descripción."
+                />
+                {cobro.cuenta.banco && (
+                  <DatoCopiable etiqueta="Banco" valor={cobro.cuenta.banco} />
+                )}
+                {cobro.cuenta.tipo && (
+                  <DatoCopiable etiqueta="Tipo de cuenta" valor={cobro.cuenta.tipo} />
+                )}
+                {cobro.cuenta.numero && (
+                  <DatoCopiable
+                    etiqueta="Número de cuenta"
+                    valor={cobro.cuenta.numero}
+                  />
+                )}
+                {cobro.cuenta.titular && (
+                  <DatoCopiable etiqueta="A nombre de" valor={cobro.cuenta.titular} />
+                )}
+                {cobro.cuenta.cedula && (
+                  <DatoCopiable etiqueta="Cédula o RUC" valor={cobro.cuenta.cedula} />
+                )}
+                {cobro.cuenta.correo && (
+                  <DatoCopiable etiqueta="Correo" valor={cobro.cuenta.correo} />
+                )}
+              </div>
+
+              {/* La nota suelta, si la dueña escribió algo más. */}
+              {cobro.banco && (
+                <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-tienda-tenue">
+                  {cobro.banco}
+                </p>
+              )}
             </div>
           )}
 

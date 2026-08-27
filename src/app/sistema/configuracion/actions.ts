@@ -17,6 +17,21 @@ const ALLOWED_KEYS = new Set([
   "sender_address",
   "order_prefix",
   "bank_details",
+  /*
+    Los datos de la cuenta, uno por uno.
+
+    Antes eran un solo texto libre. Se separan porque la página del pedido
+    pone un botón de copiar junto a cada dato: quien va a transferir tiene
+    que pegar el número de cuenta en un campo y el nombre en otro, y
+    copiar el bloque entero le obliga a borrar lo que sobra en cada uno.
+    Un texto suelto no se puede partir de forma fiable.
+  */
+  "pago_banco",
+  "pago_tipo_cuenta",
+  "pago_numero_cuenta",
+  "pago_titular",
+  "pago_cedula",
+  "pago_correo",
   "deuna_enlace",
   "contact_whatsapp",
   "contact_instagram",

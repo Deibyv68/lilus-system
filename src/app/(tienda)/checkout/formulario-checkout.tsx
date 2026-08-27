@@ -469,17 +469,37 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
               setD((prev) => ({ ...prev, provincia: v, ciudad: "" }));
             }}
           />
-          <Lista
-            nombre="ciudad"
-            etiqueta="Cantón"
-            valor={d.ciudad}
-            opciones={cantones}
-            vacio={
-              d.provincia ? "Elige tu cantón" : "Primero elige la provincia"
-            }
-            deshabilitado={cantones.length === 0}
-            onCambio={(v) => set("ciudad", v)}
-          />
+          <div>
+            <Lista
+              nombre="ciudad"
+              etiqueta="Cantón"
+              valor={d.ciudad}
+              opciones={cantones}
+              vacio={
+                d.provincia ? "Elige tu cantón" : "Primero elige la provincia"
+              }
+              deshabilitado={cantones.length === 0}
+              onCambio={(v) => set("ciudad", v)}
+            />
+            {/*
+              El mapa marcó un punto pero no supo el cantón.
+
+              Pasa de verdad: para un punto en Sangolquí, el mapa devuelve
+              «Sangolquí» —que es la ciudad— y no «Rumiñahui», que es el
+              cantón. En Quito sí lo dice, porque lo llama «Distrito
+              Metropolitano de Quito».
+
+              Y el cantón es justo lo que decide el precio del envío, así
+              que dejarlo vacío en silencio hace que el total no aparezca y
+              nadie sepa por qué.
+            */}
+            {d.lat != null && d.provincia && !d.ciudad && (
+              <p className="mt-1.5 text-xs text-tienda-acento">
+                El mapa no supo el cantón de ese punto. Elígelo tú y
+                calculamos el envío.
+              </p>
+            )}
+          </div>
           </div>
           <Campo
             nombre="calle"

@@ -135,17 +135,67 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         />
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium">Datos para la transferencia</Label>
+          {/*
+            Los datos de la cuenta van uno por uno, no en un texto suelto.
+
+            La página del pedido pone un botón de copiar junto a cada uno:
+            quien va a transferir pega el número en un campo y el nombre en
+            otro. De un bloque de texto no se pueden separar de forma
+            fiable, y copiar todo junto obliga a borrar lo que sobra cada
+            vez — que es donde se pierde un dígito de la cuenta.
+          */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Banco"
+              value={values.pago_banco ?? ""}
+              onChange={(v) => update("pago_banco", v)}
+              placeholder="Banco Pichincha"
+            />
+            <Field
+              label="Tipo de cuenta"
+              value={values.pago_tipo_cuenta ?? ""}
+              onChange={(v) => update("pago_tipo_cuenta", v)}
+              placeholder="Ahorros"
+            />
+            <Field
+              label="Número de cuenta"
+              value={values.pago_numero_cuenta ?? ""}
+              onChange={(v) => update("pago_numero_cuenta", v)}
+              placeholder="2209876543"
+            />
+            <Field
+              label="A nombre de"
+              value={values.pago_titular ?? ""}
+              onChange={(v) => update("pago_titular", v)}
+              placeholder="Nombre del titular"
+            />
+            <Field
+              label="Cédula o RUC del titular"
+              value={values.pago_cedula ?? ""}
+              onChange={(v) => update("pago_cedula", v)}
+              placeholder="0912345678"
+            />
+            <Field
+              label="Correo para transferencias"
+              value={values.pago_correo ?? ""}
+              onChange={(v) => update("pago_correo", v)}
+              placeholder="pagos@correo.com"
+              hint="Algunos bancos lo piden. Déjalo vacío si no aplica."
+            />
+          </div>
+
+          <Label className="text-xs font-medium">Nota adicional</Label>
           <Textarea
             value={values.bank_details ?? ""}
             onChange={(e) => update("bank_details", e.target.value)}
-            placeholder="Banco, tipo de cuenta, número, nombre y cédula del titular"
-            rows={5}
+            placeholder="Solo transferencias, no depósitos en efectivo"
+            rows={3}
           />
           <p className="text-xs text-muted-foreground">
-            Es lo que ve el cliente al terminar su pedido en la web. Si lo
-            dejas vacío, la tienda le dice que se los enviamos por WhatsApp
-            en vez de mostrar una cuenta equivocada.
+            Va debajo de los datos de arriba, para lo que no encaje en un
+            campo. Si dejas todo vacío, la tienda le dice al cliente que le
+            enviamos los datos por WhatsApp en vez de mostrar una cuenta
+            equivocada.
           </p>
         </div>
       </div>
