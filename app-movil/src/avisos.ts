@@ -64,10 +64,16 @@ export type ResultadoAvisos =
  * sigue trabajando.
  */
 export async function activarAvisos(): Promise<ResultadoAvisos> {
-  if (!Device.isDevice) {
-    return { ok: false, motivo: "El emulador no recibe avisos push." };
-  }
+  /*
+    No se descarta el emulador por adelantado.
 
+    Lo obvio sería cortar aquí si `Device.isDevice` es falso, pero es
+    mentira: un emulador con Google Play sí recibe avisos, y decirle a
+    quien está probando que no puede es cerrarle la única forma de
+    comprobar que esto funciona antes de instalarlo en el teléfono de
+    alguien. Se intenta siempre, y si falla se dice por qué —añadiendo
+    que puede ser el emulador solo cuando lo es—.
+  */
   await prepararCanal();
 
   const actual = await Notifications.getPermissionsAsync();
@@ -98,11 +104,13 @@ export async function activarAvisos(): Promise<ResultadoAvisos> {
     const r = await Notifications.getDevicePushTokenAsync();
     token = String(r.data);
   } catch (e) {
+    const detalle = (e as Error).message;
     return {
       ok: false,
-      motivo:
-        "Firebase no está configurado en esta compilación del APK. " +
-        `(${(e as Error).message})`,
+      motivo: Device.isDevice
+        ? `Firebase no está configurado en esta compilación del APK. (${detalle})`
+        : `No se pudo sacar el token. Si el emulador no tiene Google Play, ` +
+          `es eso. (${detalle})`,
     };
   }
 
