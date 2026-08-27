@@ -3,7 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { preciosVigentes } from "@/lib/tienda";
+import { preciosVigentes, partirCantones } from "@/lib/tienda";
 import {
   cedulaValida,
   telefonoValido,
@@ -72,7 +72,12 @@ const esquema = z.object({
       .or(z.literal("")),
   }),
   direccion: z.object({
-    zonaId: z.string().min(1, "Elige a dónde enviamos"),
+    /*
+      Se sigue aceptando pero ya no se usa para nada: la zona la decide
+      el servidor a partir del cantón, unas líneas más abajo. Se deja en
+      el esquema para no romper una petición vieja que todavía lo mande.
+    */
+    zonaId: z.string().optional(),
     provincia: z.string().trim().min(2, "Falta la provincia").max(80),
     ciudad: z.string().trim().min(2, "Falta la ciudad").max(80),
     calle: z.string().trim().min(6, "La dirección es muy corta").max(300),
@@ -163,8 +168,20 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
   }
 
   // ── Envío, sacado de la tarifa real ──
-  const zona = await prisma.shippingZone.findUnique({
-    where: { id: d.direccion.zonaId },
+  /*
+    La zona se vuelve a deducir aquí, del cantón, y NO se acepta la que
+    mandó el navegador.
+
+    El formulario ya la calcula, pero eso es del lado del cliente y
+    cualquiera puede mandar otra cosa a esta acción. Y no es un detalle
+    teórico: mandar la zona barata con una dirección lejana sería pagar
+    $3,50 por un envío de $5. Confiar en ese dato es dejar el precio del
+    envío en manos de quien compra.
+
+    Se lee la lista entera de zonas —son dos— y se elige la del cantón.
+  */
+  const todasLasZonas = await prisma.shippingZone.findMany({
+    orderBy: { isDefault: "desc" },
     include: {
       rates: {
         where: { carrier: { isActive: true } },
@@ -174,6 +191,17 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
       },
     },
   });
+
+  const conTarifa = todasLasZonas.filter((z) => z.rates.length > 0);
+  const buscado = d.direccion.ciudad.trim().toLowerCase();
+  const zona =
+    conTarifa.find((z) => partirCantones(z.cantones).includes(buscado)) ??
+    // Lo que no está en ninguna lista cae en la zona SIN cantones —«todo
+    // lo demás»—, no en la marcada por defecto. Ver `zonaParaCanton`.
+    conTarifa.find((z) => partirCantones(z.cantones).length === 0) ??
+    conTarifa.find((z) => z.isDefault) ??
+    conTarifa[0] ??
+    null;
   const tarifa = zona?.rates[0];
   if (!zona || !tarifa) {
     return { ok: false, error: "No tenemos envío configurado para esa zona." };

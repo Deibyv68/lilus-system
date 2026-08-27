@@ -224,6 +224,7 @@ export async function opcionesDeEnvio() {
       id: true,
       name: true,
       isDefault: true,
+      cantones: true,
       rates: {
         where: { carrier: { isActive: true } },
         orderBy: { price: "asc" },
@@ -241,7 +242,59 @@ export async function opcionesDeEnvio() {
       porDefecto: z.isDefault,
       precio: z.rates[0].price,
       transportadora: z.rates[0].carrier.name,
+      cantones: partirCantones(z.cantones),
     }));
+}
+
+/** «Quito, Rumiñahui» → ["quito", "rumiñahui"]. En minúsculas, para comparar. */
+export function partirCantones(valor: string | null | undefined): string[] {
+  if (!valor) return [];
+  return valor
+    .split(",")
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Qué zona corresponde a un cantón.
+ *
+ * La zona deja de ser una pregunta del formulario y pasa a deducirse de
+ * la dirección: quien elige «Manta» está eligiendo «Fuera de Quito», y no
+ * tiene sentido dejar que diga otra cosa.
+ *
+ * Si el cantón no está en ninguna lista, cae en la zona por defecto — que
+ * es justo para lo que sirve ser la zona por defecto. Y si no hubiera
+ * ninguna marcada, la primera: mejor cobrar un envío que negarse a vender.
+ */
+export function zonaParaCanton<
+  T extends { nombre: string; porDefecto: boolean; cantones: string[] }
+>(zonas: T[], canton: string): T | null {
+  if (zonas.length === 0) return null;
+  const buscado = canton.trim().toLowerCase();
+
+  if (buscado) {
+    const exacta = zonas.find((z) => z.cantones.includes(buscado));
+    if (exacta) return exacta;
+  }
+
+  /*
+    Lo que no está en ninguna lista cae en la zona SIN cantones, no en la
+    marcada por defecto.
+
+    La diferencia importa y es cara. Hoy «Quito» es la zona por defecto
+    —el panel la preselecciona al crear un pedido a mano— y si el
+    respaldo fuera esa, un envío a Manta cobraría la tarifa de Quito.
+    Perder plata en cada pedido lejano, en silencio.
+    
+    Una zona sin cantones significa «todo lo demás», que es exactamente
+    lo que hace falta aquí. El `porDefecto` queda como último recurso,
+    para el caso raro de que todas tengan lista.
+  */
+  return (
+    zonas.find((z) => z.cantones.length === 0) ??
+    zonas.find((z) => z.porDefecto) ??
+    zonas[0]
+  );
 }
 
 /**

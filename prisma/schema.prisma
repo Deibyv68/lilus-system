@@ -171,6 +171,27 @@ model ShippingZone {
   isDefault Boolean  @default(false) // zona usada por defecto si no se selecciona
   createdAt DateTime @default(now())
 
+  /// Qué cantones cubre esta zona, separados por coma.
+  ///
+  /// ── Por qué existe ──
+  ///
+  /// Sin esto, la zona y la dirección eran dos preguntas independientes:
+  /// se podía elegir «Fuera de Quito» y escribir una dirección en Quito, y
+  /// el pedido salía cobrando el envío equivocado. No es un caso raro —
+  /// el desplegable venía con una zona ya marcada, así que pasaba solo con
+  /// no fijarse.
+  ///
+  /// Ahora la zona se deduce del cantón y deja de ser una pregunta.
+  ///
+  /// ── Por qué texto y no una tabla ──
+  ///
+  /// Son dos zonas y una lista corta de cantones. Una tabla de por medio
+  /// significaría una pantalla de administración con su alta y su baja,
+  /// para un dato que se escribe una vez. La zona por defecto es la que
+  /// recoge todo lo que no está en ninguna lista, así que dejarlo vacío es
+  /// válido y quiere decir «esta zona es el resto del país».
+  cantones  String?
+
   rates     ShippingRate[]
   addresses ShippingAddress[]
   orders    Order[]

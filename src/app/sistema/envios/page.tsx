@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { ShippingMatrix } from "./shipping-matrix";
 import { ZoneCarrierForms } from "./zone-carrier-forms";
+import { CantonesPorZona } from "./cantones-por-zona";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,23 @@ export default async function ShippingPage() {
 
       <div className="space-y-6">
         <ZoneCarrierForms zones={zones} carriers={carriers} />
+
+        {zones.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Qué cantones cubre cada zona</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CantonesPorZona
+                zonas={zones.map((z) => ({
+                  id: z.id,
+                  name: z.name,
+                  cantones: z.cantones,
+                }))}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

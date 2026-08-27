@@ -16,6 +16,7 @@ import {
   MapaDireccion,
   type UbicacionElegida,
 } from "@/components/tienda/mapa-direccion";
+import { zonaParaCanton } from "@/lib/tienda";
 import { crearPedidoWebAction } from "./actions";
 
 /**
@@ -53,6 +54,8 @@ type Zona = {
   porDefecto: boolean;
   precio: number;
   transportadora: string;
+  /** Los cantones que cubre. Vacío = «el resto del país». */
+  cantones: string[];
 };
 
 type Datos = {
@@ -111,9 +114,17 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
   const [enviando, startTransition] = useTransition();
   const { lineas, listo, vaciar } = useCarrito();
 
-  const [zonaId, setZonaId] = useState(
-    zonas.find((z) => z.porDefecto)?.id ?? zonas[0].id
-  );
+  /*
+    La zona ya no se elige: se deduce del cantón.
+
+    Antes eran dos preguntas independientes y se podía marcar «Fuera de
+    Quito» con una dirección en Quito. No hacía falta mala intención —
+    venía una zona marcada por defecto, así que pasaba solo con no
+    fijarse—, y el pedido salía con el envío mal cobrado.
+
+    Quien elige «Manta» ya dijo que es fuera de Quito. Preguntarlo otra
+    vez solo abre la puerta a que las dos respuestas no coincidan.
+  */
   /*
     Lo guardado se lee al crear el estado, no en un efecto.
 
@@ -160,7 +171,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
     }
   }, [d]);
 
-  const zona = zonas.find((z) => z.id === zonaId)!;
+  const zona = zonaParaCanton(zonas, d.ciudad) ?? zonas[0];
   const productos = subtotal(lineas);
   const total = productos + zona.precio;
 
@@ -265,7 +276,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           cedula: d.cedula,
         },
         direccion: {
-          zonaId,
+          zonaId: zona.id,
           provincia: d.provincia,
           ciudad: d.ciudad,
           calle: d.calle,
@@ -383,41 +394,28 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
         </Bloque>
 
         <Bloque titulo="A dónde lo enviamos">
-          <fieldset>
-            <legend className="mb-2 text-sm text-tienda-tenue">Zona</legend>
-            <div className="space-y-2">
-              {zonas.map((z) => (
-                <label
-                  key={z.id}
-                  className={`flex cursor-pointer items-center justify-between gap-4 rounded-lg border px-4 py-3 transition-colors ${
-                    z.id === zonaId
-                      ? "border-tienda-texto bg-tienda-fondo-alt"
-                      : "border-tienda-linea hover:bg-tienda-fondo-alt"
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="zona"
-                      value={z.id}
-                      checked={z.id === zonaId}
-                      onChange={() => setZonaId(z.id)}
-                      className="size-4 accent-tienda-acento"
-                    />
-                    <span>
-                      <span className="block text-sm">{z.nombre}</span>
-                      <span className="block text-xs text-tienda-tenue">
-                        {z.transportadora}
-                      </span>
-                    </span>
-                  </span>
-                  <span className="tabular-nums text-sm">
-                    {formatCurrency(z.precio)}
-                  </span>
-                </label>
-              ))}
+          {/*
+            La zona salió de elegir, y ahora solo se informa. Sigue
+            visible porque el precio del envío cambia el total y eso no
+            puede aparecer de sorpresa al final.
+          */}
+          {d.ciudad ? (
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-tienda-linea bg-tienda-fondo-alt px-4 py-3">
+              <span>
+                <span className="block text-sm">Envío · {zona.nombre}</span>
+                <span className="block text-xs text-tienda-tenue">
+                  {zona.transportadora} · según el cantón que elegiste
+                </span>
+              </span>
+              <span className="shrink-0 tabular-nums text-sm">
+                {formatCurrency(zona.precio)}
+              </span>
             </div>
-          </fieldset>
+          ) : (
+            <p className="rounded-lg border border-dashed border-tienda-linea px-4 py-3 text-sm text-tienda-tenue">
+              Elige provincia y cantón abajo y calculamos el envío.
+            </p>
+          )}
 
           {/*
             El mapa va antes que los campos: si alguien lo usa, baja con

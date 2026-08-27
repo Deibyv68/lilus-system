@@ -47,6 +47,77 @@ import "leaflet/dist/leaflet.css";
 /** Quito. Es donde está el taller y de donde sale la mayoría de pedidos. */
 const CENTRO_POR_DEFECTO: [number, number] = [-0.1807, -78.4678];
 
+/**
+ * Busca la calle transversal más cercana, para armar «Principal y Secundaria».
+ *
+ * ── Por qué hace falta otra consulta ──
+ *
+ * Nominatim, que es quien da la dirección del punto, devuelve UNA vía: la
+ * más cercana. En Ecuador una dirección se dice con dos —«Amazonas y
+ * Naciones Unidas»— porque es lo que de verdad ubica a alguien en una
+ * ciudad de cuadrícula. Esa segunda calle hay que ir a buscarla aparte.
+ *
+ * Overpass sí sabe responder «qué vías con nombre hay alrededor». Se pide
+ * un radio de 80 m y se toma la más cercana con un nombre distinto al de
+ * la principal. No es exactamente «la que cruza» —eso exigiría mirar qué
+ * vías comparten un nodo, bastante más caro— pero en una cuadrícula la
+ * más cercana con otro nombre es la transversal casi siempre.
+ *
+ * ── Falla en silencio, y es a propósito ──
+ *
+ * Overpass es un servicio público, gratuito y sin garantías: se cae, se
+ * satura y a veces rechaza peticiones. Nada de eso puede estropear una
+ * compra. Si no contesta en seis segundos, o contesta cualquier cosa, se
+ * devuelve `null` y queda la calle principal — que es lo que había antes
+ * de todo esto.
+ */
+async function calleTransversal(
+  lat: number,
+  lng: number,
+  principal: string
+): Promise<string | null> {
+  const consulta =
+    `[out:json][timeout:8];way(around:80,${lat},${lng})[highway][name];out tags center;`;
+
+  const corte = new AbortController();
+  const temporizador = setTimeout(() => corte.abort(), 6000);
+
+  try {
+    const r = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(consulta),
+      signal: corte.signal,
+    });
+    if (!r.ok) return null;
+
+    const j = (await r.json()) as {
+      elements?: { tags?: { name?: string }; center?: { lat: number; lon: number } }[];
+    };
+
+    const normal = (t: string) => t.trim().toLowerCase();
+    const cerca = (j.elements ?? [])
+      .filter((e) => e.tags?.name && e.center)
+      .map((e) => ({
+        nombre: e.tags!.name!,
+        // Distancia aproximada en metros. Vale de sobra para ordenar a
+        // 80 m: la curvatura de la Tierra no cambia nada a esa escala.
+        d: Math.hypot(
+          (e.center!.lat - lat) * 111320,
+          (e.center!.lon - lng) * 111320 * Math.cos((lat * Math.PI) / 180)
+        ),
+      }))
+      .filter((v) => normal(v.nombre) !== normal(principal))
+      .sort((a, b) => a.d - b.d);
+
+    return cerca[0]?.nombre ?? null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(temporizador);
+  }
+}
+
 export type UbicacionElegida = {
   lat: number;
   lng: number;
@@ -161,9 +232,24 @@ export function MapaDireccion({
         if (m.scrollWheelZoom.enabled()) e.preventDefault();
       };
 
+      /*
+        El botón central del ratón, apretado, activa el «autoscroll» de
+        Windows: ese icono redondo que hace que la página se desplace
+        sola siguiendo al puntero. Dentro del mapa eso se pelea con el
+        arrastre y la página se mueve por debajo.
+
+        Se corta en `mousedown` porque es ahí donde el navegador decide
+        entrar en ese modo; en `auxclick` ya sería tarde.
+      */
+      const cortarBotonCentral = (e: MouseEvent) => {
+        if (e.button === 1) e.preventDefault();
+      };
+
       el.addEventListener("mouseenter", encender);
       el.addEventListener("mouseleave", apagar);
       el.addEventListener("wheel", cortarScroll, { passive: false });
+      el.addEventListener("mousedown", cortarBotonCentral);
+      el.addEventListener("auxclick", cortarBotonCentral);
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
@@ -214,6 +300,11 @@ export function MapaDireccion({
               "El mapa no conoce el nombre de esta calle. Escríbela abajo tú."
             );
           }
+          /*
+            Se entrega ya la calle principal, y la transversal se busca
+            después. Nadie tiene que esperar a un servicio que puede
+            tardar seis segundos para ver su dirección aparecer.
+          */
           alElegir.current({
             lat,
             lng,
@@ -222,6 +313,21 @@ export function MapaDireccion({
             provincia: a.state ?? "",
             recibioRespuesta: true,
           });
+
+          if (a.road) {
+            const cruce = await calleTransversal(lat, lng, a.road);
+            if (!vivo) return;
+            if (cruce) {
+              alElegir.current({
+                lat,
+                lng,
+                calle: `${calle} y ${cruce}`,
+                ciudad,
+                provincia: a.state ?? "",
+                recibioRespuesta: true,
+              });
+            }
+          }
         } catch {
           if (vivo) {
             setAviso("No se pudo leer la dirección. El punto sí quedó marcado.");
@@ -245,6 +351,8 @@ export function MapaDireccion({
         el.removeEventListener("mouseenter", encender);
         el.removeEventListener("mouseleave", apagar);
         el.removeEventListener("wheel", cortarScroll);
+        el.removeEventListener("mousedown", cortarBotonCentral);
+        el.removeEventListener("auxclick", cortarBotonCentral);
         m.remove();
         mapa.current = null;
         marcador.current = null;

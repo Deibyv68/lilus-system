@@ -69,3 +69,34 @@ export async function deleteCarrierAction(id: string) {
   revalidatePath("/sistema/envios");
   revalidarTienda();
 }
+
+/**
+ * Qué cantones cubre una zona.
+ *
+ * De esto depende que el envío se cobre bien: la tienda deduce la zona
+ * del cantón que elige quien compra, en vez de preguntárselo. Antes eran
+ * dos preguntas separadas y se podía marcar «Fuera de Quito» con una
+ * dirección en Quito.
+ *
+ * Dejar una zona sin cantones significa «todo lo demás» — hace falta que
+ * haya exactamente una así, o los pedidos de fuera de las listas no
+ * tendrían dónde caer.
+ */
+export async function guardarCantonesAction(zoneId: string, cantones: string) {
+  await requireUser();
+
+  const limpio = cantones
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean)
+    .join(", ");
+
+  await prisma.shippingZone.update({
+    where: { id: zoneId },
+    data: { cantones: limpio || null },
+  });
+
+  revalidatePath("/sistema/envios");
+  revalidarTienda();
+  return { ok: true as const };
+}
