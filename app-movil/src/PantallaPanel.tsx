@@ -94,6 +94,16 @@ export function PantallaPanel({ onCerrar }: { onCerrar: () => void }) {
           onLoadStart={() => setCargando(true)}
           onLoadEnd={() => setCargando(false)}
           onNavigationStateChange={(n) => setPuedeVolver(n.canGoBack)}
+          /*
+            Deja «LilusApp» en el user agent.
+
+            El panel lo usa para saber que se está viendo desde aquí. Sin
+            eso, la página de avisos decía «este navegador no puede recibir
+            avisos» y hablaba de iPhone y de Safari — dentro de una app de
+            Android que sí los recibe, solo que por Firebase y no por la
+            API de Push, que el WebView no implementa.
+          */
+          applicationNameForUserAgent="LilusApp/1.0"
           // Los <input type="file"> del panel —subir fotos de producto—
           // no funcionan sin esto en Android.
           allowFileAccess

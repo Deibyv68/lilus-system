@@ -3,19 +3,28 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Bell, BellOff, Smartphone, Trash2 } from "lucide-react";
+import { Bell, BellOff, Monitor, Smartphone, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   guardarSuscripcionAction,
   borrarSuscripcionAction,
+  borrarAparatoAction,
   probarAvisoAction,
 } from "./actions";
 
-type Aparato = {
+type Navegador = {
   id: string;
   endpoint: string;
   etiqueta: string | null;
+  createdAt: string;
+};
+
+type Telefono = {
+  id: string;
+  token: string;
+  modelo: string | null;
+  version: string | null;
   createdAt: string;
 };
 
@@ -82,17 +91,39 @@ function describirEsteAparato(): string {
 
 type Estado =
   | "cargando"
+  /** Estamos dentro de la app de Android: sus avisos son otra cosa. */
+  | "en-la-app"
   | "sin-soporte"
   | "bloqueado"
   | "activo"
   | "inactivo";
 
+/**
+ * ¿Esta página se está viendo dentro de la app de Android?
+ *
+ * El WebView de Android no implementa la API de Push del navegador, así
+ * que sin esta comprobación la página decía «este navegador no puede
+ * recibir avisos» y hablaba de iPhone y de Safari — dentro de una app de
+ * Android que sí los recibe, por otro camino.
+ *
+ * La marca la pone la propia app en su user agent
+ * (`applicationNameForUserAgent`). Es la única señal fiable: el WebView
+ * se presenta como Chrome en todo lo demás.
+ */
+function dentroDeLaApp(): boolean {
+  return (
+    typeof navigator !== "undefined" && navigator.userAgent.includes("LilusApp")
+  );
+}
+
 export function AvisosForm({
   clavePublica,
-  aparatos,
+  navegadores,
+  telefonos,
 }: {
   clavePublica: string | null;
-  aparatos: Aparato[];
+  navegadores: Navegador[];
+  telefonos: Telefono[];
 }) {
   const router = useRouter();
   const [estado, setEstado] = useState<Estado>("cargando");
@@ -103,6 +134,10 @@ export function AvisosForm({
     let vivo = true;
 
     async function sincronizar() {
+      if (dentroDeLaApp()) {
+        if (vivo) setEstado("en-la-app");
+        return;
+      }
       if (
         typeof window === "undefined" ||
         !("serviceWorker" in navigator) ||
@@ -213,6 +248,14 @@ export function AvisosForm({
     });
   }
 
+  function darDeBajaTelefono(token: string) {
+    startTrabajo(async () => {
+      await borrarAparatoAction(token);
+      toast.success("Teléfono dado de baja");
+      router.refresh();
+    });
+  }
+
   function darDeBaja(endpoint: string) {
     startTrabajo(async () => {
       await borrarSuscripcionAction(endpoint);
@@ -234,6 +277,28 @@ export function AvisosForm({
         <CardContent className="pt-6">
           {estado === "cargando" && (
             <p className="text-sm text-muted-foreground">Revisando…</p>
+          )}
+
+          {estado === "en-la-app" && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium">
+                  Estás dentro de la app de LILUS
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Los avisos de la app no se configuran aquí: se activaron
+                  solos cuando entraste, y llegan por su propia conexión con
+                  Firebase. Esta pantalla es para los navegadores.
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Mira abajo si tu teléfono aparece en la lista. Y manda una
+                  prueba para asegurarte — mejor con la app cerrada.
+                </p>
+              </div>
+              <Button onClick={probar} disabled={trabajando}>
+                <Bell className="size-4" /> Mandar prueba
+              </Button>
+            </div>
           )}
 
           {estado === "sin-soporte" && (
@@ -314,21 +379,58 @@ export function AvisosForm({
         </CardContent>
       </Card>
 
-      {aparatos.length > 0 && (
+      {telefonos.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Aparatos con avisos
+            Teléfonos con la app
           </h2>
           <ul className="mt-3 space-y-2">
-            {aparatos.map((a) => (
+            {telefonos.map((t) => (
               <li
-                key={a.id}
+                key={t.id}
                 className="flex items-center gap-3 rounded-lg border p-3"
               >
                 <Smartphone className="size-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">
-                    {a.etiqueta ?? "Aparato sin nombre"}
+                    {t.modelo ?? "Teléfono sin nombre"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Desde el {t.createdAt}
+                    {t.version && ` · versión ${t.version}`}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={trabajando}
+                  onClick={() => darDeBajaTelefono(t.token)}
+                  aria-label="Dar de baja este teléfono"
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {navegadores.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Navegadores
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {navegadores.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center gap-3 rounded-lg border p-3"
+              >
+                <Monitor className="size-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm">
+                    {a.etiqueta ?? "Navegador sin nombre"}
                     {a.endpoint === endpointActual && (
                       <span className="ml-2 text-xs text-muted-foreground">
                         · este
@@ -345,7 +447,7 @@ export function AvisosForm({
                   size="icon"
                   disabled={trabajando}
                   onClick={() => darDeBaja(a.endpoint)}
-                  aria-label="Dar de baja este aparato"
+                  aria-label="Dar de baja este navegador"
                 >
                   <Trash2 className="size-4 text-destructive" />
                 </Button>
@@ -354,6 +456,7 @@ export function AvisosForm({
           </ul>
         </div>
       )}
+
     </div>
   );
 }

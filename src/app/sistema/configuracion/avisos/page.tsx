@@ -16,9 +16,20 @@ export const dynamic = "force-dynamic";
  * vez de reiniciar el servicio.
  */
 export default async function PaginaAvisos() {
-  const aparatos = await prisma.pushSubscription.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  /*
+    Los dos transportes, en la misma pantalla.
+
+    Antes solo se contaban los navegadores, y la página decía «todavía
+    ningún aparato recibe avisos» con un teléfono ya registrado y
+    recibiendo. Son dos tablas porque son dos tuberías distintas —Web
+    Push con claves VAPID, y Firebase para la app— pero para quien mira
+    esto son la misma pregunta: ¿a quién le va a sonar?
+  */
+  const [navegadores, telefonos] = await Promise.all([
+    prisma.pushSubscription.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.dispositivoMovil.findMany({ orderBy: { createdAt: "desc" } }),
+  ]);
+  const total = navegadores.length + telefonos.length;
 
   return (
     <>
@@ -33,19 +44,26 @@ export default async function PaginaAvisos() {
       <PageHeader
         title="Avisos de venta"
         description={
-          aparatos.length > 0
-            ? `${aparatos.length} aparato${aparatos.length === 1 ? "" : "s"} recibiendo avisos`
+          total > 0
+            ? `${total} aparato${total === 1 ? "" : "s"} recibiendo avisos`
             : "Todavía ningún aparato recibe avisos"
         }
       />
 
       <AvisosForm
         clavePublica={process.env.VAPID_PUBLIC_KEY?.trim() || null}
-        aparatos={aparatos.map((a) => ({
+        navegadores={navegadores.map((a) => ({
           id: a.id,
           endpoint: a.endpoint,
           etiqueta: a.etiqueta,
           createdAt: formatDate(a.createdAt),
+        }))}
+        telefonos={telefonos.map((t) => ({
+          id: t.id,
+          token: t.token,
+          modelo: t.modelo,
+          version: t.version,
+          createdAt: formatDate(t.createdAt),
         }))}
       />
 

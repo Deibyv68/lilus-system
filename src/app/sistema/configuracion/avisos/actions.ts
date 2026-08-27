@@ -109,3 +109,17 @@ export async function probarAvisoAction() {
 
   return { ok: true as const, cuantos, web, app };
 }
+
+/**
+ * Da de baja un teléfono con la app.
+ *
+ * El equivalente de `borrarSuscripcionAction` pero para el otro
+ * transporte. Sirve para cuando alguien deja de usar un aparato y nadie
+ * se acuerda de cerrar sesión desde él: si no, se le seguirían mandando
+ * avisos a un teléfono que ya no es de la casa.
+ */
+export async function borrarAparatoAction(token: string) {
+  await requireUser();
+  await prisma.dispositivoMovil.deleteMany({ where: { token } });
+  return { ok: true as const };
+}
