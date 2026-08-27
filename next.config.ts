@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
     "pdf-to-png-converter",
     "pdfjs-dist",
     "@napi-rs/canvas",
+    /*
+      Tesseract lanza un worker de Node y resuelve su ruta en tiempo de
+      ejecución. Empaquetado, esa ruta apunta a la raíz virtual del
+      empaquetador y el worker muere con «Cannot find module
+      C:\ROOT
+ode_modules	esseract.js\...». Dejándolo fuera del
+      paquete se resuelve desde node_modules como cualquier otro proceso
+      de Node.
+    */
+    "tesseract.js",
   ],
   experimental: {
     serverActions: {

@@ -840,9 +840,31 @@ model ComprobanteDePago {
   tipo    String
   bytes   Int
 
+  /// Lo que se pudo leer de la imagen. Todo opcional: el OCR falla mucho.
+  ///
+  /// ── Qué NO es esto ──
+  ///
+  /// No es una confirmación de pago. Un comprobante es una imagen, y una
+  /// imagen se edita en dos minutos con el teléfono; la única prueba de
+  /// que el dinero llegó es el estado de cuenta del banco.
+  ///
+  /// Sirve para tres cosas concretas: comparar el monto de un vistazo,
+  /// tener el número en texto para pegarlo en el buscador del banco, y
+  /// detectar el mismo comprobante usado en dos pedidos — que es la
+  /// estafa más común y la más fácil de pillar.
+  montoLeido   Float?
+  numeroLeido  String?
+  fechaLeida   String?
+  /// El texto crudo, para poder revisar por qué se leyó mal.
+  textoLeido   String?
+  /// Cuándo terminó de leerse. Nulo mientras está en cola o si falló.
+  leidoEn      DateTime?
+
   createdAt DateTime @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+  /// Para encontrar el mismo comprobante usado en otro pedido.
+  @@index([numeroLeido])
 }

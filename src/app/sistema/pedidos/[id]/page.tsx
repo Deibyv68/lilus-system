@@ -10,7 +10,14 @@ import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
 import { buildTrackingUrl } from "@/lib/share-message";
-import { ArrowLeft, Truck, Printer, MapPin, Paperclip } from "lucide-react";
+import {
+  ArrowLeft,
+  Truck,
+  Printer,
+  MapPin,
+  Paperclip,
+  AlertTriangle,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +70,32 @@ export default async function OrderDetailPage({
     nadie se enteraría hasta que un cliente recibiera media información.
   */
   const enlaceBase = (process.env.APP_URL ?? "").trim().replace(/\/+$/, "");
+
+  /*
+    El mismo número de comprobante usado en otro pedido.
+
+    Es la estafa más común y la más fácil de pillar: se manda la misma
+    captura de una transferencia real a dos pedidos distintos. Se busca
+    solo entre los números que el OCR llegó a leer — si no leyó ninguno,
+    no hay nada que comparar y tampoco se inventa una alarma.
+  */
+  const numerosLeidos = order.comprobantes
+    .map((c) => c.numeroLeido)
+    .filter((n): n is string => Boolean(n));
+
+  const repetidos =
+    numerosLeidos.length > 0
+      ? await prisma.comprobanteDePago.findMany({
+          where: {
+            numeroLeido: { in: numerosLeidos },
+            orderId: { not: order.id },
+          },
+          select: {
+            numeroLeido: true,
+            order: { select: { id: true, orderNumber: true } },
+          },
+        })
+      : [];
 
   const paraMensaje = {
     orderNumber: order.orderNumber,
@@ -293,8 +326,74 @@ export default async function OrderDetailPage({
                             />
                           )}
                         </a>
+                        {/*
+                          Lo que el OCR creyó leer, presentado como lo que
+                          es: una lectura, no un hecho. «El comprobante
+                          dice» y no «pagó $25,50» — la diferencia importa
+                          porque una imagen se edita en dos minutos y la
+                          única prueba de un pago es el estado de cuenta.
+                        */}
+                        {c.leidoEn && (c.montoLeido || c.numeroLeido) && (
+                          <div className="mt-1.5 space-y-1 text-2xs">
+                            <p className="text-muted-foreground">
+                              El comprobante dice:{" "}
+                              {c.montoLeido != null && (
+                                <span className="font-medium text-foreground tabular-nums">
+                                  {formatCurrency(c.montoLeido)}
+                                </span>
+                              )}
+                              {c.numeroLeido && (
+                                <>
+                                  {" · nº "}
+                                  <span className="font-mono text-foreground">
+                                    {c.numeroLeido}
+                                  </span>
+                                </>
+                              )}
+                              {c.fechaLeida && ` · ${c.fechaLeida}`}
+                            </p>
+
+                            {/*
+                              La comparación con un centavo de margen: el
+                              OCR confunde un 0 con un 8 de vez en cuando,
+                              pero una diferencia real de precio nunca es
+                              de un centavo.
+                            */}
+                            {c.montoLeido != null &&
+                              Math.abs(c.montoLeido - order.total) > 0.01 && (
+                                <p className="flex items-start gap-1 rounded bg-amber-50 px-1.5 py-1 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                                  <AlertTriangle className="mt-px size-3 shrink-0" />
+                                  <span>
+                                    No cuadra con el total del pedido (
+                                    {formatCurrency(order.total)}). Revísalo
+                                    antes de confirmar.
+                                  </span>
+                                </p>
+                              )}
+
+                            {repetidos
+                              .filter((r) => r.numeroLeido === c.numeroLeido)
+                              .map((r) => (
+                                <Link
+                                  key={r.order.id}
+                                  href={`/sistema/pedidos/${r.order.id}`}
+                                  className="flex items-start gap-1 rounded bg-red-50 px-1.5 py-1 text-red-900 hover:underline dark:bg-red-950/50 dark:text-red-200"
+                                >
+                                  <AlertTriangle className="mt-px size-3 shrink-0" />
+                                  <span>
+                                    Este mismo número ya se usó en{" "}
+                                    {r.order.orderNumber}
+                                  </span>
+                                </Link>
+                              ))}
+                          </div>
+                        )}
+
                         <p className="mt-1 text-2xs text-muted-foreground">
                           Subido el {formatDateTime(c.createdAt)}
+                          {!c.leidoEn && c.tipo !== "application/pdf" && (
+                            <span className="ml-1 opacity-70">· leyendo…</span>
+                          )}
                         </p>
                       </li>
                     ))}

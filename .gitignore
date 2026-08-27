@@ -80,3 +80,4 @@ __pycache__/
 /app-movil/google-services.json
 /app-movil/dist/
 /prisma/comprobantes/
+/.tesseract/

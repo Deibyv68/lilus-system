@@ -1,8 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import path from "node:path";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { guardarComprobante } from "@/lib/comprobantes";
+import { guardarComprobante, carpetaDeComprobantes } from "@/lib/comprobantes";
+import { leerComprobanteConOcr } from "@/lib/leer-comprobante";
 import { avisarComprobante } from "@/lib/avisos-push";
 
 /**
@@ -79,7 +82,7 @@ export async function subirComprobanteAction(
     return { ok: false, error: (e as Error).message };
   }
 
-  await prisma.comprobanteDePago.create({
+  const fila = await prisma.comprobanteDePago.create({
     data: {
       orderId: pedido.id,
       archivo: guardado.archivo,
@@ -87,6 +90,48 @@ export async function subirComprobanteAction(
       bytes: guardado.bytes,
     },
   });
+
+  /*
+    El OCR corre DESPUÉS de responder.
+
+    Leer una imagen tarda entre cinco y quince segundos en la laptop que
+    hace de servidor. Hacer esperar todo ese rato a quien acaba de subir
+    su comprobante —mirando una pantalla que no dice nada— convertiría
+    una mejora en una molestia.
+
+    `after()` es de Next y existe justo para esto: la respuesta sale ya, y
+    el trabajo sigue. Cuando la dueña abra el pedido, la lectura estará.
+
+    Los PDF se saltan: Tesseract lee imágenes, no documentos. Sacar las
+    páginas de un PDF primero es otra dependencia y otro rato de proceso,
+    y los PDF son la minoría.
+  */
+  if (guardado.tipo !== "application/pdf") {
+    after(async () => {
+      try {
+        const lectura = await leerComprobanteConOcr(
+          path.join(carpetaDeComprobantes(), guardado.archivo)
+        );
+        if (!lectura) return;
+
+        await prisma.comprobanteDePago.update({
+          where: { id: fila.id },
+          data: {
+            montoLeido: lectura.monto,
+            numeroLeido: lectura.numero,
+            fechaLeida: lectura.fecha,
+            textoLeido: lectura.texto,
+            leidoEn: new Date(),
+          },
+        });
+      } catch (e) {
+        // Que el OCR falle no puede tocar el comprobante, que ya está a
+        // salvo. Se queda sin lectura y la dueña mira la imagen, que es
+        // lo que hacía antes de que esto existiera.
+        console.error("[ocr] Falló la lectura en segundo plano:", e);
+      }
+    });
+  }
 
   /*
     El aviso al teléfono va después de guardar, y su fallo no se propaga.
