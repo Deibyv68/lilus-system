@@ -2,6 +2,13 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createSession } from "@/lib/auth";
 import { json, usuarioDePeticion } from "@/lib/auth-movil";
+import {
+  puedeIntentar,
+  anotarFalloDeEntrada,
+  olvidarFallos,
+  esperaEnPalabras,
+  ipDe,
+} from "@/lib/frenar-intentos";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +41,19 @@ export async function POST(req: NextRequest) {
     return json({ error: "Usuario y contraseña requeridos" }, 400);
   }
 
+  // El mismo freno que el login web, y por las mismas razones: son dos
+  // puertas a la misma cerradura, y frenar solo una no frena nada.
+  const ip = ipDe(req.headers);
+  const freno = await puedeIntentar(usuario, ip);
+  if (freno.bloqueado) {
+    return json(
+      {
+        error: `Demasiados intentos fallidos. Espera ${esperaEnPalabras(freno.segundos)}.`,
+      },
+      429
+    );
+  }
+
   const fila = await prisma.user.findUnique({ where: { username: usuario } });
   const malo = { error: "Usuario o contraseña incorrectos" };
 
@@ -48,8 +68,12 @@ export async function POST(req: NextRequest) {
   const hash = fila?.passwordHash ?? "$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv";
   const correcta = await verifyPassword(clave, hash);
 
-  if (!fila || !fila.isActive || !correcta) return json(malo, 401);
+  if (!fila || !fila.isActive || !correcta) {
+    await anotarFalloDeEntrada(usuario, ip);
+    return json(malo, 401);
+  }
 
+  await olvidarFallos(usuario, ip);
   const token = await createSession(fila.id);
 
   return json({

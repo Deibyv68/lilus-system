@@ -732,3 +732,30 @@ model DispositivoMovil {
 
   @@index([userId])
 }
+
+/// Intentos fallidos de entrar, para poder frenar a quien prueba claves.
+///
+/// ── Por qué una tabla y no un contador en memoria ──
+///
+/// En memoria se borra en cada reinicio, y reiniciar es justo lo que
+/// provoca un ataque que satura el servidor. Además un ataque lento —una
+/// prueba cada minuto, toda la noche— nunca llenaría un contador que se
+/// vacía solo.
+///
+/// ── Por qué la llave es un texto y no un usuario ──
+///
+/// Hay que contar dos cosas distintas con el mismo mecanismo:
+///
+///   usuario:admin   quien insiste contra una cuenta concreta
+///   ip:1.2.3.4      quien prueba mil usuarios distintos desde un sitio
+///
+/// Solo con lo primero, alguien puede probar «admin», «maria», «genesis»…
+/// sin gastar nunca los intentos de ninguna. Solo con lo segundo, un
+/// ataque repartido entre muchas IPs pasa desapercibido. Hacen falta las
+/// dos, y son la misma cuenta con distinta llave.
+model IntentoDeEntrada {
+  clave          String    @id
+  intentos       Int       @default(0)
+  bloqueadoHasta DateTime?
+  ultimoIntento  DateTime  @default(now())
+}

@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -18,6 +19,13 @@ import {
   resetFailedTries,
   PIN_LOCK_MINUTES,
 } from "@/lib/auth";
+import {
+  puedeIntentar,
+  anotarFalloDeEntrada,
+  olvidarFallos,
+  esperaEnPalabras,
+  ipDe,
+} from "@/lib/frenar-intentos";
 
 export async function loginWithPassword(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim();
@@ -36,17 +44,44 @@ export async function loginWithPassword(formData: FormData) {
     };
   }
 
+  /*
+    El freno se consulta ANTES de tocar la base o bcrypt.
+
+    Si se mirara después, cada intento seguiría costando un cálculo de
+    bcrypt —unos 100 ms— y una avalancha tumbaría el servidor aunque no
+    acertara ni una vez.
+  */
+  const ip = ipDe(await headers());
+  const freno = await puedeIntentar(username, ip);
+  if (freno.bloqueado) {
+    return {
+      ok: false as const,
+      error: `Demasiados intentos fallidos. Espera ${esperaEnPalabras(freno.segundos)}.`,
+    };
+  }
+
   const user = await prisma.user.findUnique({
     where: { username },
   });
-  if (!user || !user.isActive) {
+
+  /*
+    Se verifica la contraseña aunque el usuario no exista.
+
+    bcrypt tarda a propósito. Salir antes cuando el usuario no existe
+    haría que la diferencia de tiempo entre una respuesta y otra delatara
+    qué nombres están registrados.
+  */
+  const hash =
+    user?.passwordHash ??
+    "$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv";
+  const valid = await verifyPassword(password, hash);
+
+  if (!user || !user.isActive || !valid) {
+    await anotarFalloDeEntrada(username, ip);
     return { ok: false as const, error: "Usuario o contraseña incorrectos" };
   }
 
-  const valid = await verifyPassword(password, user.passwordHash);
-  if (!valid) {
-    return { ok: false as const, error: "Usuario o contraseña incorrectos" };
-  }
+  await olvidarFallos(username, ip);
 
   // Sesión normal
   const sessionToken = await createSession(user.id);
