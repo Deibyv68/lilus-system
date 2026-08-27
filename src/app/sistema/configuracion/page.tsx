@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
+import Link from "next/link";
+import { Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "./settings-form";
 import { PrintAgentSettings } from "./print-agent-settings";
@@ -58,6 +61,23 @@ export default async function SettingsPage() {
                 printer: map.print_agent_printer ?? "",
               }}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Avisos de venta</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Que suene el teléfono cuando alguien compre por la web, aunque
+              el panel esté cerrado.
+            </p>
+            <Button asChild variant="outline" className="mt-3">
+              <Link href="/sistema/configuracion/avisos">
+                <Bell className="size-4" /> Configurar los avisos
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

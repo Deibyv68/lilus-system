@@ -600,6 +600,7 @@ model User {
 
   sessions       Session[]
   trustedDevices TrustedDevice[]
+  pushSubs       PushSubscription[]
 }
 
 model Session {
@@ -669,4 +670,35 @@ enum PrintJobStatus {
   PICKED_UP
   DONE
   FAILED
+}
+
+/// Un teléfono o navegador que pidió recibir avisos.
+///
+/// Es lo que hace falta para que entre una venta a las 11 de la noche y
+/// suene el celular sin tener el panel abierto. Cada navegador de cada
+/// dispositivo genera su propia suscripción, así que una misma persona
+/// puede tener varias: el celular, la laptop, la tablet.
+///
+/// `endpoint` es una dirección de Google o Apple, no nuestra: ahí es donde
+/// se deja el aviso para que lo recojan. Es único por dispositivo y por eso
+/// sirve de llave — si el navegador vuelve a suscribirse, se actualiza la
+/// fila en vez de crear otra.
+///
+/// Caducan solas: si alguien desinstala la app o limpia el navegador, el
+/// servicio de push responde 404 o 410 y la fila se borra en ese momento.
+model PushSubscription {
+  id       String @id @default(cuid())
+  userId   String
+  endpoint String @unique
+  p256dh   String // clave pública del navegador, para cifrar el aviso
+  auth     String // secreto de autenticación del navegador
+  /// Para que se reconozca en la lista: "Chrome en Android".
+  etiqueta String?
+
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

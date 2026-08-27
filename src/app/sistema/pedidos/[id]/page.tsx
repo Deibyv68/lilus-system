@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { StatusSelector } from "./status-selector";
+import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
 import { buildTrackingUrl } from "@/lib/share-message";
 import { ArrowLeft, Truck, Printer } from "lucide-react";
@@ -66,6 +67,14 @@ export default async function OrderDetailPage({
         title={`Pedido ${order.orderNumber}`}
         description={`${order.customer.name} · ${formatDateTime(order.createdAt)}`}
       />
+
+      {/*
+        El mismo aviso que en la lista. Se repite a propósito: es la
+        pantalla donde se cambia el estado, o sea donde se actúa sobre él.
+      */}
+      <div className="-mt-2 mb-6">
+        <AvisoDePago estado={order.status} creadoEn={order.createdAt} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">

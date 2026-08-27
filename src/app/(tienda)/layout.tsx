@@ -119,6 +119,7 @@ export default async function TiendaLayout({
             </ColumnaPie>
 
             <ColumnaPie titulo="Legal">
+              <Interno href="/rastrear">Dónde está mi pedido</Interno>
               <Interno href="/legal/terminos">Condiciones de compra</Interno>
               <Interno href="/legal/devoluciones">Cambios y devoluciones</Interno>
               <Interno href="/legal/privacidad">Tus datos</Interno>

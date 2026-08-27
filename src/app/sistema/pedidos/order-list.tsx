@@ -26,6 +26,7 @@ import {
   Globe,
 } from "lucide-react";
 import { deleteOrdersAction } from "./actions";
+import { AvisoDePago, HaceCuanto } from "./espera";
 
 type Order = {
   id: string;
@@ -323,19 +324,23 @@ function OrderCardContent({ o }: { o: Order }) {
             </Badge>
           )}
         </div>
+        {/*
+          El tiempo transcurrido va delante de la fecha, y en el movil se
+          queda solo. «hace 3 h» dice lo que hay que hacer con el pedido;
+          «26 ago» hay que restarlo mentalmente para saber lo mismo.
+        */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-          <span className="hidden sm:inline">
-            {formatDateTime(o.createdAt)}
+          <span className="tabular-nums">
+            <HaceCuanto fecha={o.createdAt} />
           </span>
-          <span className="sm:hidden">
-            {new Intl.DateTimeFormat("es-EC", {
-              day: "2-digit",
-              month: "short",
-            }).format(new Date(o.createdAt))}
+          <span className="hidden text-muted-foreground/60 sm:inline">
+            · {formatDateTime(o.createdAt)}
           </span>
           <ChevronRight className="size-4" />
         </div>
       </div>
+
+      <AvisoDePago estado={o.status} creadoEn={o.createdAt} />
     </>
   );
 }

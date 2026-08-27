@@ -10,6 +10,7 @@ import {
   type ProductoParaEtiqueta,
 } from "@/lib/order-utils";
 import { avisarAlCliente, avisarAlAdmin } from "@/lib/avisos-pedido";
+import { avisarVentaNueva } from "@/lib/avisos-push";
 
 /**
  * Crear el pedido que llega por la web.
@@ -224,7 +225,24 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
   };
 
   try {
-    await Promise.allSettled([avisarAlCliente(aviso), avisarAlAdmin(aviso)]);
+    /*
+      Los tres avisos van juntos y ninguno manda sobre el otro.
+
+      El push llega al instante al teléfono aunque el panel esté cerrado;
+      el correo queda como registro que se puede buscar después. Que falte
+      la configuración de uno no puede impedir que salga el otro, y por eso
+      van en un allSettled y no encadenados.
+    */
+    await Promise.allSettled([
+      avisarAlCliente(aviso),
+      avisarAlAdmin(aviso),
+      avisarVentaNueva({
+        orderNumber: pedido.orderNumber,
+        clienteNombre: d.cliente.nombre,
+        total: pedido.total,
+        items: items.length,
+      }),
+    ]);
   } catch (e) {
     // allSettled ya no lanza; esto es el cinturón por si algo del armado
     // del mensaje falla. El pedido está guardado igual.

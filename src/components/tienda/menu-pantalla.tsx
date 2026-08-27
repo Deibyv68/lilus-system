@@ -26,6 +26,9 @@ const ENLACES = [
 ];
 
 const LEGALES = [
+  // Va con los legales y no con los grandes de arriba: quien busca su
+  // pedido ya compró, no está navegando la tienda.
+  { href: "/rastrear", texto: "Dónde está mi pedido" },
   { href: "/legal/terminos", texto: "Condiciones de compra" },
   { href: "/legal/devoluciones", texto: "Cambios y devoluciones" },
   { href: "/legal/privacidad", texto: "Tus datos" },
