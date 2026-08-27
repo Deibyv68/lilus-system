@@ -377,3 +377,23 @@ export async function barraDePromocion(): Promise<{
 
   return { texto, enlace: m.promo_enlace || null };
 }
+
+/**
+ * Los packs, con lo que hace falta para la lista desplegable de la
+ * portada: además del resumen, la descripción larga que se revela al
+ * pasar el cursor.
+ */
+export async function listarPacksConDescripcion(): Promise<
+  (ArticuloResumen & { descripcion: string | null })[]
+> {
+  const packs = await prisma.pack.findMany({
+    where: VISIBLE,
+    select: { ...RESUMEN, description: true },
+    orderBy: { price: "asc" },
+  });
+
+  return packs.map((p) => ({
+    ...aResumen("pack", p),
+    descripcion: p.description,
+  }));
+}

@@ -317,3 +317,79 @@
     animation: none;
   }
 }
+
+/* ── La lista de colecciones ──
+   Ver src/components/tienda/lista-colecciones.tsx. */
+
+.fila-coleccion,
+.fila-cuerpo,
+.fila-foto,
+.fila-nombre,
+.fila-descripcion,
+.fila-flecha {
+  transition-duration: 400ms;
+  transition-timing-function: var(--ease-tienda);
+}
+
+.fila-cuerpo { transition-property: padding; }
+.fila-foto { transition-property: opacity; }
+.fila-nombre { transition-property: color; }
+.fila-descripcion { transition-property: opacity; }
+.fila-flecha { transition-property: background-color, color, border-color; }
+
+/*
+  El despliegue solo donde hay cursor de verdad.
+
+  En un telefono no lo hay: el navegador simula el hover en el primer
+  toque, asi que la fila se abriria en lugar de navegar y habria que
+  tocar dos veces cada enlace sin que nada lo explique. Ahi la fila es
+  solo un enlace, que es lo que se espera de ella.
+*/
+@media (hover: hover) {
+  .fila-coleccion:hover .fila-cuerpo {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .fila-coleccion:hover .fila-foto {
+    opacity: 1;
+  }
+
+  .fila-coleccion:hover .fila-nombre {
+    color: #fff;
+  }
+
+  .fila-coleccion:hover .fila-descripcion {
+    opacity: 1;
+  }
+
+  .fila-coleccion:hover .fila-flecha {
+    background-color: var(--color-tienda-texto);
+    border-color: var(--color-tienda-texto);
+    color: var(--color-tienda-fondo);
+  }
+}
+
+/*
+  El foco del teclado abre la fila igual que el cursor. Sin esto, quien
+  navega con tabulador ve el borde de foco sobre una fila que no reacciona
+  y no sabe si el enlace hace algo.
+*/
+.fila-coleccion:focus-visible .fila-foto,
+.fila-coleccion:focus-visible .fila-descripcion {
+  opacity: 1;
+}
+.fila-coleccion:focus-visible .fila-nombre {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fila-coleccion,
+  .fila-cuerpo,
+  .fila-foto,
+  .fila-nombre,
+  .fila-descripcion,
+  .fila-flecha {
+    transition: none;
+  }
+}

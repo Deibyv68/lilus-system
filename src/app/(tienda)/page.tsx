@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { listarCatalogo } from "@/lib/tienda";
+import { listarCatalogo, listarPacksConDescripcion } from "@/lib/tienda";
 import { Revelar } from "@/components/tienda/revelar";
-import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
+import { ListaColecciones } from "@/components/tienda/lista-colecciones";
 import { CarruselProductos } from "@/components/tienda/carrusel-productos";
 import { CintaTexto } from "@/components/tienda/cinta-texto";
 
@@ -21,7 +21,10 @@ import { CintaTexto } from "@/components/tienda/cinta-texto";
 export const revalidate = 1800;
 
 export default async function Portada() {
-  const { packs, productos } = await listarCatalogo();
+  const [{ productos }, packs] = await Promise.all([
+    listarCatalogo(),
+    listarPacksConDescripcion(),
+  ]);
 
   return (
     <>
@@ -62,38 +65,9 @@ export default async function Portada() {
         </section>
 
         {packs.length > 0 && (
-          <section className="pb-[120px]">
-            <Revelar className="mb-12 flex items-end justify-between gap-6">
-              <div>
-                <h2 className="font-display text-4xl leading-none tracking-[-0.02em] text-white sm:text-5xl">
-                  Packs
-                </h2>
-                <p className="mt-3 text-sm text-tienda-tenue">
-                  Salen mejor que comprar lo mismo por separado.
-                </p>
-              </div>
-              <Link
-                href="/tienda"
-                className="hidden shrink-0 text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto sm:block"
-              >
-                Ver todo
-              </Link>
-            </Revelar>
-
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-14 lg:grid-cols-3">
-              {packs.map((a, i) => (
-                <Revelar
-                  as="li"
-                  key={`${a.tipo}:${a.id}`}
-                  variante={i % 2 === 0 ? "inclinar" : "inclinar-derecha"}
-                  retardo={(i % 3) * 80}
-                  className="min-w-0"
-                >
-                  <TarjetaArticulo articulo={a} prioridad={i < 3} />
-                </Revelar>
-              ))}
-            </ul>
-          </section>
+          <div className="pb-[120px]">
+            <ListaColecciones packs={packs} />
+          </div>
         )}
 
         {/*
