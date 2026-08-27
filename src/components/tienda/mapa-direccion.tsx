@@ -54,6 +54,16 @@ export type UbicacionElegida = {
   calle?: string;
   ciudad?: string;
   provincia?: string;
+  /**
+   * `true` cuando ya se consultó la dirección de este punto, aunque no
+   * haya devuelto calle.
+   *
+   * Distingue «todavía no sabemos» de «preguntamos y no hay calle». El
+   * primero llega en el aviso inmediato, apenas se toca el mapa; el
+   * segundo, cuando contesta el servicio. Sin esta marca, quien recibe
+   * los datos no puede saber si esperar o si ya no viene nada.
+   */
+  recibioRespuesta?: boolean;
 };
 
 export function MapaDireccion({
@@ -100,11 +110,39 @@ export function MapaDireccion({
       const m = L.map(contenedor.current, {
         center: inicio,
         zoom: valorInicial ? 17 : 12,
-        // El scroll del ratón NO hace zoom: quien baja por el formulario
-        // pasa por encima del mapa, y sin esto la página se queda
-        // atrapada haciendo zoom en vez de seguir bajando.
+        // Arranca apagado y se enciende al entrar el puntero. Ver abajo.
         scrollWheelZoom: false,
       });
+
+      /*
+        La rueda hace zoom solo mientras el puntero está dentro del mapa.
+
+        Encendido siempre, quien baja por el formulario pasa por encima
+        del mapa y la página se queda atrapada haciendo zoom. Apagado
+        siempre, el mapa se siente muerto y hay que usar los botones de
+        + y −.
+
+        Encenderlo al entrar y apagarlo al salir da las dos cosas: dentro
+        se hace zoom, fuera se sigue bajando. Es lo mismo que hace un
+        mapa de Google incrustado.
+
+        No aplica al móvil: ahí no hay puntero, y el zoom es con dos
+        dedos, que Leaflet maneja aparte y nunca compite con el scroll.
+      */
+      const el = contenedor.current;
+      const encender = () => m.scrollWheelZoom.enable();
+      const apagar = () => m.scrollWheelZoom.disable();
+      /*
+        Se escucha en el elemento y no con `m.on("mouseover")`.
+
+        Leaflet reenvía los eventos del ratón como eventos suyos, pero
+        filtra los de entrada y salida para no dispararlos cuando el
+        puntero pasa entre sus propias capas internas. `mouseenter` y
+        `mouseleave` del DOM no tienen esa complicación: entran y salen
+        del contenedor, que es exactamente la pregunta.
+      */
+      el.addEventListener("mouseenter", encender);
+      el.addEventListener("mouseleave", apagar);
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
@@ -155,10 +193,23 @@ export function MapaDireccion({
               "El mapa no conoce el nombre de esta calle. Escríbela abajo tú."
             );
           }
-          alElegir.current({ lat, lng, calle, ciudad, provincia: a.state ?? "" });
+          alElegir.current({
+            lat,
+            lng,
+            calle,
+            ciudad,
+            provincia: a.state ?? "",
+            recibioRespuesta: true,
+          });
         } catch {
           if (vivo) {
             setAviso("No se pudo leer la dirección. El punto sí quedó marcado.");
+            /*
+              El servicio falló: no sabemos si hay calle o no. Se avisa sin
+              `recibioRespuesta` para que nadie borre lo que ya estaba
+              escrito basándose en una consulta que ni llegó.
+            */
+            alElegir.current({ lat, lng });
           }
         } finally {
           if (vivo) setBuscando(false);
@@ -170,6 +221,8 @@ export function MapaDireccion({
       mapa.current = m;
       setListo(true);
       limpiar = () => {
+        el.removeEventListener("mouseenter", encender);
+        el.removeEventListener("mouseleave", apagar);
         m.remove();
         mapa.current = null;
         marcador.current = null;
@@ -222,7 +275,7 @@ export function MapaDireccion({
 
       <div
         ref={contenedor}
-        className="mt-3 h-[280px] w-full overflow-hidden rounded-tienda-sm border border-tienda-linea bg-tienda-velo"
+        className="mt-3 h-[280px] w-full overflow-hidden rounded-tienda-sm border border-tienda-linea bg-tienda-velo sm:h-[360px]"
         // Leaflet pinta sus propios controles; sin esto quedan por debajo
         // de la cabecera fija de la tienda.
         style={{ zIndex: 0 }}

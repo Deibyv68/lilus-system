@@ -131,6 +131,14 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
     () => leerGuardado() !== VACIO
   );
   const [verMapa, setVerMapa] = useState(false);
+  /*
+    La última calle que escribió el mapa.
+
+    Hace falta para distinguir «esto lo puso el mapa» de «esto lo escribió
+    la persona», y son dos cosas con derechos distintos: lo del mapa se
+    puede reemplazar al mover el punto, lo escrito a mano no.
+  */
+  const [calleDelMapa, setCalleDelMapa] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   /*
@@ -173,25 +181,47 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
   function onUbicacion(u: UbicacionElegida) {
     setD((prev) => {
       const siguiente = { ...prev, lat: u.lat, lng: u.lng };
-      /*
-        El mapa rellena, no pisa.
 
-        Si alguien ya escribió su calle a mano, el mapa no se la borra: lo
-        que el mapa cree saber es una aproximación, y lo que la persona
-        escribió es lo que sabe. Lo mismo con la provincia y el cantón,
-        que además tienen que coincidir con la lista.
+      /*
+        Cada punto nuevo reescribe la dirección que puso el mapa.
+
+        Tres casos, y los tres importan:
+
+        1. El mapa sabe la calle  → se pone, siempre. Quien mueve el
+           marcador está diciendo «no, es acá».
+
+        2. El mapa NO la sabe y lo que hay lo puso el mapa  → se borra.
+           Dejarla sería peor que no tener nada: la dirección diría la
+           calle del punto anterior, que puede estar a kilómetros.
+
+        3. El mapa NO la sabe y lo que hay lo escribió la persona  → se
+           respeta. El mapa no sabe más que ella sobre dónde vive.
       */
-      if (u.calle && !prev.calle) siguiente.calle = u.calle;
-      if (u.provincia && !prev.provincia) {
+      if (u.calle) {
+        siguiente.calle = u.calle;
+        setCalleDelMapa(u.calle);
+      } else if (u.recibioRespuesta && prev.calle && prev.calle === calleDelMapa) {
+        siguiente.calle = "";
+        setCalleDelMapa(null);
+      }
+
+      if (u.provincia) {
         const p = PROVINCIAS.find(
           (x) => x.nombre.toLowerCase() === u.provincia!.toLowerCase()
         );
+        // Solo si cae en una provincia de la lista. Cerca de la frontera
+        // el mapa puede devolver una de Colombia o Perú, y esa no está.
         if (p) {
           siguiente.provincia = p.nombre;
           const c = p.cantones.find(
             (x) => x.toLowerCase() === (u.ciudad ?? "").toLowerCase()
           );
-          if (c) siguiente.ciudad = c;
+          /*
+            El cantón se limpia si el nuevo punto cayó en otra provincia:
+            dejar «Quito» con la provincia ya cambiada a Manabí sería un
+            dato imposible, y el servidor lo rechazaría al confirmar.
+          */
+          siguiente.ciudad = c ?? (p.nombre === prev.provincia ? prev.ciudad : "");
         }
       }
       return siguiente;
@@ -301,6 +331,14 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
 
       <form onSubmit={onSubmit} className="mt-8 space-y-9">
         <Bloque titulo="Tus datos">
+          {/*
+            De a dos en pantalla ancha. Nueve campos en una sola columna
+            hacen una página larguísima en la que no se ve dónde termina;
+            emparejados, el formulario entra casi de una vez y se percibe
+            corto. En el teléfono siguen uno debajo de otro, que es lo
+            único que cabe.
+          */}
+          <div className="grid gap-4 sm:grid-cols-2">
           <Campo
             nombre="nombre"
             etiqueta="Nombre y apellido"
@@ -341,6 +379,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
             ayuda="Solo si necesitas factura."
             error={malCedula ? "Esa cédula no pasa la verificación" : undefined}
           />
+          </div>
         </Bloque>
 
         <Bloque titulo="A dónde lo enviamos">
@@ -415,6 +454,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
             </p>
           )}
 
+          <div className="grid gap-4 sm:grid-cols-2">
           <Lista
             nombre="provincia"
             etiqueta="Provincia"
@@ -437,13 +477,19 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
             deshabilitado={cantones.length === 0}
             onCambio={(v) => set("ciudad", v)}
           />
+          </div>
           <Campo
             nombre="calle"
             etiqueta="Dirección"
             requerido
             autoComplete="street-address"
             valor={d.calle}
-            onCambio={(v) => set("calle", v)}
+            onCambio={(v) => {
+              set("calle", v);
+              // Desde que alguien la toca, la calle es suya y el mapa ya
+              // no puede reemplazarla.
+              setCalleDelMapa(null);
+            }}
             ayuda="Calle principal, número y calle secundaria."
           />
           <Campo
@@ -661,7 +707,13 @@ function Bloque({
 
 function Marco({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-xl px-5 py-12">
+    /*
+      Más ancho que el `max-w-xl` de antes. Con el mapa dentro, 576 px
+      dejaban un cuadrado pequeño en el que costaba apuntar; y en un
+      portátil sobraba pantalla a los dos lados mientras el formulario
+      hacía una columna angosta y larguísima.
+    */
+    <div className="mx-auto max-w-3xl px-5 py-12 sm:px-8">
       <h1 className="mb-8 text-2xl font-medium tracking-tight">Tu pedido</h1>
       {children}
     </div>
