@@ -759,3 +759,27 @@ model IntentoDeEntrada {
   bloqueadoHasta DateTime?
   ultimoIntento  DateTime  @default(now())
 }
+
+/// Un mensaje que alguien dejó en la página de contacto.
+///
+/// ── Por qué se guarda y no se manda por correo ──
+///
+/// Un formulario que solo envía un correo depende de que el SMTP esté
+/// configurado, de que el correo no caiga en spam, y de que nadie borre
+/// el hilo sin querer. Si algo de eso falla, el mensaje se pierde y nadie
+/// se entera nunca — ni quien escribió, que se queda esperando.
+///
+/// Guardado en la base, el mensaje existe pase lo que pase. El aviso por
+/// correo se suma cuando esté configurado, pero no es lo que lo sostiene.
+model MensajeDeContacto {
+  id       String  @id @default(cuid())
+  nombre   String
+  correo   String
+  mensaje  String
+  /// Se marca al leerlo, para saber cuáles faltan por contestar.
+  leido    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([leido, createdAt])
+}

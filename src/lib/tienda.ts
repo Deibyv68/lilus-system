@@ -589,3 +589,50 @@ export async function datosDeCobro() {
     banco: m.bank_details || null,
   };
 }
+
+/**
+ * Imágenes para la página de Nosotros.
+ *
+ * No hay un sitio donde subir «fotos de la marca», y no lo voy a inventar:
+ * sería una pantalla más de administración para tres imágenes que casi
+ * nunca cambian. Se toman prestadas del catálogo publicado.
+ *
+ * Si no hay ninguna, la página se arma igual sin ellas — el texto es lo
+ * que sostiene esa página, y un hueco gris donde debería haber una foto
+ * se ve peor que no tener foto.
+ */
+export async function imagenesParaNosotros(cuantas = 3): Promise<string[]> {
+  const [productos, packs] = await Promise.all([
+    prisma.product.findMany({
+      where: { isPublic: true, imageUrl: { not: null } },
+      select: { imageUrl: true },
+      orderBy: { updatedAt: "desc" },
+      take: cuantas * 2,
+    }),
+    prisma.pack.findMany({
+      where: { isPublic: true, imageUrl: { not: null } },
+      select: { imageUrl: true },
+      take: cuantas,
+    }),
+  ]);
+
+  /*
+    Los packs primero: son fotos de conjunto, con caja y varias barras, y
+    dan mejor de fondo grande que la foto suelta de un jabón.
+  */
+  const todas = [...packs, ...productos]
+    .map((f) => f.imageUrl)
+    .filter((u): u is string => Boolean(u));
+
+  return [...new Set(todas)].slice(0, cuantas);
+}
+
+/** Cifras verdaderas para la página de Nosotros. Nada inventado. */
+export async function cifrasDeLaMarca() {
+  const [productos, packs, zonas] = await Promise.all([
+    prisma.product.count({ where: { isPublic: true } }),
+    prisma.pack.count({ where: { isPublic: true } }),
+    prisma.shippingZone.count(),
+  ]);
+  return { productos, packs, zonas };
+}

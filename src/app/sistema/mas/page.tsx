@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { logoutAction } from "@/app/login/actions";
 import {
   Users,
+  Mail,
   Truck,
   Settings,
   Boxes,
@@ -28,6 +29,7 @@ const links = [
   { href: "/sistema/etiquetas", label: "Imprimir etiquetas", icon: Printer, description: "Imprimir etiquetas sueltas sin pedido" },
   { href: "/sistema/packs", label: "Packs", icon: Boxes, description: "Paquetes que agrupan productos" },
   { href: "/sistema/clientes", label: "Clientes", icon: Users, description: "Historial de personas que han comprado" },
+  { href: "/sistema/mensajes", label: "Mensajes", icon: Mail, description: "Lo que escribe la gente desde la web" },
   { href: "/sistema/envios", label: "Envíos", icon: Truck, description: "Zonas, transportadoras y tarifas" },
   { href: "/sistema/configuracion", label: "Configuración", icon: Settings, description: "Datos del remitente, marca" },
 ];

@@ -11,6 +11,7 @@ import {
   Boxes,
   ShoppingCart,
   Users,
+  Mail,
   Truck,
   Settings,
   PlusCircle,
@@ -41,6 +42,7 @@ const nav = [
   { href: "/sistema/audiovisual", label: "Audiovisual", icon: Clapperboard },
   { href: "/sistema/etiquetas", label: "Imprimir etiquetas", icon: Printer },
   { href: "/sistema/clientes", label: "Clientes", icon: Users },
+  { href: "/sistema/mensajes", label: "Mensajes", icon: Mail },
   { href: "/sistema/envios", label: "Envíos", icon: Truck },
   { href: "/sistema/configuracion", label: "Configuración", icon: Settings },
 ];

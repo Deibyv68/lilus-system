@@ -4,6 +4,8 @@ import { datosDeContacto, identidadDelVendedor, opcionesDeEnvio } from "@/lib/ti
 import { formatCurrency } from "@/lib/format";
 import { DIAS_PREPARACION } from "@/lib/politicas";
 import { Revelar } from "@/components/tienda/revelar";
+import { Migas } from "@/components/tienda/migas";
+import { FormularioDeContacto } from "./formulario";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -33,32 +35,33 @@ export default async function Contacto() {
 
   return (
     <div className="mx-auto max-w-[1440px] px-6 sm:px-10">
-      <section className="py-[120px] sm:py-[180px]">
-        <Revelar variante="enfocar" className="max-w-3xl">
-          <h1 className="font-display text-6xl sm:text-8xl leading-[0.95] tracking-[-0.02em] text-white text-balance">
-            Escríbenos
+      <section className="pt-[100px] sm:pt-[140px]">
+        <Migas actual="Contacto" />
+
+        <Revelar variante="enfocar" className="mt-8 text-center">
+          <h1 className="font-display text-[clamp(3.5rem,13vw,8.5rem)] leading-[0.9] tracking-[-0.03em] text-white">
+            Contacto
           </h1>
-          <p className="mt-8 max-w-xl text-base leading-[1.7] text-tienda-tenue text-pretty">
+          <p className="mx-auto mt-8 max-w-md text-sm leading-relaxed text-tienda-tenue">
             Contestamos personas, no un robot, así que puede tomar unas horas.
             Si es sobre un pedido que ya hiciste, ten a mano su número.
           </p>
         </Revelar>
       </section>
 
-      <div className="max-w-2xl space-y-[100px] pb-[120px]">
-        {(contacto.whatsapp || contacto.instagram) && (
+      {/* El formulario, centrado y en tarjeta — la forma de la referencia. */}
+      <Revelar retardo={80} className="mx-auto mt-16 max-w-3xl sm:mt-20">
+        <FormularioDeContacto whatsapp={contacto.whatsapp} />
+      </Revelar>
+
+      <div className="mx-auto max-w-2xl space-y-[100px] py-[120px]">
+        {contacto.instagram && (
           <Revelar as="section">
             <div className="flex flex-col gap-4 sm:flex-row">
-              {contacto.whatsapp && (
-                <Boton href={contacto.whatsapp} principal>
-                  WhatsApp
-                </Boton>
-              )}
-              {contacto.instagram && (
-                <Boton href={contacto.instagram}>
-                  @{contacto.instagramUsuario}
-                </Boton>
-              )}
+              <Boton href={contacto.instagram} principal>
+                @{contacto.instagramUsuario}
+              </Boton>
+              {contacto.tiktok && <Boton href={contacto.tiktok}>TikTok</Boton>}
             </div>
           </Revelar>
         )}

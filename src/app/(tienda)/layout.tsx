@@ -116,10 +116,10 @@ export default async function TiendaLayout({
               <Interno href="/tienda">Tienda</Interno>
               <Interno href="/nosotros">Nosotros</Interno>
               <Interno href="/contacto">Contacto</Interno>
+              <Interno href="/rastrear">Dónde está mi pedido</Interno>
             </ColumnaPie>
 
             <ColumnaPie titulo="Legal">
-              <Interno href="/rastrear">Dónde está mi pedido</Interno>
               <Interno href="/legal/terminos">Condiciones de compra</Interno>
               <Interno href="/legal/devoluciones">Cambios y devoluciones</Interno>
               <Interno href="/legal/privacidad">Tus datos</Interno>
