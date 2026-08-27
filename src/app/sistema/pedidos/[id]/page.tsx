@@ -10,7 +10,7 @@ import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
 import { buildTrackingUrl } from "@/lib/share-message";
-import { ArrowLeft, Truck, Printer } from "lucide-react";
+import { ArrowLeft, Truck, Printer, MapPin } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -237,6 +237,27 @@ export default async function OrderDetailPage({
                     Ref: {order.shippingAddress.reference}
                   </p>
                 )}
+                {/*
+                  El punto que marcó quien compró, si lo marcó.
+
+                  Vale más que la calle: media dirección en Ecuador es
+                  «sendero del quinde y de los quindes», y eso no lo
+                  encuentra nadie. El enlace abre Google Maps porque es lo
+                  que tiene instalado quien reparte — el punto es el mismo
+                  venga de donde venga.
+                */}
+                {order.shippingAddress?.lat != null &&
+                  order.shippingAddress?.lng != null && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${order.shippingAddress.lat},${order.shippingAddress.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                    >
+                      <MapPin className="size-3.5" />
+                      Abrir el punto en el mapa
+                    </a>
+                  )}
                 <Badge variant="outline" className="mt-2">
                   {order.zone?.name ?? "Sin zona"}
                 </Badge>

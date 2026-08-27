@@ -226,6 +226,18 @@ model ShippingAddress {
   reference  String? // referencia adicional
   isDefault  Boolean @default(false)
 
+  /// Dónde queda, marcado en el mapa por quien compra.
+  ///
+  /// Vale más que la calle. En Ecuador, fuera del centro de las ciudades
+  /// grandes, media dirección es «sendero del quinde y de los quindes» o
+  /// una urbanización que no sale en ningún mapa. Un punto exacto se abre
+  /// en el teléfono del repartidor y se acabó la discusión.
+  ///
+  /// Opcionales a propósito: quien no quiera marcar en el mapa compra
+  /// igual. Un campo obligatorio de más en un checkout es una venta menos.
+  lat        Float?
+  lng        Float?
+
   customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   zone     ShippingZone? @relation(fields: [zoneId], references: [id])
   orders   Order[]

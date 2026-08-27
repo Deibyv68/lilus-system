@@ -5,6 +5,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { preciosVigentes } from "@/lib/tienda";
 import {
+  cedulaValida,
+  telefonoValido,
+  provinciaYCantonValidos,
+} from "@/lib/ecuador";
+import {
   createOrderWithNumber,
   buildProductionUnits,
   type ProductoParaEtiqueta,
@@ -37,10 +42,34 @@ const esquema = z.object({
     nombre: z.string().trim().min(2, "Necesitamos tu nombre").max(120),
     // El teléfono va impreso en la etiqueta de envío: sin él la
     // transportadora no tiene a quién llamar si no encuentra la dirección.
-    telefono: z.string().trim().min(7, "Necesitamos un teléfono de contacto").max(30),
+    /*
+      El teléfono se valida de verdad, no solo por largo.
+
+      Es el dato con el que la transportadora ubica a la persona: un
+      número mal escrito no se descubre hasta que la guía vuelve, y ahí
+      ya se pagó el envío dos veces.
+    */
+    telefono: z
+      .string()
+      .trim()
+      .refine(telefonoValido, "Ese teléfono no parece de Ecuador"),
     email: z.string().trim().email("Ese correo no parece válido").max(160),
     // Solo si quiere factura. Ver la nota en el formulario.
-    cedula: z.string().trim().max(20).optional().or(z.literal("")),
+    /*
+      La cédula es opcional, pero si viene tiene que ser válida.
+
+      Se comprueba con su propio dígito verificador — no consulta nada
+      externo. Atrapa el error de tecleo, que es el caso real. No exigirla
+      es deliberado: una guía se despacha igual sin ella, y bloquear una
+      venta por un dato que solo hace falta para facturar sería cambiar
+      una molestia por una pérdida.
+    */
+    cedula: z
+      .string()
+      .trim()
+      .refine((c) => c === "" || cedulaValida(c), "Esa cédula no es válida")
+      .optional()
+      .or(z.literal("")),
   }),
   direccion: z.object({
     zonaId: z.string().min(1, "Elige a dónde enviamos"),
@@ -48,7 +77,29 @@ const esquema = z.object({
     ciudad: z.string().trim().min(2, "Falta la ciudad").max(80),
     calle: z.string().trim().min(6, "La dirección es muy corta").max(300),
     referencia: z.string().trim().max(300).optional().or(z.literal("")),
-  }),
+    /*
+      Las coordenadas del mapa, si las marcó.
+
+      Se acotan al rango real de la Tierra para que un valor absurdo no
+      llegue a la base y rompa el enlace del repartidor.
+    */
+    lat: z.number().min(-90).max(90).nullable().optional(),
+    lng: z.number().min(-180).max(180).nullable().optional(),
+  }).refine(
+    (dir) => provinciaYCantonValidos(dir.provincia, dir.ciudad),
+    {
+      /*
+        Provincia y cantón se comprueban CONTRA la lista, también aquí.
+
+        El desplegable del formulario ya lo garantiza, pero el formulario
+        es del navegador y cualquiera puede mandar lo que quiera a esta
+        acción. Si esto no estuviera, la validación por lista sería una
+        sugerencia y la base volvería a llenarse de «pichincha» a mano.
+      */
+      message: "Esa provincia y ese cantón no coinciden",
+      path: ["ciudad"],
+    }
+  ),
   nota: z.string().trim().max(500).optional().or(z.literal("")),
   lineas: z
     .array(
@@ -177,6 +228,8 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
       city: d.direccion.ciudad,
       address: d.direccion.calle,
       reference: d.direccion.referencia || null,
+      lat: d.direccion.lat ?? null,
+      lng: d.direccion.lng ?? null,
       isDefault: true,
     },
   });
