@@ -141,8 +141,29 @@ export function MapaDireccion({
         `mouseleave` del DOM no tienen esa complicación: entran y salen
         del contenedor, que es exactamente la pregunta.
       */
+      /*
+        Y además se corta el scroll de la página a mano.
+
+        Leaflet ya llama a `preventDefault` en su propio manejador, pero
+        no siempre llega a tiempo: el navegador puede haber empezado a
+        desplazar antes, y el resultado es que el mapa hace zoom y la
+        página se mueve un poco a la vez.
+
+        Este listener va con `passive: false` a propósito. Sin esa opción
+        el navegador asume que nadie va a cancelar el evento —para poder
+        desplazar sin esperar a que corra JavaScript— e ignora el
+        `preventDefault`. Es justo lo que hay que desactivar aquí.
+
+        Solo corta cuando el zoom está encendido, o sea cuando el puntero
+        está dentro. Fuera del mapa la rueda sigue siendo de la página.
+      */
+      const cortarScroll = (e: WheelEvent) => {
+        if (m.scrollWheelZoom.enabled()) e.preventDefault();
+      };
+
       el.addEventListener("mouseenter", encender);
       el.addEventListener("mouseleave", apagar);
+      el.addEventListener("wheel", cortarScroll, { passive: false });
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
@@ -223,6 +244,7 @@ export function MapaDireccion({
       limpiar = () => {
         el.removeEventListener("mouseenter", encender);
         el.removeEventListener("mouseleave", apagar);
+        el.removeEventListener("wheel", cortarScroll);
         m.remove();
         mapa.current = null;
         marcador.current = null;
