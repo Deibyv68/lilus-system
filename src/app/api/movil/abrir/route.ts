@@ -51,7 +51,24 @@ export const GET = conSesion(async (req: NextRequest) => {
 
   const token = (req.headers.get("authorization") ?? "").slice(7).trim();
 
-  const respuesta = NextResponse.redirect(new URL(destino, req.url));
+  /*
+    El destino va relativo, y eso es a propósito.
+
+    `NextResponse.redirect()` exige una dirección absoluta y la arma con
+    `req.url`, que del lado del servidor es la interna:
+    `https://localhost:3000/...`. El WebView recibiría eso y no cargaría
+    nada, porque para el teléfono «localhost» es el teléfono.
+
+    Detrás hay un túnel —hoy Tailscale, mañana Cloudflare— así que el
+    servidor no puede saber por qué nombre le llegó la petición sin
+    fiarse de cabeceras que él no controla. Una `Location` relativa la
+    resuelve el cliente contra la dirección que él mismo pidió, que es la
+    correcta por definición.
+  */
+  const respuesta = new NextResponse(null, {
+    status: 307,
+    headers: { location: destino },
+  });
   respuesta.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: true,
