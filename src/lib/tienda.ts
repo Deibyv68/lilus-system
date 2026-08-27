@@ -309,17 +309,22 @@ export async function datosDeTransferencia(): Promise<string | null> {
  */
 export async function datosDeContacto() {
   const filas = await prisma.setting.findMany({
-    where: { key: { in: ["contact_whatsapp", "contact_instagram"] } },
+    where: {
+      key: { in: ["contact_whatsapp", "contact_instagram", "contact_tiktok"] },
+    },
   });
   const mapa = Object.fromEntries(filas.map((f) => [f.key, f.value]));
 
   const digitos = (mapa.contact_whatsapp ?? "").replace(/\D/g, "");
   const instagram = (mapa.contact_instagram ?? "").trim().replace(/^@/, "");
+  const tiktok = (mapa.contact_tiktok ?? "").trim().replace(/^@/, "");
 
   return {
     whatsapp: digitos ? `https://wa.me/${digitos}` : null,
     instagram: instagram ? `https://instagram.com/${instagram}` : null,
     instagramUsuario: instagram || null,
+    tiktok: tiktok ? `https://tiktok.com/@${tiktok}` : null,
+    tiktokUsuario: tiktok || null,
   };
 }
 
@@ -553,4 +558,12 @@ export async function otrosPacks(slugActual: string): Promise<ArticuloResumen[]>
     orderBy: { price: "asc" },
   });
   return filas.map((f) => aResumen("pack", f));
+}
+
+/** Las fotos del feed, en el orden que puso la dueña. */
+export async function listarFeed() {
+  return prisma.feedImagen.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    select: { id: true, url: true, alt: true, enlace: true },
+  });
 }

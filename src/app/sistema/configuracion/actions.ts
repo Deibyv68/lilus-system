@@ -17,6 +17,7 @@ const ALLOWED_KEYS = new Set([
   "bank_details",
   "contact_whatsapp",
   "contact_instagram",
+  "contact_tiktok",
   "promo_activa",
   "promo_texto",
   "promo_enlace",

@@ -121,6 +121,36 @@ model StoreImage {
   @@index([packId])
 }
 
+/// Las fotos del feed de la portada.
+///
+/// Son las de redes: el taller, el proceso, las manos trabajando. No son
+/// fotos de producto y por eso no cuelgan de ninguno — su sitio es contar
+/// que detrás hay alguien haciendo esto.
+///
+/// Se suben desde el panel en vez de traerse de la API de Instagram o
+/// TikTok. Las dos exigen registrar una aplicación en Meta o TikTok, que
+/// la cuenta sea de empresa, y un token que caduca y hay que renovar cada
+/// dos meses: el día que nadie lo renueve, la portada se queda con un
+/// hueco sin que nadie se entere. Subir ocho fotos cada tanto es más
+/// trabajo una vez y cero mantenimiento.
+///
+/// Si algún día se conecta la API, alimentará esta misma tabla y la
+/// portada no tendrá que cambiar.
+model FeedImagen {
+  id  String @id @default(cuid())
+  url String
+
+  /// Qué se ve en la foto. Lo lee quien navega sin ver, y también Google.
+  alt String?
+
+  /// A dónde lleva al tocarla: la publicación concreta, si se tiene.
+  /// Si está vacío, se usa el perfil configurado en Contacto.
+  enlace String?
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model PackItem {
   id        String @id @default(cuid())
   packId    String

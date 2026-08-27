@@ -36,6 +36,7 @@ export default async function SettingsPage() {
                 bank_details: map.bank_details ?? "",
                 contact_whatsapp: map.contact_whatsapp ?? "",
                 contact_instagram: map.contact_instagram ?? "",
+                contact_tiktok: map.contact_tiktok ?? "",
                 promo_activa: map.promo_activa ?? "false",
                 promo_texto: map.promo_texto ?? "",
                 promo_enlace: map.promo_enlace ?? "",

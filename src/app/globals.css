@@ -521,3 +521,37 @@
     transition-delay: 0ms;
   }
 }
+
+/* ── Los resultados del buscador ──
+
+   Van con `animation` y no con `transition` a proposito: los resultados
+   cambian en cada tecla, y una transicion necesita que el elemento exista
+   antes para tener de donde salir. Con una animacion, cada resultado
+   NUEVO entra solo al aparecer.
+
+   Como React reutiliza el nodo de los que siguen coincidiendo —van
+   identificados por su slug—, esos no se reanimen al escribir otra letra.
+   Solo se mueve lo que de verdad acaba de entrar, que es lo que hace que
+   no parpadee toda la lista con cada pulsacion. */
+@keyframes aparecer-resultado {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.resultado {
+  animation: aparecer-resultado 320ms var(--ease-tienda) both;
+  animation-delay: var(--retardo, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resultado {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

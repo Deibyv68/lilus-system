@@ -2,20 +2,40 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Search, X } from "lucide-react";
 import { CapaPantalla } from "@/components/tienda/capa-pantalla";
+import { ImagenArticulo } from "@/components/tienda/imagen-articulo";
+import { formatCurrency } from "@/lib/format";
+import { listarParaBuscar } from "@/app/(tienda)/acciones-buscar";
+import { filtrar, terminos } from "@/lib/buscar";
 
 /**
- * El buscador, a pantalla completa.
+ * El buscador, a pantalla completa y con resultados según se escribe.
  *
- * Un solo campo en el centro y nada más. La página queda detrás, oscura:
- * no hay nada que hacer mientras se escribe salvo escribir.
+ * ── Por qué filtra en el navegador ──
  *
- * ── Busca de verdad ──
+ * El catálogo entero se trae UNA vez, al abrir, y a partir de ahí cada
+ * letra filtra en memoria. Con treinta artículos eso da resultados en el
+ * mismo fotograma: no hay espera, ni parpadeo, ni resultados de una
+ * búsqueda vieja llegando tarde y pisando a los de la nueva — que es el
+ * fallo clásico de consultar al servidor en cada tecla.
  *
- * Manda a `/tienda?q=…`, que filtra el catálogo. Un icono de lupa que no
- * busca es peor que no ponerlo: promete algo y no lo cumple.
+ * Con un catálogo de miles habría que hacerlo al revés. Con este, ir al
+ * servidor sería más lento y más frágil.
  */
+
+type Articulo = {
+  tipo: "producto" | "pack";
+  slug: string;
+  nombre: string;
+  tagline: string | null;
+  precio: number;
+  imagen: string | null;
+};
+
+const MAX_RESULTADOS = 6;
+
 export function Buscador({
   abierto,
   onCerrar,
@@ -26,26 +46,57 @@ export function Buscador({
   const router = useRouter();
   const campo = useRef<HTMLInputElement>(null);
   const [texto, setTexto] = useState("");
+  const [catalogo, setCatalogo] = useState<Articulo[] | null>(null);
 
   useEffect(() => {
     if (!abierto) return;
     /*
-      Al abrir, el cursor ya está dentro: nadie abre un buscador para
-      después tener que tocar el campo.
-
-      Directo, sin esperar. Antes hacía falta un retardo porque la capa se
-      ocultaba con `visibility: hidden` y un elemento invisible no acepta
-      el foco; ahora se oculta solo con opacidad, así que el campo ya es
-      enfocable en el momento en que este efecto corre.
+      El cursor ya está dentro al abrir: nadie abre un buscador para
+      después tener que tocar el campo. Directo, sin esperar — la capa se
+      oculta con opacidad y no con `visibility`, así que el campo ya
+      acepta el foco cuando este efecto corre.
     */
     campo.current?.focus();
   }, [abierto]);
 
+  useEffect(() => {
+    // Una sola vez, y solo si alguien llega a abrirlo: quien nunca usa el
+    // buscador no descarga el catálogo.
+    if (!abierto || catalogo) return;
+    let vigente = true;
+    listarParaBuscar().then((lista) => {
+      if (vigente) setCatalogo(lista);
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [abierto, catalogo]);
+
+  const consulta = texto.trim();
+  const buscando = terminos(consulta).length > 0;
+
+  const resultados =
+    !buscando || !catalogo ? [] : filtrar(catalogo, consulta).slice(0, MAX_RESULTADOS);
+  const sinResultados = buscando && catalogo !== null && resultados.length === 0;
+
+  function irAlCatalogo() {
+    onCerrar();
+    router.push(consulta ? `/tienda?q=${encodeURIComponent(consulta)}` : "/tienda");
+  }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const q = texto.trim();
-    onCerrar();
-    router.push(q ? `/tienda?q=${encodeURIComponent(q)}` : "/tienda");
+    // Enter con un solo resultado va directo ahí: es lo que se espera
+    // cuando ya solo queda una cosa en pantalla.
+    if (resultados.length === 1) {
+      const unico = resultados[0];
+      onCerrar();
+      router.push(
+        unico.tipo === "pack" ? `/packs/${unico.slug}` : `/tienda/${unico.slug}`
+      );
+      return;
+    }
+    irAlCatalogo();
   }
 
   return (
@@ -62,7 +113,7 @@ export function Buscador({
           </button>
         </div>
 
-        <div className="flex flex-1 items-start justify-center px-6 pt-16 sm:pt-24">
+        <div className="flex flex-1 flex-col items-center overflow-y-auto px-6 pb-12 pt-8 sm:pt-16">
           <form
             onSubmit={onSubmit}
             role="search"
@@ -85,25 +136,94 @@ export function Buscador({
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 placeholder="Busca tu jabón…"
+                autoComplete="off"
                 /*
                   16 px para que Safari en iOS no amplíe la página al
-                  enfocar. Es el mismo motivo que en el checkout.
+                  enfocar. Mismo motivo que en el checkout.
                 */
                 className="w-full bg-transparent text-base text-stone-900 outline-none placeholder:text-stone-400"
               />
             </div>
-
-            <p className="mt-4 text-center text-sm text-tienda-tenue">
-              Escribe y pulsa Enter. También puedes{" "}
-              <button
-                type="submit"
-                className="underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
-              >
-                ver todo el catálogo
-              </button>
-              .
-            </p>
           </form>
+
+          {/*
+            Sin esto, quien no ve la lista no se entera de que escribir
+            cambió lo que hay debajo.
+          */}
+          <p aria-live="polite" className="sr-only">
+            {buscando
+              ? `${resultados.length} resultado${resultados.length === 1 ? "" : "s"}`
+              : ""}
+          </p>
+
+          <div className="mt-8 w-full max-w-xl">
+            {sinResultados && (
+              <p className="resultado text-center text-sm text-tienda-tenue">
+                Nada con esa palabra. Prueba con el nombre del jabón o del
+                ingrediente.
+              </p>
+            )}
+
+            {resultados.length > 0 && (
+              <ul className="space-y-2">
+                {resultados.map((a, i) => (
+                  <li
+                    key={`${a.tipo}:${a.slug}`}
+                    className="resultado"
+                    style={{ ["--retardo" as string]: `${i * 45}ms` }}
+                  >
+                    <Link
+                      href={
+                        a.tipo === "pack"
+                          ? `/packs/${a.slug}`
+                          : `/tienda/${a.slug}`
+                      }
+                      onClick={onCerrar}
+                      className="group flex items-center gap-4 rounded-tienda-sm border border-transparent p-3 transition-colors duration-200 ease-out hover:border-tienda-linea hover:bg-tienda-fondo-alt"
+                    >
+                      <span className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-tienda-velo">
+                        <ImagenArticulo
+                          url={a.imagen}
+                          alt={null}
+                          nombre={a.nombre}
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-tienda-texto transition-colors duration-200 ease-out group-hover:text-white">
+                          {a.nombre}
+                        </span>
+                        {a.tagline && (
+                          <span className="block truncate text-sm text-tienda-tenue">
+                            {a.tagline}
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 text-sm tabular-nums text-tienda-tenue">
+                        {formatCurrency(a.precio)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {buscando && resultados.length > 0 && (
+              <button
+                type="button"
+                onClick={irAlCatalogo}
+                style={{ ["--retardo" as string]: `${resultados.length * 45}ms` }}
+                className="resultado mt-5 block w-full py-2 text-center text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-200 ease-out hover:text-tienda-texto"
+              >
+                Ver todos los resultados
+              </button>
+            )}
+
+            {!buscando && (
+              <p className="text-center text-sm text-tienda-tenue">
+                Escribe para buscar entre los jabones, cremas y packs.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </CapaPantalla>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listarCatalogo, type ArticuloResumen } from "@/lib/tienda";
+import { filtrar } from "@/lib/buscar";
 import { Revelar } from "@/components/tienda/revelar";
 import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
 
@@ -23,19 +24,6 @@ import { TarjetaArticulo } from "@/components/tienda/tarjeta-articulo";
 */
 export const revalidate = 1800;
 
-/**
- * Busca por nombre y por la línea del catálogo, sin tildes.
- *
- * Sin normalizar, buscar «jabon» no encontraría «Jabón» — y escribir sin
- * tildes en el teléfono es lo normal, no la excepción.
- */
-function normalizar(t: string): string {
-  return t
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
-}
-
 export default async function Catalogo({
   searchParams,
 }: {
@@ -47,19 +35,11 @@ export default async function Catalogo({
   ]);
 
   const busqueda = (q ?? "").trim();
-  const filtrar = (lista: ArticuloResumen[]) => {
-    if (!busqueda) return lista;
-    const agujas = normalizar(busqueda).split(/\s+/).filter(Boolean);
-    return lista.filter((a) => {
-      const pajar = normalizar(`${a.nombre} ${a.tagline ?? ""}`);
-      // Todas las palabras tienen que aparecer: «jabon lavanda» no debería
-      // devolver todos los jabones.
-      return agujas.every((x) => pajar.includes(x));
-    });
-  };
 
-  const packsVisibles = filtrar(packs);
-  const productosVisibles = filtrar(productos);
+  // La misma función que usa la capa del buscador, para que escribir lo
+  // mismo aquí y allá dé exactamente lo mismo.
+  const packsVisibles = filtrar(packs, busqueda);
+  const productosVisibles = filtrar(productos, busqueda);
   const vacio = packsVisibles.length === 0 && productosVisibles.length === 0;
 
   return (

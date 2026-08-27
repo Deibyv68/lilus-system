@@ -161,6 +161,23 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           placeholder="lilus.ec"
           hint="Solo el usuario, sin la arroba."
         />
+        <p className="text-xs text-muted-foreground">
+          Las fotos del feed de la portada se suben en{" "}
+          <a
+            href="/sistema/configuracion/feed"
+            className="underline underline-offset-2"
+          >
+            Feed de la portada
+          </a>
+          .
+        </p>
+        <Field
+          label="TikTok"
+          value={values.contact_tiktok ?? ""}
+          onChange={(v) => update("contact_tiktok", v)}
+          placeholder="lilus.ec"
+          hint="Solo el usuario, sin la arroba."
+        />
       </div>
 
       {/* Cinta de promocion */}

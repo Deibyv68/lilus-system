@@ -3,11 +3,14 @@ import {
   listarCatalogo,
   listarPacksConDescripcion,
   listarDestacados,
+  listarFeed,
+  datosDeContacto,
 } from "@/lib/tienda";
 import { Revelar } from "@/components/tienda/revelar";
 import { ListaColecciones } from "@/components/tienda/lista-colecciones";
 import { SeleccionDestacada } from "@/components/tienda/seleccion-destacada";
 import { Testimonios } from "@/components/tienda/testimonios";
+import { FeedSocial } from "@/components/tienda/feed-social";
 import { TESTIMONIOS_DE_MUESTRA } from "@/lib/testimonios";
 import { CarruselProductos } from "@/components/tienda/carrusel-productos";
 import { CintaTexto } from "@/components/tienda/cinta-texto";
@@ -28,10 +31,12 @@ import { CintaTexto } from "@/components/tienda/cinta-texto";
 export const revalidate = 1800;
 
 export default async function Portada() {
-  const [{ productos }, packs, destacados] = await Promise.all([
+  const [{ productos }, packs, destacados, feed, contacto] = await Promise.all([
     listarCatalogo(),
     listarPacksConDescripcion(),
     listarDestacados(),
+    listarFeed(),
+    datosDeContacto(),
   ]);
 
   return (
@@ -164,6 +169,19 @@ export default async function Portada() {
           testimonios={TESTIMONIOS_DE_MUESTRA}
           titulo="Lo que dicen"
           entrada="Impresiones de clientas que compraron y volvieron. Hablan de olor, textura y trato — de un jabón no se puede esperar más que eso."
+        />
+      </div>
+
+      {/*
+        El feed va a sangre, sin el margen del contenido: la fila tiene que
+        salirse por los lados para que se lea como que hay más.
+      */}
+      <div className="pb-[120px]">
+        <FeedSocial
+          imagenes={feed}
+          titulo="En el taller"
+          entrada="Lo que pasa antes de que llegue a tu casa: las tandas, los cortes, las manos."
+          perfiles={contacto}
         />
       </div>
 

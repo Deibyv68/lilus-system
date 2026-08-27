@@ -114,7 +114,7 @@ export function PanelCarrito({
       <div
         onClick={onCerrar}
         aria-hidden="true"
-        className={`absolute inset-0 bg-black/60 transition-opacity duration-[400ms] ease-tienda ${
+        className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ease-out ${
           abierto ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -132,14 +132,20 @@ export function PanelCarrito({
         */
         inert={!abierto}
         /*
-          `ease-panel` y no el muelle: este panel tiene que quedar pegado
-          al borde derecho, y el muelle se pasa un 4,6 % antes de volver.
-          En una pantalla de 375 eso son 17 px de más, con la página
-          asomando por detrás a la derecha durante un instante. Se leía
-          como si hubiera dos paneles superpuestos.
+          Entra desde la derecha y punto: 300 ms con una desaceleración
+          normal, el mismo ritmo que el velo.
+          
+          Pasó por dos versiones peores. La primera usaba el muelle, que se
+          pasa un 4,6 % antes de volver — en un panel pegado a un borde eso
+          son 17 px MÁS ALLÁ del borde, con la página asomando por detrás.
+          La segunda ya no se pasaba, pero iba a 520 ms mientras el velo
+          iba a 400: dos cosas que entran juntas a ritmos distintos se
+          leen como un tirón aunque cada una por separado esté bien.
+          
+          Aquí lo que se pide es que aparezca, no que haga una entrada.
         */
         className={`absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col bg-tienda-fondo-alt
-          transition-transform duration-[520ms] ease-panel
+          transition-transform duration-300 ease-out
           ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex items-start justify-between px-8 pt-8 sm:px-10">
