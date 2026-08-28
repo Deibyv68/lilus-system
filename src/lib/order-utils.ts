@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { addMonths } from "date-fns";
@@ -63,7 +64,31 @@ export async function createOrderWithNumber(
     try {
       return await prisma.$transaction(async (tx) => {
         const orderNumber = await generateOrderNumber(tx);
-        return tx.order.create({ data: { ...datos, orderNumber } });
+        return tx.order.create({
+          data: {
+            /*
+              Todo pedido nace con su enlace, venga de la tienda o del
+              panel.
+
+              Antes los cargados a mano nacían sin él, con el argumento de
+              que «esos no se comparten con nadie». Resultó falso: una
+              venta por WhatsApp también quiere mandarle a la clienta
+              dónde ver cómo va y dónde subir su comprobante — y sin token
+              esa página no existe, así que había que pedirle el número y
+              el correo para entrar por «Mi pedido».
+
+              Tenerlo no abre nada: son 24 bytes al azar, y quien no los
+              tiene no llega. Lo que ahorra es un botón de «generar
+              enlace» que habría que acordarse de pulsar.
+
+              `datos` va después para que quien ya trae uno —la tienda lo
+              genera por su cuenta— conserve el suyo.
+            */
+            publicToken: randomBytes(24).toString("base64url"),
+            ...datos,
+            orderNumber,
+          },
+        });
       });
     } catch (e) {
       const chocoElNumero =

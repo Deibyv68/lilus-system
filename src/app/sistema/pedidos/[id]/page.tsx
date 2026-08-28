@@ -17,6 +17,7 @@ import {
   Truck,
   Printer,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -314,6 +315,49 @@ export default async function OrderDetailPage({
                   order.carrier?.trackingUrlTemplate ?? null
                 }
               />
+
+              {/*
+                La página que ve el cliente, a un toque.
+
+                El enlace viaja dentro de los mensajes, pero hasta ahora no
+                había forma de abrirlo desde aquí: ni para comprobar qué
+                está viendo quien pregunta, ni para pegarlo en una
+                conversación que ya estaba abierta.
+
+                Va relativo —«/pedido/…»— y no con la dirección pública, así
+                que funciona aunque `APP_URL` no esté puesta. Para ella, que
+                está dentro del panel, es lo único que hace falta.
+              */}
+              {order.publicToken && (
+                <a
+                  href={`/pedido/${order.publicToken}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  <ExternalLink className="size-3.5" />
+                  Ver la página del cliente
+                </a>
+              )}
+
+              {/*
+                Que se note cuando el mensaje sale sin enlace.
+
+                El enlace se omite si no hay dirección pública, y hasta
+                ahora eso pasaba en silencio: los mensajes salían más
+                pobres —sin el sitio donde pagar, ver el estado y subir el
+                comprobante— y nadie tenía forma de saber por qué. Un
+                trabajo que no se hace y no avisa es peor que uno que
+                falla.
+              */}
+              {!enlaceBase && (
+                <p className="rounded-md border border-dashed px-2.5 py-2 text-2xs text-muted-foreground">
+                  Los mensajes salen <strong>sin el enlace</strong> al pedido,
+                  así que el cliente tiene que entrar a «Mi pedido» y teclear
+                  su número y su correo. Se arregla poniendo la dirección
+                  pública de la tienda (<code>APP_URL</code>) en la laptop.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -331,6 +375,9 @@ export default async function OrderDetailPage({
             estadoPedido={order.status}
             comprobantes={order.comprobantes}
             repetidos={repetidos}
+            pedido={paraMensaje}
+            telefono={order.customer.phone}
+            telefonoContacto={order.customer.contactPhone}
           />
 
           <Card>

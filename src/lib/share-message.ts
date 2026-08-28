@@ -156,6 +156,62 @@ export function buildStatusMessage(
   return lines.join("\n").trim();
 }
 
+/**
+ * El mensaje para pedir lo que falta de un pago a medias.
+ *
+ * ── Por qué no es un estado más ──
+ *
+ * «Le falta pagar» no es un punto del recorrido de un pedido: es una
+ * situación que puede darse estando pendiente y que se resuelve sin que
+ * el pedido se mueva de sitio. Meterlo en `buildStatusMessage` obligaría
+ * a inventar un estado que la base no tiene.
+ *
+ * ── Por qué el número va escrito y no calculado por quien lee ──
+ *
+ * Aquí se abona: la mitad hoy, el resto el viernes. Un mensaje que diga
+ * «te falta completar» obliga a quien lo recibe a restar del total lo que
+ * ya mandó, y a quien lo escribe a hacer la misma resta antes. Las dos
+ * cuentas se equivocan, y la que se equivoca de más deja una venta a
+ * medias que nadie reclama.
+ *
+ * Va también el enlace, porque desde ahí sube el segundo comprobante y
+ * llega pegado al pedido correcto.
+ */
+export function buildSaldoMessage(
+  order: ShareableOrder,
+  saldo: { confirmado: number; falta: number }
+): string {
+  const firstName = order.customerName.split(" ")[0] ?? order.customerName;
+  const lines: string[] = [];
+
+  lines.push(`¡Hola ${firstName}! 🌸`);
+  lines.push("");
+  lines.push(
+    `Recibimos tu transferencia de *$${saldo.confirmado.toFixed(2)}* ` +
+      `para el pedido *${order.orderNumber}*. ¡Gracias!`
+  );
+  lines.push("");
+  lines.push(
+    `Para completarlo faltan *$${saldo.falta.toFixed(2)}* ` +
+      `(el total es $${order.total.toFixed(2)}).`
+  );
+  lines.push("");
+
+  if (order.enlacePedido) {
+    lines.push("Puedes mandarlos cuando puedas y subir el comprobante aquí:");
+    lines.push(order.enlacePedido);
+  } else {
+    lines.push(
+      "Puedes mandarlos cuando puedas y pasarnos el comprobante por aquí."
+    );
+  }
+
+  lines.push("");
+  lines.push("Apenas lo confirmemos, empezamos a preparar tu pedido 💛");
+
+  return lines.join("\n").trim();
+}
+
 // Devuelve un label corto para el botón de compartir, según estado.
 export function statusShareLabel(status: OrderStatus): string {
   switch (status) {

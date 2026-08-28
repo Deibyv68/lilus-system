@@ -10,6 +10,7 @@ import {
   Paperclip,
   Pencil,
   Loader2,
+  MessageCircle,
   RotateCcw,
   Upload,
   X,
@@ -19,6 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { estadoDePago } from "@/lib/pago-del-pedido";
+import {
+  buildSaldoMessage,
+  normalizePhoneForWhatsApp,
+  pickWhatsAppPhone,
+  type ShareableOrder,
+} from "@/lib/share-message";
 import {
   confirmarComprobanteAction,
   descartarComprobanteAction,
@@ -84,12 +91,19 @@ export function Pago({
   comprobantes,
   repetidos,
   estadoPedido,
+  pedido,
+  telefono,
+  telefonoContacto,
 }: {
   orderId: string;
   total: number;
   comprobantes: ComprobanteEnPanel[];
   repetidos: Repetido[];
   estadoPedido: string;
+  /** Para poder armar el mensaje de lo que falta sin volver al servidor. */
+  pedido: ShareableOrder;
+  telefono: string | null;
+  telefonoContacto: string | null;
 }) {
   const pago = estadoDePago(comprobantes, total);
 
@@ -204,6 +218,31 @@ export function Pago({
             .
           </p>
         )}
+
+        {/*
+          Pedir lo que falta, con la cifra ya escrita.
+
+          Sale solo cuando alguien confirmó una parte y queda saldo: es el
+          único momento en que este mensaje tiene sentido. Con el pedido
+          sin pagar del todo el mensaje correcto es otro —el de «recibimos
+          tu pedido»— y ese ya está en el selector de estado.
+
+          El número va en el mensaje y no lo calcula quien escribe: restar
+          de cabeza delante del teléfono es donde se pide de más o de
+          menos, y pedir de menos deja una venta a medias que nadie
+          reclama.
+        */}
+        {estadoPedido === "PENDING" &&
+          pago.confirmado > 0 &&
+          pago.falta > 0 && (
+            <PedirElResto
+              pedido={pedido}
+              confirmado={pago.confirmado}
+              falta={pago.falta}
+              telefono={telefono}
+              telefonoContacto={telefonoContacto}
+            />
+          )}
 
         {comprobantes.length > 0 && (
           <ul className="space-y-4">
@@ -834,5 +873,44 @@ function Subir({
         />
       </label>
     </div>
+  );
+}
+
+/**
+ * El botón para pedir por WhatsApp lo que falta de un pago a medias.
+ *
+ * Abre WhatsApp con el mensaje escrito, igual que el resto de avisos al
+ * cliente: no se manda solo. Un mensaje que sale sin que nadie lo lea es
+ * un mensaje que tarde o temprano sale en mal momento — justo después de
+ * que la clienta avisó por otro lado de que ya transfirió, por ejemplo.
+ */
+function PedirElResto({
+  pedido,
+  confirmado,
+  falta,
+  telefono,
+  telefonoContacto,
+}: {
+  pedido: ShareableOrder;
+  confirmado: number;
+  falta: number;
+  telefono: string | null;
+  telefonoContacto: string | null;
+}) {
+  const mensaje = buildSaldoMessage(pedido, { confirmado, falta });
+  const numero = normalizePhoneForWhatsApp(
+    pickWhatsAppPhone(telefonoContacto, telefono)
+  );
+  const url = numero
+    ? `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
+    : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+  return (
+    <Button asChild variant="outline" className="w-full">
+      <a href={url} target="_blank" rel="noreferrer">
+        <MessageCircle className="size-4" />
+        Pedirle los {formatCurrency(falta)} que faltan
+      </a>
+    </Button>
   );
 }

@@ -29,9 +29,31 @@ export function EtiquetaDePago({
   total: number;
   comprobantes: ComprobanteParaContar[];
 }) {
-  if (estado !== "PENDING") return null;
-
   const pago = estadoDePago(comprobantes, total);
+
+  /*
+    En un pedido que ya no está pendiente solo queda una cosa por decir:
+    que hay comprobantes que nadie miró.
+
+    Al dar un pedido por pagado la etiqueta desaparecía entera, y con ella
+    el único aviso de que quedaba trabajo. Un comprobante sin revisar
+    después de cobrar ya no decide si se prepara el pedido, pero sí es el
+    que lleva el número que sirve para pillar la misma captura mandada a
+    dos pedidos, y el que deja la cuenta cuadrada al cerrar el mes.
+
+    Sale apagada, sin color: recuerda, no interrumpe.
+  */
+  if (estado !== "PENDING") {
+    if (pago.porRevisar === 0) return null;
+    return (
+      <Badge variant="outline" className="text-3xs text-muted-foreground">
+        <Paperclip className="size-2.5" />
+        {pago.porRevisar === 1
+          ? "1 sin revisar"
+          : `${pago.porRevisar} sin revisar`}
+      </Badge>
+    );
+  }
 
   if (!pago.hayComprobantes) {
     return (
