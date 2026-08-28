@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { ESTADOS, type EstadoPedido } from "./estados-pedido";
 
 /**
  * Mover un pedido de estado.
@@ -13,16 +14,13 @@ import { prisma } from "@/lib/prisma";
  * fallara de forma visible.
  */
 
-export const ESTADOS = [
-  "PENDING",
-  "PAID",
-  "PACKED",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-] as const;
+/*
+  La lista vive en `estados-pedido.ts`, que no es `server-only`.
 
-export type EstadoPedido = (typeof ESTADOS)[number];
+  Se reexporta desde aquí para no romper a quien ya la importaba de este
+  módulo: son server actions y rutas de API, y para ellas nada cambia.
+*/
+export { ESTADOS, type EstadoPedido };
 
 export function esEstadoValido(v: string): v is EstadoPedido {
   return (ESTADOS as readonly string[]).includes(v);

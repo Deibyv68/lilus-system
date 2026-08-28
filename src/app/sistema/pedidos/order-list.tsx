@@ -27,13 +27,19 @@ import {
 } from "lucide-react";
 import { deleteOrdersAction } from "./actions";
 import { ChipDeEspera, HaceCuanto } from "./espera";
+import { Filtros } from "./filtros";
 import {
-  Filtros,
-  contarPorFiltro,
-  pasaElFiltro,
-  ETIQUETA_FILTRO,
-  type Filtro,
-} from "./filtros";
+  contarPorAtajo,
+  pasaElAtajo,
+  pasaElAvanzado,
+  origenesDe,
+  transportadorasDe,
+  criteriosPuestos,
+  ETIQUETA_ATAJO,
+  AVANZADO_VACIO,
+  type Atajo,
+  type Avanzado,
+} from "@/lib/filtrar-pedidos";
 import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
 import { EtiquetaDePago } from "@/components/etiqueta-de-pago";
 
@@ -44,7 +50,13 @@ type Order = {
   total: number;
   createdAt: string | Date;
   source: string | null;
-  customer: { name: string };
+  customer: {
+    name: string;
+    phone?: string | null;
+    contactPhone?: string | null;
+    cedula?: string | null;
+  };
+  ciudad?: string | null;
   carrier: { name: string } | null;
   _count: { items: number };
   comprobantes: { aceptado: boolean | null; montoConfirmado: number | null }[];
@@ -52,7 +64,8 @@ type Order = {
 
 export function OrderList({ orders }: { orders: Order[] }) {
   const router = useRouter();
-  const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [atajo, setAtajo] = useState<Atajo>("todos");
+  const [avanzado, setAvanzado] = useState<Avanzado>(AVANZADO_VACIO);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -97,8 +110,23 @@ export function OrderList({ orders }: { orders: Order[] }) {
     mira para saber cuánto trabajo hay ahí, no cuánto queda de lo que ya
     se está mirando.
   */
-  const cuentas = contarPorFiltro(orders);
-  const visibles = orders.filter((o) => pasaElFiltro(o, filtro));
+  const cuentas = contarPorAtajo(orders);
+
+  /*
+    El atajo y el avanzado se cruzan con Y.
+
+    Marcar «Por cobrar» arriba y luego acotar a Instagram abajo tiene que
+    dar los pendientes DE Instagram. Que el segundo anulara al primero
+    sería una sorpresa cada vez, y de las que no se notan: sale una lista
+    plausible con lo que no se pidió.
+  */
+  const visibles = orders.filter(
+    (o) => pasaElAtajo(o, atajo) && pasaElAvanzado(o, avanzado)
+  );
+
+  const origenes = origenesDe(orders);
+  const transportadoras = transportadorasDe(orders);
+  const hayAvanzado = criteriosPuestos(avanzado) > 0;
 
   function goBatchPrint() {
     if (selectedIds.size === 0) return;
@@ -234,12 +262,45 @@ export function OrderList({ orders }: { orders: Order[] }) {
         </DialogContent>
       </Dialog>
 
-      <Filtros actual={filtro} onCambiar={setFiltro} cuentas={cuentas} />
+      <Filtros
+        atajo={atajo}
+        onAtajo={setAtajo}
+        cuentas={cuentas}
+        avanzado={avanzado}
+        onAvanzado={setAvanzado}
+        origenes={origenes}
+        transportadoras={transportadoras}
+        visibles={visibles.length}
+        total={orders.length}
+      />
 
       {visibles.length === 0 && (
-        <p className="rounded-2xl border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-          No hay pedidos en «{ETIQUETA_FILTRO[filtro]}».
-        </p>
+        <div className="rounded-2xl border border-dashed px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            {hayAvanzado
+              ? "Ningún pedido cumple lo que buscas."
+              : `No hay pedidos en «${ETIQUETA_ATAJO[atajo]}».`}
+          </p>
+          {/*
+            La salida, ahí mismo. Una lista vacía sin forma de volver deja
+            a quien filtró de más buscando qué desmarcar entre ocho
+            criterios que ya no ve.
+          */}
+          {(hayAvanzado || atajo !== "todos") && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => {
+                setAtajo("todos");
+                setAvanzado(AVANZADO_VACIO);
+              }}
+            >
+              Ver todos los pedidos
+            </Button>
+          )}
+        </div>
       )}
 
       <ul className="space-y-3">

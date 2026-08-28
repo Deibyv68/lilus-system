@@ -14,7 +14,23 @@ export default async function OrdersPage() {
     // sola, hay que poder distinguir de un vistazo cuál llegó por la web
     // y está esperando que alguien revise la transferencia.
     include: {
-      customer: { select: { name: true } },
+      /*
+        Teléfono, cédula y ciudad: los busca el filtro avanzado.
+
+        Quien llama por teléfono casi nunca sabe el número de su pedido —
+        sabe su nombre, o el número desde el que escribió. Sin estos
+        campos el buscador solo encontraría por nombre, que es justo el
+        dato que más se repite entre clientas.
+      */
+      customer: {
+        select: {
+          name: true,
+          phone: true,
+          contactPhone: true,
+          cedula: true,
+        },
+      },
+      shippingAddress: { select: { city: true } },
       carrier: { select: { name: true } },
       _count: { select: { items: true } },
       /*
@@ -67,7 +83,8 @@ export default async function OrdersPage() {
             total: o.total,
             createdAt: o.createdAt.toISOString(),
             source: o.source,
-            customer: { name: o.customer.name },
+            customer: o.customer,
+            ciudad: o.shippingAddress?.city ?? null,
             carrier: o.carrier ? { name: o.carrier.name } : null,
             _count: { items: o._count.items },
             comprobantes: o.comprobantes,

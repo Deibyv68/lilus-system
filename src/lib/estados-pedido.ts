@@ -12,6 +12,26 @@
  * «terminado», rojo es «se cayó». Se lee antes que la palabra.
  */
 
+/**
+ * Los seis estados, en el orden en que ocurren.
+ *
+ * Vive aquí y no en `cambiar-estado.ts` porque ese importa `server-only`
+ * —hace de verdad el cambio, contra la base— y esta lista la necesitan
+ * también pantallas del navegador, como el filtro de la lista de
+ * pedidos. Arrastrar el módulo entero al navegador por leer seis cadenas
+ * rompe la compilación, y con razón.
+ */
+export const ESTADOS = [
+  "PENDING",
+  "PAID",
+  "PACKED",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+] as const;
+
+export type EstadoPedido = (typeof ESTADOS)[number];
+
 export const ETIQUETA_ESTADO: Record<string, string> = {
   PENDING: "Pendiente",
   PAID: "Pagado",
