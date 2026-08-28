@@ -186,7 +186,13 @@ export default async function PaginaPedido({
             </div>
           )}
 
-          {(hayCuenta || cobro.banco) && (
+          {/*
+            Sin ninguna cuenta activa no se abre el bloque, aunque haya nota.
+            La nota es "para lo que no encaje en un campo" — suelta, sin una
+            cuenta al lado, no dice a dónde mandar el dinero y encima puede
+            contradecir a la cuenta que se active después.
+          */}
+          {hayCuenta && (
             <div className="mt-6 border-t border-tienda-linea pt-6">
               <p className="text-xs uppercase tracking-wide text-tienda-tenue">
                 {cobro.deuna ? "O por transferencia" : "Transferencia"}
