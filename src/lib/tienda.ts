@@ -26,6 +26,16 @@ export type ArticuloResumen = {
   precio: number;
   imagen: string | null;
   imagenAlt: string | null;
+  /**
+   * Resumen de lo principal que lleva. Es lo que hace que buscar
+   * «romero» encuentre los jabones que lo llevan y no solo el que se
+   * llama así. En un pack se compone de lo que hay dentro.
+   *
+   * Opcional: el carrito arma este mismo objeto y no lo necesita para
+   * nada. Exigirlo obligaría a arrastrar por media aplicación un dato que
+   * solo usa el buscador.
+   */
+  ingredientes?: string | null;
 };
 
 export type ArticuloDetalle = ArticuloResumen & {
@@ -37,6 +47,13 @@ export type ArticuloDetalle = ArticuloResumen & {
 };
 
 /** Columnas que se pueden mostrar. El resto no sale de la base. */
+/*
+  Este resumen es de PRODUCTOS. Los packs usan `RESUMEN_PACK`, más abajo.
+
+  La diferencia no es cosmética: `ingredients` es una columna de Product y
+  no existe en Pack, así que pedirla en una consulta de packs revienta al
+  ejecutarse — no al compilar.
+*/
 const RESUMEN = {
   id: true,
   slug: true,
@@ -46,10 +63,46 @@ const RESUMEN = {
   // La miniatura de trabajo interno. Se usa solo como respaldo: ver
   // `aResumen`.
   imageUrl: true,
+  /*
+    El resumen de lo principal que lleva.
+
+    Es el mismo texto que va en la etiqueta 2x1 —«Carbón activado,
+    arcillas bentonita y verde, árbol de té»— y no la lista completa de
+    la formulación: se escribió corto a propósito, para que quepa en una
+    etiqueta y se lea de un vistazo. Sirve igual para buscar.
+  */
+  ingredients: true,
   storeImages: {
     orderBy: { sortOrder: "asc" },
     take: 1,
     select: { url: true, alt: true },
+  },
+} as const;
+
+/*
+  El mismo resumen, pero para packs.
+
+  Un pack no tiene columna de ingredientes —no los tiene propios— así que
+  pedirla a la base sería un error. En su lugar se traen sus piezas, y de
+  ahí se compone. Se escribe entero y no como `{...RESUMEN}` menos algo:
+  Prisma no acepta quitar un campo poniéndolo en `undefined`, y el
+  «menos» silencioso es justo el tipo de cosa que se rompe al añadir un
+  campo dentro de un año.
+*/
+const RESUMEN_PACK = {
+  id: true,
+  slug: true,
+  name: true,
+  tagline: true,
+  price: true,
+  imageUrl: true,
+  storeImages: {
+    orderBy: { sortOrder: "asc" },
+    take: 1,
+    select: { url: true, alt: true },
+  },
+  items: {
+    select: { product: { select: { name: true, ingredients: true } } },
   },
 } as const;
 
@@ -72,8 +125,11 @@ function aResumen(
     tagline: string | null;
     price: number;
     imageUrl?: string | null;
+    ingredients?: string | null;
     storeImages: { url: string; alt: string | null }[];
-  }
+  },
+  /** En los packs se compone de lo que llevan dentro. */
+  ingredientes?: string | null
 ): ArticuloResumen {
   return {
     tipo,
@@ -91,7 +147,29 @@ function aResumen(
     */
     imagen: fila.storeImages[0]?.url ?? fila.imageUrl ?? null,
     imagenAlt: fila.storeImages[0]?.alt ?? null,
+    ingredientes: ingredientes ?? fila.ingredients ?? null,
   };
+}
+
+/**
+ * Lo que lleva un pack, sacado de los productos que contiene.
+ *
+ * Un pack no tiene ingredientes propios: los tiene prestados de lo que va
+ * dentro. Y quien busca «avena» quiere que le salga tanto el jabón de
+ * avena como el pack donde va ese jabón — si el pack no apareciera,
+ * estaría escondiendo una forma de comprar lo que la persona busca.
+ *
+ * Se guarda el nombre de cada pieza junto a lo suyo para poder decir
+ * después POR QUÉ salió el pack: «lleva el Jabón de Manzanilla, con
+ * avena» explica; una lista suelta de ingredientes, no.
+ */
+function ingredientesDelPack(
+  items: { product: { name: string; ingredients: string | null } }[]
+): string | null {
+  const partes = items
+    .filter((i) => i.product.ingredients?.trim())
+    .map((i) => `${i.product.name}: ${i.product.ingredients!.trim()}`);
+  return partes.length > 0 ? partes.join(" ") : null;
 }
 
 /** El catálogo completo. Los packs primero: son la mejor puerta de entrada. */
@@ -100,12 +178,16 @@ export async function listarCatalogo(): Promise<{
   productos: ArticuloResumen[];
 }> {
   const [packs, productos] = await Promise.all([
-    prisma.pack.findMany({ where: VISIBLE, select: RESUMEN, orderBy: { price: "asc" } }),
+    prisma.pack.findMany({
+      where: VISIBLE,
+      select: RESUMEN_PACK,
+      orderBy: { price: "asc" },
+    }),
     prisma.product.findMany({ where: VISIBLE, select: RESUMEN, orderBy: { name: "asc" } }),
   ]);
 
   return {
-    packs: packs.map((p) => aResumen("pack", p)),
+    packs: packs.map((p) => aResumen("pack", p, ingredientesDelPack(p.items))),
     productos: productos.map((p) => aResumen("producto", p)),
   };
 }
@@ -472,7 +554,7 @@ export async function listarPacksConDescripcion(): Promise<
 > {
   const packs = await prisma.pack.findMany({
     where: VISIBLE,
-    select: { ...RESUMEN, description: true },
+    select: { ...RESUMEN_PACK, description: true },
     orderBy: { price: "asc" },
   });
 
@@ -622,10 +704,10 @@ export async function obtenerPackPresentacion(
 export async function otrosPacks(slugActual: string): Promise<ArticuloResumen[]> {
   const filas = await prisma.pack.findMany({
     where: { ...VISIBLE, slug: { not: slugActual } },
-    select: RESUMEN,
+    select: RESUMEN_PACK,
     orderBy: { price: "asc" },
   });
-  return filas.map((f) => aResumen("pack", f));
+  return filas.map((f) => aResumen("pack", f, ingredientesDelPack(f.items)));
 }
 
 /** Las fotos del feed, en el orden que puso la dueña. */

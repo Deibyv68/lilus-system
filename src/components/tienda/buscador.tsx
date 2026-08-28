@@ -8,7 +8,7 @@ import { CapaPantalla } from "@/components/tienda/capa-pantalla";
 import { ImagenArticulo } from "@/components/tienda/imagen-articulo";
 import { formatCurrency } from "@/lib/format";
 import { listarParaBuscar } from "@/app/(tienda)/acciones-buscar";
-import { filtrar, terminos } from "@/lib/buscar";
+import { filtrar, terminos, porQueCoincide } from "@/lib/buscar";
 
 /**
  * El buscador, a pantalla completa y con resultados según se escribe.
@@ -32,6 +32,7 @@ type Articulo = {
   tagline: string | null;
   precio: number;
   imagen: string | null;
+  ingredientes: string | null;
 };
 
 const MAX_RESULTADOS = 6;
@@ -192,11 +193,31 @@ export function Buscador({
                         <span className="block truncate text-tienda-texto transition-colors duration-200 ease-out group-hover:text-white">
                           {a.nombre}
                         </span>
-                        {a.tagline && (
-                          <span className="block truncate text-sm text-tienda-tenue">
-                            {a.tagline}
-                          </span>
-                        )}
+                        {/*
+                          Cuando el nombre no explica por qué salió, se
+                          enseña el ingrediente que sí.
+
+                          Buscar «romero» y ver aparecer el «Jabón de
+                          Manzanilla» es correcto —lo lleva— pero sin
+                          decirlo parece que el buscador se equivocó, y a
+                          la segunda vez ya nadie se fía de él. Con la
+                          línea debajo, el resultado raro pasa a ser el
+                          hallazgo que se buscaba.
+                        */}
+                        {(() => {
+                          const porQue = porQueCoincide(a, consulta);
+                          return porQue ? (
+                            <span className="block truncate text-sm text-tienda-acento">
+                              {porQue}
+                            </span>
+                          ) : (
+                            a.tagline && (
+                              <span className="block truncate text-sm text-tienda-tenue">
+                                {a.tagline}
+                              </span>
+                            )
+                          );
+                        })()}
                       </span>
                       <span className="shrink-0 text-sm tabular-nums text-tienda-tenue">
                         {formatCurrency(a.precio)}

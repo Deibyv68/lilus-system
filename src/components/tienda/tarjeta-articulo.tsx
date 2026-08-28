@@ -1,3 +1,4 @@
+import { porQueCoincide } from "@/lib/buscar";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
 import type { ArticuloResumen } from "@/lib/tienda";
@@ -22,10 +23,20 @@ import { BotonAgregar } from "@/components/tienda/boton-agregar";
 export function TarjetaArticulo({
   articulo,
   prioridad = false,
+  consulta,
 }: {
   articulo: ArticuloResumen;
   prioridad?: boolean;
+  /**
+   * Lo que se buscó, si se llegó aquí buscando.
+   *
+   * Sirve para poder decir por qué salió este artículo cuando su nombre
+   * no lo explica: buscar «karité» y ver seis jabones cuyas líneas no la
+   * mencionan parece un buscador roto, aunque los seis la lleven.
+   */
+  consulta?: string;
 }) {
+  const porQue = consulta ? porQueCoincide(articulo, consulta) : null;
   return (
     // min-w-0 no es decorativo: sin él, un hijo de cuadrícula se niega a
     // encogerse por debajo del ancho de su contenido y desborda la fila.
@@ -51,10 +62,16 @@ export function TarjetaArticulo({
         </h3>
       </Link>
 
-      {articulo.tagline && (
-        <p className="mt-1.5 text-sm leading-snug text-pretty text-tienda-tenue">
-          {articulo.tagline}
+      {porQue ? (
+        <p className="mt-1.5 text-sm leading-snug text-pretty text-tienda-acento">
+          {porQue}
         </p>
+      ) : (
+        articulo.tagline && (
+          <p className="mt-1.5 text-sm leading-snug text-pretty text-tienda-tenue">
+            {articulo.tagline}
+          </p>
+        )
       )}
 
       {/* mt-auto: los botones quedan alineados aunque los textos midan distinto. */}

@@ -76,10 +76,15 @@ export default async function Catalogo({
               titulo="Packs"
               nota="Salen mejor que comprar lo mismo por separado."
               articulos={packsVisibles}
+              busqueda={busqueda}
             />
           )}
           {productosVisibles.length > 0 && (
-            <Seccion titulo="Productos" articulos={productosVisibles} />
+            <Seccion
+              titulo="Productos"
+              articulos={productosVisibles}
+              busqueda={busqueda}
+            />
           )}
         </>
       )}
@@ -91,10 +96,13 @@ function Seccion({
   titulo,
   nota,
   articulos,
+  busqueda,
 }: {
   titulo: string;
   nota?: string;
   articulos: ArticuloResumen[];
+  /** Para que cada tarjeta pueda decir por qué salió. */
+  busqueda?: string;
 }) {
   return (
     <section className="pb-[120px]">
@@ -119,7 +127,7 @@ function Seccion({
             retardo={(i % 3) * 80}
             className="min-w-0"
           >
-            <TarjetaArticulo articulo={a} prioridad={i < 3} />
+            <TarjetaArticulo articulo={a} prioridad={i < 3} consulta={busqueda} />
           </Revelar>
         ))}
       </ul>

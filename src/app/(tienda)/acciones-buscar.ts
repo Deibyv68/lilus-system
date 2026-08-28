@@ -24,5 +24,13 @@ export async function listarParaBuscar() {
     tagline: a.tagline,
     precio: a.precio,
     imagen: a.imagen,
+    /*
+      El resumen de lo que lleva, para poder buscar por ingrediente.
+
+      Es texto que ya se enseña en la ficha y en las piezas de un pack,
+      así que no revela nada nuevo: son unas pocas palabras por artículo y
+      viajan una sola vez, al abrir el buscador.
+    */
+    ingredientes: a.ingredientes ?? null,
   }));
 }
