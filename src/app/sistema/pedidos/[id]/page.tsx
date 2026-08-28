@@ -10,6 +10,7 @@ import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
 import { Pago } from "./pago";
+import { estadoDePago } from "@/lib/pago-del-pedido";
 import { buildTrackingUrl } from "@/lib/share-message";
 import {
   ArrowLeft,
@@ -121,6 +122,16 @@ export default async function OrderDetailPage({
         orderNumber: r.order.orderNumber,
       }))
   );
+
+  /*
+    El estado del cobro, calculado una vez.
+
+    Lo usan el selector de estado —para preguntar antes de dar por pagado
+    algo que los comprobantes no cubren— y la tarjeta de Pago. Con dos
+    cálculos aparte, el día que cambie la regla uno de los dos seguiría
+    con la vieja y nadie se enteraría.
+  */
+  const cobro = estadoDePago(order.comprobantes, order.total);
 
   const paraMensaje = {
     orderNumber: order.orderNumber,
@@ -259,6 +270,13 @@ export default async function OrderDetailPage({
                 telefono={order.customer.phone}
                 telefonoContacto={order.customer.contactPhone}
                 plantillaGuia={order.carrier?.trackingUrlTemplate ?? null}
+                cobro={{
+                  total: order.total,
+                  confirmado: cobro.confirmado,
+                  falta: cobro.falta,
+                  porRevisar: cobro.porRevisar,
+                  hayComprobantes: cobro.hayComprobantes,
+                }}
               />
 
               {order.trackingNumber && (

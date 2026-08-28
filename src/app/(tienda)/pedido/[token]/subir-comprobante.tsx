@@ -28,6 +28,19 @@ type Comprobante = {
 export type ResumenDePago = {
   confirmado: number;
   falta: number;
+  /**
+   * Si el pedido sigue esperando el pago.
+   *
+   * Cuando la dueña ya lo dio por pagado, esta cuenta se calla. Ella mira
+   * el estado de cuenta del banco; esta suma solo mira los comprobantes
+   * que alguien subió, y hay pagos que nunca pasan por ahí —en efectivo,
+   * o una transferencia de la que no mandaron captura—.
+   *
+   * Sin esto, la página decía «Pago confirmado» arriba y «faltan $14,50»
+   * abajo, en la misma pantalla. Quien lo lea concluye lo que quiera, y
+   * las dos conclusiones posibles son malas.
+   */
+  esperandoPago: boolean;
 };
 
 /**
@@ -149,7 +162,7 @@ export function SubirComprobante({
         acaba de subir su comprobante y espera revisión parece que se le
         perdió.
       */}
-      {pago.confirmado > 0 && pago.falta > 0 && (
+      {pago.esperandoPago && pago.confirmado > 0 && pago.falta > 0 && (
         <p className="mt-3 rounded-tienda-sm border border-tienda-linea px-4 py-3 text-sm leading-relaxed">
           Recibimos {formatCurrency(pago.confirmado)}. Faltan{" "}
           <strong className="font-medium text-white">

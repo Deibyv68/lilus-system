@@ -96,14 +96,31 @@ export function Pago({
           <Linea label="Total del pedido" valor={total} />
           <Linea label="Confirmado" valor={pago.confirmado} />
 
-          {pago.falta > 0 && (
-            <div className="flex items-baseline justify-between gap-3 border-t pt-1.5">
-              <span className="font-medium">Falta</span>
-              <span className="text-lg font-semibold tabular-nums">
-                {formatCurrency(pago.falta)}
-              </span>
-            </div>
-          )}
+          {pago.falta > 0 &&
+            (estadoPedido === "PENDING" ? (
+              <div className="flex items-baseline justify-between gap-3 border-t pt-1.5">
+                <span className="font-medium">Falta</span>
+                <span className="text-lg font-semibold tabular-nums">
+                  {formatCurrency(pago.falta)}
+                </span>
+              </div>
+            ) : (
+              /*
+                El pedido ya se dio por pagado y los comprobantes no llegan
+                al total. No es un error: el dinero pudo entrar en efectivo
+                o por una transferencia sin captura.
+
+                Pero queda escrito, y en gris. Dentro de tres meses, si
+                alguien viene a preguntar por qué este pedido cuadra en la
+                caja y no en los comprobantes, la respuesta está aquí en
+                vez de en la memoria de nadie.
+              */
+              <p className="border-t pt-1.5 text-xs text-muted-foreground">
+                Marcado como pagado con {formatCurrency(pago.falta)} sin
+                respaldar por comprobantes. Si entró en efectivo o por una
+                transferencia sin captura, está bien.
+              </p>
+            ))}
 
           {pago.cuadra && pago.sobra === 0 && (
             <p className="flex items-start gap-1.5 rounded bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">

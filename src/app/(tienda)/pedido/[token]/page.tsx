@@ -263,7 +263,11 @@ export default async function PaginaPedido({
               aceptado: c.aceptado,
               monto: c.montoConfirmado,
             }))}
-            pago={{ confirmado: pago.confirmado, falta: pago.falta }}
+            pago={{
+              confirmado: pago.confirmado,
+              falta: pago.falta,
+              esperandoPago: pedido.status === "PENDING",
+            }}
           />
 
           {/*

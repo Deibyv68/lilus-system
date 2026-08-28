@@ -21,8 +21,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Truck } from "lucide-react";
+import { Truck, AlertTriangle } from "lucide-react";
 import { updateOrderStatusAction, markAsShippedAction } from "../actions";
+import { formatCurrency } from "@/lib/format";
 import {
   buildStatusMessage,
   buildTrackingUrl,
@@ -51,6 +52,7 @@ export function StatusSelector({
   telefono,
   telefonoContacto,
   plantillaGuia,
+  cobro,
 }: {
   id: string;
   status: string;
@@ -61,11 +63,37 @@ export function StatusSelector({
   telefono: string | null;
   telefonoContacto: string | null;
   plantillaGuia: string | null;
+  /**
+   * Lo que dicen los comprobantes de este pedido.
+   *
+   * Solo para poder preguntar antes de dar por pagado algo que, según los
+   * comprobantes, todavía no está cubierto. Nunca para impedirlo: ver más
+   * abajo.
+   */
+  cobro: {
+    total: number;
+    confirmado: number;
+    falta: number;
+    porRevisar: number;
+    hayComprobantes: boolean;
+  };
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [shipDialogOpen, setShipDialogOpen] = useState(false);
+  const [cobroDialogOpen, setCobroDialogOpen] = useState(false);
   const [tracking, setTracking] = useState(existingTracking ?? "");
+
+  /*
+    Cuándo preguntar antes de dar un pedido por pagado.
+
+    Solo si hay comprobantes Y no cubren el total. Sin comprobantes no se
+    pregunta nada: los pedidos que se cargan a mano —una venta por
+    WhatsApp, un pago en efectivo— no tienen ninguno, y avisar ahí sería
+    una alarma en cada pedido normal. A la tercera alarma falsa ya nadie
+    las lee, y entonces tampoco se lee la que sí importaba.
+  */
+  const faltaPorCubrir = cobro.hayComprobantes && cobro.falta > 0;
 
   /*
     Cambiar el estado y avisar al cliente son el mismo gesto.
@@ -113,9 +141,30 @@ export function StatusSelector({
       setShipDialogOpen(true);
       return;
     }
+    /*
+      Se pregunta, no se impide.
+
+      Un pedido puede estar pagado de verdad sin que los comprobantes lo
+      demuestren: pagó en efectivo al recibir, transfirió y nunca subió la
+      captura, o la transferencia se ve en el estado de cuenta y punto.
+      Quien mira el banco sabe más que esta suma, y bloquearla la dejaría
+      peleando con su propio sistema.
+
+      Lo que sí hace falta es que sea un acto deliberado, porque al marcar
+      pagado el cliente deja de ver que debe algo.
+    */
+    if (value === "PAID" && faltaPorCubrir) {
+      setCobroDialogOpen(true);
+      return;
+    }
+    aplicar(value);
+  }
+
+  function aplicar(value: string) {
     startTransition(async () => {
       try {
         await updateOrderStatusAction(id, value as Status);
+        setCobroDialogOpen(false);
         ofrecerAviso(value as Status);
         router.refresh();
       } catch {
@@ -156,6 +205,64 @@ export function StatusSelector({
           ))}
         </SelectContent>
       </Select>
+
+      <Dialog open={cobroDialogOpen} onOpenChange={setCobroDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5" />
+              Todavía falta {formatCurrency(cobro.falta)}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3 text-left">
+                <p>
+                  {cobro.confirmado > 0 ? (
+                    <>
+                      Los comprobantes confirmados suman{" "}
+                      <strong>{formatCurrency(cobro.confirmado)}</strong> de{" "}
+                      {formatCurrency(cobro.total)}.
+                    </>
+                  ) : cobro.porRevisar > 0 ? (
+                    <>
+                      {cobro.porRevisar === 1
+                        ? "Hay un comprobante subido que todavía nadie ha revisado"
+                        : `Hay ${cobro.porRevisar} comprobantes subidos que todavía nadie ha revisado`}
+                      , así que no hay nada confirmado de los{" "}
+                      {formatCurrency(cobro.total)}.
+                    </>
+                  ) : (
+                    <>
+                      Ningún comprobante de este pedido cuenta, así que no hay
+                      nada confirmado de los {formatCurrency(cobro.total)}.
+                    </>
+                  )}
+                </p>
+                <p>
+                  Márcalo como pagado solo si el dinero entró de otra forma: en
+                  efectivo, o una transferencia que ves en tu estado de cuenta
+                  aunque no subieran la captura.
+                </p>
+                <p>
+                  Al hacerlo, el cliente deja de ver que debe algo en su página.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setCobroDialogOpen(false)}
+              disabled={isPending}
+            >
+              Mejor lo reviso
+            </Button>
+            <Button onClick={() => aplicar("PAID")} disabled={isPending}>
+              Sí, ya está pagado
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
         <DialogContent>
