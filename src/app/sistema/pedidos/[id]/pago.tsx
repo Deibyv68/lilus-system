@@ -11,6 +11,7 @@ import {
   Pencil,
   Loader2,
   MessageCircle,
+  RefreshCw,
   RotateCcw,
   Trash2,
   Upload,
@@ -33,6 +34,7 @@ import {
   reabrirComprobanteAction,
   subirComprobanteEnPanelAction,
   borrarComprobanteAction,
+  releerComprobanteAction,
 } from "./revisar-comprobante";
 import { LeerQrDelComprobante } from "./leer-qr-comprobante";
 
@@ -586,6 +588,41 @@ function Comprobante({
             puede decodificar en el navegador sin traerse un lector
             entero, y los PDF son la minoría.
           */}
+          {/*
+            Volver a leer, para cuando la primera vez no salió bien.
+
+            El OCR mejora con el tiempo y los comprobantes viejos se
+            quedan con la lectura del día que se subieron. Sin esto habría
+            que borrarlos y volverlos a subir para que los mirara otra
+            vez, perdiendo la fecha y lo ya confirmado.
+
+            No aparece mientras está leyendo: pedirle que relea algo que
+            está leyendo no adelanta nada y deja la rueda girando dos
+            veces.
+          */}
+          {c.tipo !== "application/pdf" && !esperando && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={trabajando}
+              onClick={() =>
+                empezar(async () => {
+                  const r = await releerComprobanteAction(c.id);
+                  if (!r.ok) {
+                    toast.error(r.error);
+                    return;
+                  }
+                  toast.success("Leyéndolo otra vez…");
+                  router.refresh();
+                })
+              }
+            >
+              <RefreshCw className="size-3.5" /> Volver a leer
+            </Button>
+          )}
+
           {c.tipo !== "application/pdf" && (
             <LeerQrDelComprobante
               src={`/api/comprobante/${c.id}`}

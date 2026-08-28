@@ -1,10 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/guard";
 import { anotarComprobante } from "@/lib/anotar-comprobante";
-import { borrarArchivoDeComprobante } from "@/lib/comprobantes";
+import {
+  borrarArchivoDeComprobante,
+  carpetaDeComprobantes,
+} from "@/lib/comprobantes";
+import { leerComprobanteConOcr } from "@/lib/leer-comprobante";
+import { cuentasDeCobro } from "@/lib/tienda";
 
 /**
  * Revisar un comprobante: decir qué dice de verdad, o que no cuenta.
@@ -252,6 +259,117 @@ export async function borrarComprobanteAction(id: string): Promise<Resultado> {
   } catch (e) {
     console.error("[comprobante] No se pudo borrar el archivo:", e);
   }
+
+  refrescar(comprobante.orderId, comprobante.order.publicToken);
+  return { ok: true };
+}
+
+/**
+ * Volver a leer un comprobante que ya se leyó una vez.
+ *
+ * ── Para qué ──
+ *
+ * Tres motivos, y los tres pasan:
+ *
+ * · El OCR mejora. El de hoy prepara la imagen antes de mirarla, y con
+ *   eso ve monto y banco donde antes no veía nada — pero los
+ *   comprobantes que ya estaban guardados siguen con la lectura vieja.
+ *   Sin este botón habría que borrarlos y volverlos a subir.
+ *
+ * · La primera lectura falló y no por culpa de la imagen: el servidor
+ *   estaba ocupado, se quedó sin memoria, se reinició a medias.
+ *
+ * · Curiosidad legítima. Si el monto que puso la máquina no cuadra con
+ *   lo que se ve en la foto, poder decir «míralo otra vez» es más
+ *   barato que teclear los cuatro campos.
+ *
+ * ── Lo que NO toca ──
+ *
+ * Lo confirmado. Si alguien ya revisó ese comprobante y dijo que son
+ * $12,00, una lectura nueva de la máquina no puede cambiar esa cifra —
+ * es justo la separación que sostiene todo: la máquina propone, la
+ * persona decide. Solo se reemplaza lo que la máquina había propuesto.
+ */
+export async function releerComprobanteAction(id: string): Promise<Resultado> {
+  await requireUser();
+
+  const comprobante = await prisma.comprobanteDePago.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      archivo: true,
+      tipo: true,
+      orderId: true,
+      order: { select: { publicToken: true } },
+    },
+  });
+  if (!comprobante) return { ok: false, error: "Ese comprobante ya no está" };
+
+  if (comprobante.tipo === "application/pdf") {
+    return { ok: false, error: "Un PDF no se puede leer con OCR" };
+  }
+
+  /*
+    Se marca como «sin leer» ANTES de empezar.
+
+    Con eso la pantalla vuelve sola al estado de espera —imagen
+    difuminada, rueda girando— y el sondeo que ya existe se encarga de
+    traer el resultado. No hizo falta inventar nada: es el mismo camino
+    que recorre un comprobante recién subido.
+  */
+  await prisma.comprobanteDePago.update({
+    where: { id },
+    data: {
+      leidoEn: null,
+      montoLeido: null,
+      numeroLeido: null,
+      fechaLeida: null,
+      bancoLeido: null,
+      textoLeido: null,
+    },
+  });
+
+  /*
+    Y la lectura corre después de responder.
+
+    En la laptop tarda unos veinte segundos. Dejar el botón pulsado todo
+    ese rato haría que pareciera colgado, y con `after()` la respuesta
+    sale ya y el trabajo sigue por detrás.
+  */
+  after(async () => {
+    try {
+      const cuentas = await cuentasDeCobro();
+      const lectura = await leerComprobanteConOcr(
+        path.join(carpetaDeComprobantes(), comprobante.archivo),
+        cuentas.map((c) => c.banco)
+      );
+
+      await prisma.comprobanteDePago.update({
+        where: { id: comprobante.id },
+        data: {
+          montoLeido: lectura?.monto ?? null,
+          numeroLeido: lectura?.numero ?? null,
+          fechaLeida: lectura?.fecha ?? null,
+          bancoLeido: lectura?.banco ?? null,
+          textoLeido: lectura?.texto ?? null,
+          /*
+            La fecha de lectura se pone aunque no se haya sacado nada.
+
+            Es lo que distingue «todavía leyendo» de «ya lo miró y no
+            encontró». Sin ella la pantalla se quedaría esperando para
+            siempre por algo que ya terminó.
+          */
+          leidoEn: new Date(),
+        },
+      });
+    } catch (e) {
+      console.error("[ocr] Falló la relectura:", e);
+      // Que no se quede en espera eterna si la lectura reventó.
+      await prisma.comprobanteDePago
+        .update({ where: { id: comprobante.id }, data: { leidoEn: new Date() } })
+        .catch(() => {});
+    }
+  });
 
   refrescar(comprobante.orderId, comprobante.order.publicToken);
   return { ok: true };
