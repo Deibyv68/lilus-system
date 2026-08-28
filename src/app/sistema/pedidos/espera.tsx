@@ -40,10 +40,9 @@ export function HaceCuanto({ fecha }: { fecha: string | Date }) {
 /**
  * La banda que avisa que hay un pago sin confirmar.
  *
- * Va dentro de la tarjeta del pedido, debajo de todo. Ocupa una línea
- * entera en vez de ser otra etiqueta pequeña entre las demás: si se
- * pareciera a «Servientrega» o a «Web» se leería como una más y ese es
- * justo el problema que viene a resolver.
+ * Ocupa una línea entera, así que solo va donde hay UN pedido delante: en
+ * su ficha. En la lista se usa `ChipDeEspera`, que dice lo mismo en tres
+ * palabras — ver ahí el porqué.
  */
 export function AvisoDePago({
   estado,
@@ -80,5 +79,62 @@ export function AvisoDePago({
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * El mismo reloj, del tamaño de una etiqueta, para las listas.
+ *
+ * ── Por qué no la banda ──
+ *
+ * La banda se escribió para que no se leyera como una etiqueta más entre
+ * «Web» y «Servientrega». El razonamiento era bueno y el resultado no:
+ * casi todos los pedidos de una lista están pendientes, así que la banda
+ * salía en casi todas las tarjetas, repitiendo la misma frase. Catorce
+ * avisos idénticos no son catorce avisos, son un fondo de pantalla.
+ *
+ * ── Lo que se conserva de la idea ──
+ *
+ * Que lo urgente no se confunda con lo demás. Pero eso ahora lo hace el
+ * color y no el tamaño: mientras sobra tiempo el chip va gris, callado
+ * entre los otros, porque no hay nada que hacer todavía. Cuando quedan
+ * doce horas se pone ámbar, y cuando se pasa de las 48 se pone rojo con
+ * el icono de alerta.
+ *
+ * Así la lista está tranquila cuando no pasa nada y grita solo en el
+ * pedido que de verdad lo necesita — que es lo que la banda quería
+ * conseguir y no conseguía gritando en todos a la vez.
+ */
+export function ChipDeEspera({
+  estado,
+  creadoEn,
+}: {
+  estado: string;
+  creadoEn: string | Date;
+}) {
+  const ahora = useAhora();
+  const espera = esperaDePago(estado, creadoEn, ahora);
+  if (!espera) return null;
+
+  const estilo = {
+    tranquilo:
+      "border-border text-muted-foreground",
+    atencion:
+      "border-amber-400/70 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200",
+    vencido:
+      "border-red-400/70 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200",
+  }[espera.nivel];
+
+  const Icono = espera.nivel === "vencido" ? AlertTriangle : Clock;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-3xs font-medium ${estilo}`}
+      suppressHydrationWarning
+      title={espera.detalle}
+    >
+      <Icono className="size-2.5" />
+      {espera.breve}
+    </span>
   );
 }

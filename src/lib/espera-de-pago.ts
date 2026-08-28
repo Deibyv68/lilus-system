@@ -36,6 +36,15 @@ export type EsperaDePago = {
   aviso: string;
   /** La línea de abajo, con el detalle del tiempo. */
   detalle: string;
+  /**
+   * La versión de tres palabras, para la lista.
+   *
+   * En la ficha de un pedido cabe una frase; en una lista de catorce, esa
+   * misma frase repetida catorce veces deja de leerse y empieza a
+   * estorbar. Aquí solo va lo que cambia entre un pedido y otro: el
+   * tiempo. El estado ya lo dice la etiqueta «Pendiente» de al lado.
+   */
+  breve: string;
 };
 
 /**
@@ -64,6 +73,7 @@ export function esperaDePago(
       detalle:
         `Esperando desde hace ${dias} ${dias === 1 ? "día" : "días"}. ` +
         "Toca cancelarlo o escribirle al cliente.",
+      breve: `Venció hace ${dias} ${dias === 1 ? "día" : "días"}`,
     };
   }
 
@@ -73,6 +83,7 @@ export function esperaDePago(
       nivel: "atencion",
       aviso: "Falta confirmar el pago",
       detalle: `Quedan ${Math.ceil(restantes)} h antes de las 48 · conviene escribirle`,
+      breve: `Quedan ${Math.ceil(restantes)} h`,
     };
   }
 
@@ -81,6 +92,7 @@ export function esperaDePago(
     nivel: "tranquilo",
     aviso: "Falta confirmar el pago",
     detalle: `Revisa si entró la transferencia · quedan ${Math.floor(restantes)} h`,
+    breve: `${Math.floor(restantes)} h para confirmar`,
   };
 }
 

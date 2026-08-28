@@ -11,7 +11,7 @@ import {
   Globe,
 } from "lucide-react";
 import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
-import { AvisoDePago, HaceCuanto } from "./pedidos/espera";
+import { ChipDeEspera, HaceCuanto } from "./pedidos/espera";
 import { EtiquetaDePago } from "@/components/etiqueta-de-pago";
 import { AgentStatusBadge } from "@/components/agent-status-badge";
 
@@ -160,12 +160,12 @@ export default async function DashboardPage() {
                       total={o.total}
                       comprobantes={o.comprobantes}
                     />
+                    <ChipDeEspera estado={o.status} creadoEn={o.createdAt} />
                     <span className="text-3xs text-muted-foreground ml-auto">
                       {o._count.items} {o._count.items === 1 ? "ítem" : "ítems"}
                     </span>
                   </div>
 
-                  <AvisoDePago estado={o.status} creadoEn={o.createdAt} />
                 </Link>
               </li>
             ))}

@@ -26,7 +26,14 @@ import {
   Globe,
 } from "lucide-react";
 import { deleteOrdersAction } from "./actions";
-import { AvisoDePago, HaceCuanto } from "./espera";
+import { ChipDeEspera, HaceCuanto } from "./espera";
+import {
+  Filtros,
+  contarPorFiltro,
+  pasaElFiltro,
+  ETIQUETA_FILTRO,
+  type Filtro,
+} from "./filtros";
 import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
 import { EtiquetaDePago } from "@/components/etiqueta-de-pago";
 
@@ -45,6 +52,7 @@ type Order = {
 
 export function OrderList({ orders }: { orders: Order[] }) {
   const router = useRouter();
+  const [filtro, setFiltro] = useState<Filtro>("todos");
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -69,12 +77,28 @@ export function OrderList({ orders }: { orders: Order[] }) {
   }
 
   function selectAll() {
-    setSelectedIds(new Set(orders.map((o) => o.id)));
+    /*
+      Solo los visibles. «Seleccionar todos» con un filtro puesto tiene
+      que significar todos LOS DE ESTE FILTRO — si no, se imprimirían
+      etiquetas de pedidos que ni siquiera están en pantalla.
+    */
+    setSelectedIds(new Set(visibles.map((o) => o.id)));
   }
 
   function deselectAll() {
     setSelectedIds(new Set());
   }
+
+  /*
+    Los filtros se cuentan sobre TODOS los pedidos, no sobre los visibles.
+
+    Si el número de al lado de «Pendientes» cambiara según lo que ya está
+    filtrado, dejaría de servir para lo que sirve: decidir adónde ir. Se
+    mira para saber cuánto trabajo hay ahí, no cuánto queda de lo que ya
+    se está mirando.
+  */
+  const cuentas = contarPorFiltro(orders);
+  const visibles = orders.filter((o) => pasaElFiltro(o, filtro));
 
   function goBatchPrint() {
     if (selectedIds.size === 0) return;
@@ -210,8 +234,16 @@ export function OrderList({ orders }: { orders: Order[] }) {
         </DialogContent>
       </Dialog>
 
+      <Filtros actual={filtro} onCambiar={setFiltro} cuentas={cuentas} />
+
+      {visibles.length === 0 && (
+        <p className="rounded-2xl border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
+          No hay pedidos en «{ETIQUETA_FILTRO[filtro]}».
+        </p>
+      )}
+
       <ul className="space-y-3">
-        {orders.map((o) => {
+        {visibles.map((o) => {
           const checked = selectedIds.has(o.id);
 
           // Modo normal: card link al detalle
@@ -308,6 +340,7 @@ function OrderCardContent({ o }: { o: Order }) {
             total={o.total}
             comprobantes={o.comprobantes}
           />
+          <ChipDeEspera estado={o.status} creadoEn={o.createdAt} />
           {o.carrier && (
             <Badge variant="outline" className="text-3xs">
               {o.carrier.name}
@@ -330,7 +363,6 @@ function OrderCardContent({ o }: { o: Order }) {
         </div>
       </div>
 
-      <AvisoDePago estado={o.status} creadoEn={o.createdAt} />
     </>
   );
 }
