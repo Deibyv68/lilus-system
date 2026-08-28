@@ -510,6 +510,16 @@ export default async function OrderDetailPage({
                 <p>{order.shippingAddress?.address}</p>
                 <p className="text-muted-foreground">
                   {order.shippingAddress?.city}, {order.shippingAddress?.province}
+                  {/*
+                    El postal, cuando el mapa lo supo. Va pegado a la
+                    ciudad porque es lo que mira quien despacha en el
+                    mostrador de la transportadora.
+                  */}
+                  {order.shippingAddress?.postal && (
+                    <span className="ml-1.5 font-mono text-xs">
+                      · {order.shippingAddress.postal}
+                    </span>
+                  )}
                 </p>
                 {order.shippingAddress?.reference && (
                   <p className="text-xs italic mt-1">

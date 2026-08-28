@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
             */
             lat: c.addresses[0].lat,
             lng: c.addresses[0].lng,
+            postal: c.addresses[0].postal,
           }
         : null,
     }))

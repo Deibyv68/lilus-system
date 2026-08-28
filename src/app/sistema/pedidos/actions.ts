@@ -36,6 +36,7 @@ type CreateOrderPayload = {
     */
     lat?: number | null;
     lng?: number | null;
+    postal?: string;
   };
   carrierId: string;
   shippingCost: number;
@@ -152,6 +153,7 @@ export async function createOrderAction(payload: CreateOrderPayload) {
       reference: data.address.reference || null,
       lat: data.address.lat ?? null,
       lng: data.address.lng ?? null,
+      postal: data.address.postal || null,
       isDefault: true,
     },
   });

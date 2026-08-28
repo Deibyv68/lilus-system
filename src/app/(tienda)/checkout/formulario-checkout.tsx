@@ -70,6 +70,8 @@ type Datos = {
   calle: string;
   referencia: string;
   nota: string;
+  /** Lo saca el mapa; nunca se le pide a quien compra. */
+  postal: string;
   lat: number | null;
   lng: number | null;
 };
@@ -84,6 +86,14 @@ const VACIO: Datos = {
   calle: "",
   referencia: "",
   nota: "",
+  /*
+    El código postal no se le pide a nadie: lo saca el mapa.
+
+    Aquí casi nadie se lo sabe, así que un campo más sería un campo vacío
+    más — y en un checkout cada campo de más es una venta menos. Si se
+    marca el punto, viene solo; si no, se va sin él y no pasa nada.
+  */
+  postal: "",
   lat: null,
   lng: null,
 };
@@ -208,6 +218,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           calle: prev.calle,
           provincia: prev.provincia,
           ciudad: prev.ciudad,
+          postal: prev.postal,
           lat: prev.lat,
           lng: prev.lng,
         },
@@ -260,6 +271,7 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           ciudad: d.ciudad,
           calle: d.calle,
           referencia: d.referencia,
+          postal: d.postal,
           lat: d.lat,
           lng: d.lng,
         },

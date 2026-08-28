@@ -8,7 +8,7 @@ function igual(que: string, dio: unknown, esperado: unknown) {
   console.log(`${ok ? "ok  " : "FALLA"} ${que}${ok ? "" : ` → ${JSON.stringify(dio)}, esperaba ${JSON.stringify(esperado)}`}`);
 }
 
-const vacia: Direccion = { calle: "", provincia: "", ciudad: "", lat: null, lng: null };
+const vacia: Direccion = { calle: "", provincia: "", ciudad: "", postal: "", lat: null, lng: null };
 
 console.log("── lo básico ──");
 {
@@ -45,7 +45,7 @@ console.log("\n── el cantón no es el primer nombre que suene a ciudad ─�
 
 console.log("\n── la calle escrita a mano se respeta ──");
 {
-  const previa: Direccion = { calle: "Casa de la esquina verde", provincia: "Pichincha", ciudad: "Quito", lat: null, lng: null };
+  const previa: Direccion = { calle: "Casa de la esquina verde", provincia: "Pichincha", ciudad: "Quito", postal: "", lat: null, lng: null };
   const r = aplicarPunto(
     { lat: -0.18, lng: -78.46, provincia: "Pichincha", lugares: ["Quito"], recibioRespuesta: true },
     previa, null
@@ -53,7 +53,7 @@ console.log("\n── la calle escrita a mano se respeta ──");
   igual("el mapa no pisa lo que escribió la persona", r.direccion.calle, "Casa de la esquina verde");
 }
 {
-  const previa: Direccion = { calle: "Av. Amazonas", provincia: "Pichincha", ciudad: "Quito", lat: null, lng: null };
+  const previa: Direccion = { calle: "Av. Amazonas", provincia: "Pichincha", ciudad: "Quito", postal: "", lat: null, lng: null };
   const r = aplicarPunto(
     { lat: -0.18, lng: -78.46, provincia: "Pichincha", lugares: ["Quito"], recibioRespuesta: true },
     previa, "Av. Amazonas"
@@ -62,7 +62,7 @@ console.log("\n── la calle escrita a mano se respeta ──");
   igual("...y se olvida de ella", r.calleDelMapa, null);
 }
 {
-  const previa: Direccion = { calle: "Av. Amazonas", provincia: "Pichincha", ciudad: "Quito", lat: null, lng: null };
+  const previa: Direccion = { calle: "Av. Amazonas", provincia: "Pichincha", ciudad: "Quito", postal: "", lat: null, lng: null };
   const r = aplicarPunto(
     { lat: -0.18, lng: -78.46, recibioRespuesta: false },
     previa, "Av. Amazonas"
@@ -72,7 +72,7 @@ console.log("\n── la calle escrita a mano se respeta ──");
 
 console.log("\n── cambiar de provincia ──");
 {
-  const previa: Direccion = { calle: "", provincia: "Pichincha", ciudad: "Quito", lat: null, lng: null };
+  const previa: Direccion = { calle: "", provincia: "Pichincha", ciudad: "Quito", postal: "", lat: null, lng: null };
   const r = aplicarPunto(
     { lat: -0.95, lng: -80.7, provincia: "Manabí", lugares: ["Nada reconocible"], recibioRespuesta: true },
     previa, null
@@ -81,7 +81,7 @@ console.log("\n── cambiar de provincia ──");
   igual("y limpia el cantón viejo, que ya no cuadra", r.direccion.ciudad, "");
 }
 {
-  const previa: Direccion = { calle: "", provincia: "Pichincha", ciudad: "Quito", lat: null, lng: null };
+  const previa: Direccion = { calle: "", provincia: "Pichincha", ciudad: "Quito", postal: "", lat: null, lng: null };
   const r = aplicarPunto(
     { lat: -0.18, lng: -78.46, provincia: "Pichincha", lugares: ["Sitio raro"], recibioRespuesta: true },
     previa, null
@@ -97,7 +97,28 @@ console.log("\n── lo que no debe romper ──");
 }
 {
   const r = aplicarPunto({ lat: -0.18, lng: -78.46 }, vacia, null);
-  igual("sin datos del mapa solo quedan las coordenadas", r.direccion, { calle: "", provincia: "", ciudad: "", lat: -0.18, lng: -78.46 });
+  igual("sin datos del mapa solo quedan las coordenadas", r.direccion, { calle: "", provincia: "", ciudad: "", postal: "", lat: -0.18, lng: -78.46 });
+}
+
+console.log("\n── el código postal ──");
+{
+  const r = aplicarPunto({ lat: -0.18, lng: -78.46, postal: "170515", recibioRespuesta: true }, vacia, null);
+  igual("lo guarda cuando el mapa lo sabe", r.direccion.postal, "170515");
+}
+{
+  const previa: Direccion = { calle: "", provincia: "", ciudad: "", postal: "170515", lat: null, lng: null };
+  const r = aplicarPunto({ lat: -0.95, lng: -80.7, postal: "130802", recibioRespuesta: true }, previa, null);
+  igual("lo reemplaza al cambiar de sitio", r.direccion.postal, "130802");
+}
+{
+  const previa: Direccion = { calle: "", provincia: "", ciudad: "", postal: "170515", lat: null, lng: null };
+  const r = aplicarPunto({ lat: -1.5, lng: -78.0, recibioRespuesta: true }, previa, null);
+  igual("lo borra si el nuevo punto no tiene: el viejo ya no es de ahí", r.direccion.postal, "");
+}
+{
+  const previa: Direccion = { calle: "", provincia: "", ciudad: "", postal: "170515", lat: null, lng: null };
+  const r = aplicarPunto({ lat: -1.5, lng: -78.0, recibioRespuesta: false }, previa, null);
+  igual("pero si el mapa ni contestó, no lo toca", r.direccion.postal, "170515");
 }
 
 console.log(fallos === 0 ? "\nTodo bien." : `\n${fallos} fallo(s).`);

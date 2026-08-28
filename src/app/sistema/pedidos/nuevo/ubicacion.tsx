@@ -88,6 +88,7 @@ export function Ubicacion({
           calle: r.lugar?.calle || undefined,
           lugares: r.lugar?.lugares,
           provincia: r.lugar?.provincia || undefined,
+          postal: r.lugar?.postal || undefined,
           recibioRespuesta: r.lugar !== null,
         },
         direccion,

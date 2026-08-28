@@ -96,6 +96,7 @@ type DireccionDelPunto = {
   road: string;
   lugares: string[];
   provincia: string;
+  postal: string;
 };
 
 /**
@@ -136,6 +137,14 @@ async function direccionDelPunto(
         a.village,
       ].filter((v: unknown): v is string => Boolean(v)),
       provincia: a.state ?? "",
+      /*
+        El código postal, que el mapa sí conoce.
+
+        Aquí casi nadie se lo sabe de memoria, así que pedirlo en un
+        formulario sería un campo vacío más. Sacarlo del punto es gratis
+        y a la transportadora le sirve para clasificar.
+      */
+      postal: a.postcode ?? "",
     };
 
     memoria.set(k, resultado);
@@ -227,6 +236,14 @@ export type UbicacionElegida = {
    */
   lugares?: string[];
   provincia?: string;
+  /**
+   * El código postal, si el mapa lo conoce.
+   *
+   * Aquí casi nadie se lo sabe de memoria, así que pedirlo en un
+   * formulario sería un campo vacío más. Sacarlo del punto es gratis, y
+   * a la transportadora le sirve para clasificar en el mostrador.
+   */
+  postal?: string;
   /**
    * `true` cuando ya se consultó la dirección de este punto, aunque no
    * haya devuelto calle.
@@ -436,7 +453,7 @@ export function MapaDireccion({
             return;
           }
 
-          const { calle, lugares, provincia, road } = direccion;
+          const { calle, lugares, provincia, road, postal } = direccion;
           if (!calle) {
             setAviso(
               "El mapa no conoce el nombre de esta calle. Escríbela abajo tú."
@@ -449,6 +466,7 @@ export function MapaDireccion({
             calle,
             lugares,
             provincia,
+            postal,
             recibioRespuesta: true,
           });
 
@@ -463,6 +481,7 @@ export function MapaDireccion({
             calle: `${calle} y ${cruce}`,
             lugares,
             provincia,
+            postal,
             recibioRespuesta: true,
           });
         } finally {

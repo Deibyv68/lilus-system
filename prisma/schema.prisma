@@ -259,6 +259,16 @@ model ShippingAddress {
   lat        Float?
   lng        Float?
 
+  /// Código postal, sacado del mapa.
+  ///
+  /// En Ecuador casi nadie se lo sabe de memoria, así que pedirlo en un
+  /// formulario sería un campo vacío más. Pero el mapa sí lo conoce, y
+  /// las transportadoras lo usan para clasificar: tenerlo en la etiqueta
+  /// ahorra un paso en el mostrador.
+  ///
+  /// Opcional, como el punto: quien no marca en el mapa compra igual.
+  postal     String?
+
   customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   zone     ShippingZone? @relation(fields: [zoneId], references: [id])
   orders   Order[]

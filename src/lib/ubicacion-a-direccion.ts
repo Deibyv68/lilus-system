@@ -29,6 +29,8 @@ export type PuntoElegido = {
   /** Todos los nombres de lugar, del más pequeño al más grande. */
   lugares?: string[];
   provincia?: string;
+  /** El código postal, si el mapa lo conoce. */
+  postal?: string;
   /** Si el mapa llegó a contestar. Distinto de «contestó y no sabía». */
   recibioRespuesta?: boolean;
 };
@@ -38,6 +40,7 @@ export type Direccion = {
   provincia: string;
   /** El cantón. Se llama ciudad porque es como lo llama la gente. */
   ciudad: string;
+  postal: string;
   lat: number | null;
   lng: number | null;
 };
@@ -61,6 +64,17 @@ export function aplicarPunto(
     lat: punto.lat,
     lng: punto.lng,
   };
+
+  /*
+    El código postal se reemplaza solo si el mapa trae uno.
+
+    Si el punto nuevo cae donde el mapa no lo conoce, dejar el anterior
+    sería peor que dejarlo vacío: diría el postal de un sitio que ya no
+    es. Pero tampoco se borra el que escribió una persona sin motivo, así
+    que solo se pisa cuando hay algo mejor que poner.
+  */
+  if (punto.postal) siguiente.postal = punto.postal;
+  else if (punto.recibioRespuesta && previa.postal) siguiente.postal = "";
   let nuevaCalleDelMapa = calleDelMapa;
 
   /*

@@ -82,6 +82,8 @@ const esquema = z.object({
     ciudad: z.string().trim().min(2, "Falta la ciudad").max(80),
     calle: z.string().trim().min(6, "La dirección es muy corta").max(300),
     referencia: z.string().trim().max(300).optional().or(z.literal("")),
+    // Lo saca el mapa; nunca lo escribe quien compra. Ver el esquema del panel.
+    postal: z.string().trim().max(20).optional().or(z.literal("")),
     /*
       Las coordenadas del mapa, si las marcó.
 
@@ -256,6 +258,7 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
       city: d.direccion.ciudad,
       address: d.direccion.calle,
       reference: d.direccion.referencia || null,
+      postal: d.direccion.postal || null,
       lat: d.direccion.lat ?? null,
       lng: d.direccion.lng ?? null,
       isDefault: true,

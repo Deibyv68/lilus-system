@@ -74,6 +74,14 @@ export const shippingAddressSchema = z.object({
   */
   lat: z.coerce.number().min(-90).max(90).nullish(),
   lng: z.coerce.number().min(-180).max(180).nullish(),
+  /*
+    El código postal lo saca el mapa, así que llega como venga: en
+    Ecuador son seis cifras, pero no se valida el formato porque no
+    decide nada — solo informa a la transportadora. Rechazar un pedido
+    por un postal raro sería perder la venta por el dato menos
+    importante de todos.
+  */
+  postal: z.string().trim().max(20).optional().or(z.literal("")),
 });
 
 export const orderItemSchema = z.object({

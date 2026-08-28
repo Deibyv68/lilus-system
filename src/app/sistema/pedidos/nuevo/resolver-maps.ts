@@ -2,6 +2,7 @@
 
 import { requireUser } from "@/lib/guard";
 import { leerPunto, esEnlaceCorto, type Punto } from "@/lib/punto-de-maps";
+import { elegirTransversal } from "@/lib/vias";
 
 /**
  * Convertir en coordenadas el enlace de Google Maps que mandó el cliente.
@@ -32,11 +33,56 @@ type Resultado =
  * para que pegar un enlace haga lo mismo que tocar el mapa.
  */
 export type LugarDelPunto = {
+  /** «Principal y Secundaria», si se pudo averiguar la transversal. */
   calle: string;
   /** Del más pequeño al más grande. De aquí sale el cantón. */
   lugares: string[];
   provincia: string;
+  postal: string;
 };
+
+/*
+  La calle que cruza con la principal, preguntándole a Overpass.
+
+  Es la misma idea que hace el mapa de la tienda desde el navegador. Aquí
+  se hace en el servidor porque pegar un enlace no abre ningún mapa: sin
+  esto, pegar daba «Avenida 24» y tocar el mapa daba «Avenida 24 y Calle
+  15», para el mismo punto. Que dos caminos den direcciones distintas es
+  peor que dar una peor: nadie sabría cuál creer.
+
+  Si Overpass no contesta —tiene turnos y devuelve 429 cuando se acaban—
+  se devuelve `null` y queda la principal sola. Es lo que había antes,
+  así que no se pierde nada.
+*/
+async function transversalDe(
+  punto: Punto,
+  principal: string
+): Promise<string | null> {
+  if (!principal) return null;
+  try {
+    const consulta =
+      `[out:json][timeout:15];` +
+      `way(around:${RADIO_CRUCE},${punto.lat},${punto.lng})[highway][name];` +
+      `out tags center;`;
+    const r = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: new URLSearchParams({ data: consulta }),
+      signal: AbortSignal.timeout(ESPERA_MAXIMA * 2),
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    return elegirTransversal(j.elements ?? [], principal, punto.lat, punto.lng);
+  } catch (e) {
+    console.error("[maps] No se pudo buscar la transversal:", e);
+    return null;
+  }
+}
+
+/*
+  Sesenta metros alrededor del punto. El mismo radio que usa el mapa de
+  la tienda: más lejos empiezan a aparecer calles que no cruzan con esta.
+*/
+const RADIO_CRUCE = 60;
 
 /*
   Los mismos campos que pide el mapa de la tienda, y en el mismo orden.
@@ -65,8 +111,18 @@ async function lugarDe(punto: Punto): Promise<LugarDelPunto | null> {
 
     const j = await r.json();
     const a = j.address ?? {};
+    const road: string = a.road ?? "";
+    const calle = [a.road, a.house_number].filter(Boolean).join(" ");
+
+    /*
+      La transversal se busca después de tener la principal, porque hace
+      falta su nombre para descartarla de las candidatas.
+    */
+    const cruce = await transversalDe(punto, road);
+
     return {
-      calle: [a.road, a.house_number].filter(Boolean).join(" "),
+      calle: cruce ? `${calle} y ${cruce}` : calle,
+      postal: a.postcode ?? "",
       lugares: [
         a.city,
         a.town,

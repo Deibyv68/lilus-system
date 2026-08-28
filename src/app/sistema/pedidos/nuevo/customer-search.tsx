@@ -21,6 +21,7 @@ export type FoundCustomer = {
     zoneName: string | null;
     lat: number | null;
     lng: number | null;
+    postal: string | null;
   } | null;
 };
 

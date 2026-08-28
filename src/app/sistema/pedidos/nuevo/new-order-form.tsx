@@ -113,6 +113,7 @@ export function NewOrderForm({
     city: "Quito",
     address: "",
     reference: "",
+    postal: "",
     lat: null as number | null,
     lng: null as number | null,
     zoneId: zones.find((z) => z.name === "Quito")?.id ?? zones[0]?.id ?? "",
@@ -199,6 +200,7 @@ export function NewOrderForm({
         city: c.lastAddress.city,
         address: c.lastAddress.address,
         reference: c.lastAddress.reference ?? "",
+        postal: c.lastAddress.postal ?? "",
         // El punto de su última entrega: casi siempre es el mismo sitio.
         lat: c.lastAddress.lat ?? null,
         lng: c.lastAddress.lng ?? null,
@@ -806,6 +808,7 @@ function StepShipping({
     city: string;
     address: string;
     reference: string;
+    postal: string;
     lat: number | null;
     lng: number | null;
     zoneId: string;
@@ -865,6 +868,7 @@ function StepShipping({
           calle: address.address,
           provincia: address.province,
           ciudad: address.city,
+          postal: address.postal,
           lat: address.lat,
           lng: address.lng,
         }}
@@ -874,6 +878,7 @@ function StepShipping({
             address: d.calle,
             province: d.provincia,
             city: d.ciudad,
+            postal: d.postal,
             lat: d.lat,
             lng: d.lng,
           })
@@ -902,6 +907,24 @@ function StepShipping({
           value={address.reference}
           onChange={(e) => setAddress({ ...address, reference: e.target.value })}
           placeholder="Casa esquinera, frente a…"
+          className="h-12 text-base"
+        />
+      </BigField>
+
+      {/*
+        El postal lo rellena el mapa, pero se puede corregir.
+
+        Sale aquí y no en el checkout porque quien imprime la etiqueta es
+        ella: si el mapa se equivoca de sector, es la única que va a
+        notarlo. A quien compra no se le pide — en Ecuador casi nadie se
+        lo sabe, y un campo más en un checkout es una venta menos.
+      */}
+      <BigField label="Código postal (lo saca el mapa)">
+        <Input
+          value={address.postal}
+          onChange={(e) => setAddress({ ...address, postal: e.target.value })}
+          placeholder="170515"
+          inputMode="numeric"
           className="h-12 text-base"
         />
       </BigField>
