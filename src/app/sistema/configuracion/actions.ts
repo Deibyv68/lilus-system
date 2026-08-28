@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/guard";
 import { saveUpload } from "@/lib/uploads";
-import { revalidarTienda } from "@/lib/revalidar-tienda";
+import { revalidarTienda, revalidarTiendaEntera } from "@/lib/revalidar-tienda";
 
 const ALLOWED_KEYS = new Set([
   "brand_name",
@@ -40,6 +40,15 @@ export async function saveSettingsAction(formData: FormData) {
     });
   }
   revalidatePath("/sistema/configuracion");
+  /*
+    Y la tienda entera, no solo esta pantalla.
+
+    Estos ajustes salen en la plantilla que envuelve a todas las páginas
+    —la cinta de promoción, el nombre de la marca, el contacto del pie— y
+    esas páginas se generan estáticas. Sin esto, se activa la cinta, se
+    va a mirar la tienda, no está, y uno concluye que se rompió.
+  */
+  revalidarTiendaEntera();
   return { ok: true as const };
 }
 

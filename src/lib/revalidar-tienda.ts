@@ -31,3 +31,30 @@ export function revalidarTienda() {
   // El mapa del sitio se arma desde el catálogo, así que envejece con él.
   revalidatePath("/sitemap.xml");
 }
+
+/**
+ * Tira el caché de la tienda ENTERA, plantilla incluida.
+ *
+ * ── Por qué hace falta otra ──
+ *
+ * `revalidarTienda()` refresca las páginas que enseñan el catálogo. Pero
+ * hay cosas que no viven en una página sino en la plantilla que envuelve
+ * a todas: la cinta de promoción, el nombre de la marca, los enlaces de
+ * contacto del pie.
+ *
+ * Casi toda la tienda se genera estática —es lo correcto: son las
+ * páginas que más se piden y esto corre en una laptop de casa— así que
+ * la plantilla queda impresa dentro de cada una en el momento de
+ * compilar. Cambiar el ajuste no las despierta, y algunas (`/carrito`,
+ * las legales) ni siquiera tienen tiempo de caducidad: se quedarían con
+ * la promoción vieja hasta el siguiente despliegue.
+ *
+ * Con `"layout"` se invalida la plantilla y todo lo que cuelga de ella.
+ * Es más de lo que hace falta para un solo ajuste, pero los ajustes se
+ * tocan tres veces al año y las páginas se regeneran al pedirlas, de una
+ * en una. Barato comparado con la alternativa: cambiar algo, ir a
+ * mirarlo, no verlo, y no saber si está roto o solo tarda.
+ */
+export function revalidarTiendaEntera() {
+  revalidatePath("/", "layout");
+}
