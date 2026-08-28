@@ -6,6 +6,7 @@ import { DIAS_PREPARACION } from "@/lib/politicas";
 import { Revelar } from "@/components/tienda/revelar";
 import { Migas } from "@/components/tienda/migas";
 import { FormularioDeContacto } from "./formulario";
+import { Canales } from "./canales";
 
 export const metadata: Metadata = {
   title: "Contacto",
@@ -17,14 +18,22 @@ export const revalidate = 1800;
 /**
  * Contacto.
  *
- * Sin formulario a propósito. Un formulario de contacto obliga a montar
- * envío de correo, a vigilar que no lo llene un robot, y sobre todo hace
- * esperar a quien escribe sin saber si llegó. Aquí ya se vende y se
- * atiende por WhatsApp: mandar a la gente ahí es más rápido para ella y
- * para quien contesta.
+ * ── El orden dice lo que conviene ──
  *
- * Todo lo de esta página sale de Configuración. Lo que no esté cargado no
- * se pinta, en vez de dejar un enlace que no lleva a ningún lado.
+ * Primero los canales directos, después el formulario. El formulario deja
+ * a quien escribe esperando sin saber si llegó; WhatsApp le da las dos
+ * palomitas, la conversación guardada en su teléfono, y la posibilidad de
+ * mandar una foto del comprobante en el mismo hilo.
+ *
+ * Antes el formulario era lo único que se veía y los enlaces a redes
+ * estaban debajo, sueltos, como dos botones sin explicar. Quien llegaba
+ * con una duda que le frenaba la compra escribía en un formulario y se
+ * iba a esperar.
+ *
+ * El formulario se queda: hay quien no quiere dar su número.
+ *
+ * Todo sale de Configuración. Lo que no esté cargado no se pinta, en vez
+ * de dejar un enlace que no lleva a ningún lado.
  */
 export default async function Contacto() {
   const [contacto, vendedor, zonas] = await Promise.all([
@@ -49,23 +58,41 @@ export default async function Contacto() {
         </Revelar>
       </section>
 
+      <Revelar retardo={60} className="mx-auto mt-14 max-w-3xl sm:mt-16">
+        <Canales
+          canales={{ ...contacto, correo: vendedor.email }}
+          mensajePorDefecto={`Hola ${vendedor.nombre}, tengo una pregunta:`}
+        />
+
+        {/*
+          El enlace a rastrear, aquí y no solo en el menú.
+
+          Buena parte de quien entra a Contacto viene a preguntar por dónde
+          va su pedido, y eso lo puede ver ahora mismo sin esperar a que
+          nadie le conteste. Ofrecerlo antes del formulario le ahorra el
+          mensaje a ella y la respuesta a quien atiende.
+        */}
+        <p className="mt-6 text-center text-sm text-tienda-tenue">
+          ¿Solo quieres saber por dónde va tu pedido?{" "}
+          <Link
+            href="/rastrear"
+            className="text-tienda-texto underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-acento"
+          >
+            Míralo aquí
+          </Link>
+          , sin escribirle a nadie.
+        </p>
+      </Revelar>
+
       {/* El formulario, centrado y en tarjeta — la forma de la referencia. */}
       <Revelar retardo={80} className="mx-auto mt-16 max-w-3xl sm:mt-20">
+        <p className="mb-5 text-center text-xs uppercase tracking-[0.12em] text-tienda-tenue">
+          O déjanos un mensaje
+        </p>
         <FormularioDeContacto whatsapp={contacto.whatsapp} />
       </Revelar>
 
       <div className="mx-auto max-w-2xl space-y-[100px] py-[120px]">
-        {contacto.instagram && (
-          <Revelar as="section">
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <Boton href={contacto.instagram} principal>
-                @{contacto.instagramUsuario}
-              </Boton>
-              {contacto.tiktok && <Boton href={contacto.tiktok}>TikTok</Boton>}
-            </div>
-          </Revelar>
-        )}
-
         <Bloque titulo="Dónde estamos">
           <p>
             {vendedor.ciudad ? `${vendedor.ciudad}, Ecuador.` : "Ecuador."} No
@@ -111,31 +138,6 @@ export default async function Contacto() {
         </Bloque>
       </div>
     </div>
-  );
-}
-
-function Boton({
-  href,
-  children,
-  principal = false,
-}: {
-  href: string;
-  children: React.ReactNode;
-  principal?: boolean;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`inline-block rounded-full px-8 py-4 text-center text-sm font-medium transition-[background-color,color,border-color,transform] duration-[400ms] ease-tienda active:scale-[0.97] active:duration-100 active:ease-tienda-tap ${
-        principal
-          ? "bg-tienda-texto text-tienda-fondo hover:bg-tienda-acento"
-          : "border border-tienda-linea text-tienda-texto hover:border-tienda-texto hover:text-white"
-      }`}
-    >
-      {children}
-    </a>
   );
 }
 

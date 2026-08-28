@@ -381,6 +381,14 @@ export async function datosDeContacto() {
 
   return {
     whatsapp: digitos ? `https://wa.me/${digitos}` : null,
+    /*
+      Los dígitos sueltos, además del enlace de WhatsApp.
+
+      Es el mismo número, pero hace falta crudo para el enlace `tel:` de
+      la página de contacto: hay clientas que no escriben por WhatsApp y
+      sí llaman.
+    */
+    whatsappNumero: digitos || null,
     instagram: instagram ? `https://instagram.com/${instagram}` : null,
     instagramUsuario: instagram || null,
     tiktok: tiktok ? `https://tiktok.com/@${tiktok}` : null,

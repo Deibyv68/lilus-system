@@ -23,10 +23,24 @@ import { Buscador } from "@/components/tienda/buscador";
  * se esconde y la hamburguesa es la única puerta.
  */
 
+/*
+  «Mi pedido» va arriba, con los demás.
+
+  Estaba solo dentro del menú de hamburguesa, y en pantalla grande la
+  hamburguesa casi nadie la abre: la navegación está a la vista, así que
+  se da por hecho que ahí está todo. Quien vuelve a esta web después de
+  comprar viene a una sola cosa —saber por dónde va su pedido— y tenía
+  que buscarla.
+
+  Se llama «Mi pedido» y no «Rastrear» porque describe lo que quien lo
+  toca está buscando, no lo que hace el sistema. Y cabe: en la barra hay
+  cuatro palabras en versalitas y una quinta larga las apretaría.
+*/
 const ENLACES = [
   { href: "/tienda", texto: "Tienda" },
   { href: "/nosotros", texto: "Nosotros" },
   { href: "/contacto", texto: "Contacto" },
+  { href: "/rastrear", texto: "Mi pedido" },
 ];
 
 export function Cabecera({
@@ -87,7 +101,15 @@ export function Cabecera({
     */
     <>
       <header className="sticky top-0 z-50 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-[1fr_auto] items-center gap-4 px-6 py-5 sm:px-10 lg:grid-cols-3">
+        {/*
+          La columna del centro se mide por su contenido, no a un tercio.
+
+          Con `grid-cols-3` los cuatro enlaces no cabían en 384 px y el
+          último se partía en dos líneas: «MI / PEDIDO». Con `1fr auto 1fr`
+          la navegación ocupa lo que necesita y sigue centrada, porque las
+          dos columnas de los lados se reparten el resto por igual.
+        */}
+        <div className="mx-auto grid max-w-[1440px] grid-cols-[1fr_auto] items-center gap-4 px-6 py-5 sm:px-10 lg:grid-cols-[1fr_auto_1fr]">
           {/* Marca */}
           {/* py-2 no es aire decorativo: sube la zona tactil de 30 a 46 px. */}
           <Link
@@ -108,7 +130,7 @@ export function Cabecera({
           </Link>
 
           {/* Navegación: solo en pantalla grande */}
-          <nav className="hidden justify-center gap-10 lg:flex">
+          <nav className="hidden justify-center gap-8 lg:flex">
             {ENLACES.map((e) => {
               const activo = pathname === e.href || pathname.startsWith(`${e.href}/`);
               return (
@@ -116,7 +138,11 @@ export function Cabecera({
                   key={e.href}
                   href={e.href}
                   aria-current={activo ? "page" : undefined}
-                  className={`text-sm font-medium uppercase tracking-[0.12em] transition-colors duration-[400ms] ease-tienda ${
+                  /*
+                    `whitespace-nowrap`: una etiqueta de dos palabras no
+                    puede partirse por la mitad en una barra de navegación.
+                  */
+                  className={`whitespace-nowrap text-sm font-medium uppercase tracking-[0.12em] transition-colors duration-[400ms] ease-tienda ${
                     activo ? "text-white" : "text-tienda-texto hover:text-white"
                   }`}
                 >
