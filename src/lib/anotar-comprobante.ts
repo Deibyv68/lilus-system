@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { prisma } from "./prisma";
 import { guardarComprobante, carpetaDeComprobantes } from "./comprobantes";
 import { leerComprobanteConOcr } from "./leer-comprobante";
+import { cuentasDeCobro } from "./tienda";
 
 /**
  * Guardar un comprobante en un pedido y ponerlo a leer.
@@ -80,8 +81,17 @@ export async function anotarArchivoGuardado(
   if (guardado.tipo !== "application/pdf") {
     after(async () => {
       try {
+        /*
+          Se le dicen nuestros bancos para que pueda descartarlos.
+
+          Un comprobante nombra dos: el de quien paga y el de quien
+          cobra. El segundo siempre es uno de los nuestros, así que
+          saberlos convierte una adivinanza en una resta.
+        */
+        const cuentas = await cuentasDeCobro();
         const lectura = await leerComprobanteConOcr(
-          path.join(carpetaDeComprobantes(), guardado.archivo)
+          path.join(carpetaDeComprobantes(), guardado.archivo),
+          cuentas.map((c) => c.banco)
         );
         if (!lectura) return;
 

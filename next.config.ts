@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
     "@prisma/client",
     ".prisma/client",
     "bwip-js",
+    /*
+      Sharp tiene binarios compilados por sistema operativo. Empaquetarlo
+      dejaría dentro los de esta máquina —Windows— y el despliegue corre
+      en Linux: el servidor arrancaría bien y solo fallaría al preparar
+      la primera imagen de un comprobante, que es el peor momento para
+      enterarse.
+    */
+    "sharp",
     "pdf-to-png-converter",
     "pdfjs-dist",
     "@napi-rs/canvas",

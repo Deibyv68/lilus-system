@@ -1,6 +1,7 @@
 import "server-only";
 import path from "node:path";
 import { createWorker } from "tesseract.js";
+import { prepararImagen } from "./imagen-comprobante";
 import {
   extraerMonto,
   extraerNumero,
@@ -71,7 +72,15 @@ const CACHE = path.join(process.cwd(), ".tesseract");
  * impedir que el comprobante exista, que es lo que de verdad importa.
  */
 export async function leerComprobanteConOcr(
-  rutaAbsoluta: string
+  rutaAbsoluta: string,
+  /**
+   * Los bancos donde cobramos.
+   *
+   * Sirven para descartarlos al decidir de qué banco vino el pago: el
+   * dinero llega a una cuenta de la casa, así que ese banco es el
+   * destino por definición. Ver `extraerBanco`.
+   */
+  misBancos: string[] = []
 ): Promise<LecturaDeComprobante | null> {
   let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
@@ -87,15 +96,43 @@ export async function leerComprobanteConOcr(
       logger: () => {},
     });
 
-    const { data } = await worker.recognize(rutaAbsoluta);
-    const texto = data.text ?? "";
+    /*
+      La imagen se prepara antes de leerla.
+
+      Sin esto, Tesseract no ve el texto claro sobre las franjas de color
+      que casi todas las apps bancarias usan para el monto — que es
+      justamente el dato que más importa. Ver `imagen-comprobante.ts`.
+    */
+    const imagen = await prepararImagen(rutaAbsoluta);
+
+    const { data } = await worker.recognize(imagen.normal);
+    let texto = data.text ?? "";
+
+    /*
+      Segunda pasada, con la imagen invertida, solo si hizo falta.
+
+      Hay encabezados tan oscuros que ni estirando el contraste sueltan
+      su texto. Invertir los saca, pero cuesta otros diez segundos en
+      esta laptop, así que solo se paga cuando la primera pasada no
+      encontró el monto — que es la señal de que se perdió una franja.
+
+      Se queda el texto más largo de los dos: no se mezclan. Pegar dos
+      lecturas del mismo comprobante duplicaría las cifras y volvería
+      ambiguo justo lo que hay que decidir.
+    */
+    if (!extraerMonto(texto)) {
+      const segunda = await worker.recognize(imagen.invertida);
+      const otro = segunda.data.text ?? "";
+      if (extraerMonto(otro) || otro.length > texto.length) texto = otro;
+    }
+
     if (!texto.trim()) return null;
 
     return {
       monto: extraerMonto(texto),
       numero: extraerNumero(texto),
       fecha: extraerFecha(texto),
-      banco: extraerBanco(texto),
+      banco: extraerBanco(texto, misBancos),
       texto: texto.slice(0, 4000),
     };
   } catch (e) {
