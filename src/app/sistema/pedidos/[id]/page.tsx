@@ -10,6 +10,7 @@ import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
 import { Pago } from "./pago";
+import { MapaMini } from "./mapa-mini";
 import { estadoDePago } from "@/lib/pago-del-pedido";
 import { buildTrackingUrl } from "@/lib/share-message";
 import {
@@ -35,7 +36,50 @@ export default async function OrderDetailPage({
       shippingAddress: true,
       carrier: true,
       zone: true,
-      items: true,
+      /*
+        Cada línea con su foto, y los packs con lo que llevan dentro.
+
+        La receta se busca por el producto: `Recipe.productId` es el
+        vínculo, y sirve para saltar de «esto se vendió» a «así se hace»
+        sin pasar por el buscador del recetario.
+      */
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              imageUrl: true,
+              recipes: {
+                where: { isActive: true },
+                select: { slug: true },
+                take: 1,
+              },
+            },
+          },
+          pack: {
+            select: {
+              imageUrl: true,
+              items: {
+                select: {
+                  quantity: true,
+                  product: {
+                    select: {
+                      id: true,
+                      name: true,
+                      imageUrl: true,
+                      recipes: {
+                        where: { isActive: true },
+                        select: { slug: true },
+                        take: 1,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       productionUnits: { include: { product: true } },
       comprobantes: { orderBy: { createdAt: "desc" } },
     },
@@ -203,23 +247,90 @@ export default async function OrderDetailPage({
             <CardContent>
               <ul className="divide-y -mx-2">
                 {order.items.map((it) => (
-                  <li
-                    key={it.id}
-                    className="px-2 py-3 flex items-start justify-between gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium leading-tight">{it.itemName}</p>
-                      <p className="text-2xs text-muted-foreground font-mono mt-0.5">
-                        {it.itemSku}
-                        {it.packId && " · Pack"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 tabular-nums">
-                        {it.quantity} × {formatCurrency(it.unitPrice)}
-                      </p>
+                  <li key={it.id} className="px-2 py-3">
+                    <div className="flex items-start gap-3">
+                      <Miniatura
+                        url={it.product?.imageUrl ?? it.pack?.imageUrl ?? null}
+                        nombre={it.itemName}
+                        receta={it.product?.recipes[0]?.slug ?? null}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium leading-tight">
+                          {/*
+                            El nombre lleva a la receta cuando la hay.
+
+                            Quien mira este desglose para preparar el pedido
+                            necesita a cada rato cómo se hace lo que va a
+                            preparar, y hasta ahora tenía que ir al recetario
+                            y buscarlo por nombre — con el pedido abierto en
+                            otra pestaña para no perder la cuenta.
+                          */}
+                          {it.product?.recipes[0] ? (
+                            <Link
+                              href={`/sistema/recetario/${it.product.recipes[0].slug}`}
+                              className="hover:underline"
+                            >
+                              {it.itemName}
+                            </Link>
+                          ) : (
+                            it.itemName
+                          )}
+                        </p>
+                        <p className="text-2xs text-muted-foreground font-mono mt-0.5">
+                          {it.itemSku}
+                          {it.packId && " · Pack"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 tabular-nums">
+                          {it.quantity} × {formatCurrency(it.unitPrice)}
+                        </p>
+                      </div>
+                      <span className="font-semibold tabular-nums shrink-0">
+                        {formatCurrency(it.lineTotal)}
+                      </span>
                     </div>
-                    <span className="font-semibold tabular-nums shrink-0">
-                      {formatCurrency(it.lineTotal)}
-                    </span>
+
+                    {/*
+                      Lo que lleva el pack, desplegado.
+
+                      «Pack Ritual de Luminosidad» no dice qué hay que
+                      preparar. Quien arma el pedido tiene que saberlo, y
+                      abrir el catálogo a mirarlo es un viaje de ida y
+                      vuelta por cada pack de cada pedido.
+                    */}
+                    {it.pack && it.pack.items.length > 0 && (
+                      <ul className="mt-3 ml-2 space-y-2 border-l pl-4">
+                        {it.pack.items.map((pieza) => (
+                          <li
+                            key={pieza.product.id}
+                            className="flex items-center gap-2.5"
+                          >
+                            <Miniatura
+                              url={pieza.product.imageUrl}
+                              nombre={pieza.product.name}
+                              receta={pieza.product.recipes[0]?.slug ?? null}
+                              pequena
+                            />
+                            <span className="min-w-0 flex-1 text-xs">
+                              {pieza.product.recipes[0] ? (
+                                <Link
+                                  href={`/sistema/recetario/${pieza.product.recipes[0].slug}`}
+                                  className="hover:underline"
+                                >
+                                  {pieza.product.name}
+                                </Link>
+                              ) : (
+                                pieza.product.name
+                              )}
+                            </span>
+                            {pieza.quantity > 1 && (
+                              <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
+                                ×{pieza.quantity}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -416,15 +527,11 @@ export default async function OrderDetailPage({
                 */}
                 {order.shippingAddress?.lat != null &&
                   order.shippingAddress?.lng != null && (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${order.shippingAddress.lat},${order.shippingAddress.lng}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-                    >
-                      <MapPin className="size-3.5" />
-                      Abrir el punto en el mapa
-                    </a>
+                    <MapaMini
+                      lat={order.shippingAddress.lat}
+                      lng={order.shippingAddress.lng}
+                      etiqueta={order.shippingAddress.address}
+                    />
                   )}
                 <Badge variant="outline" className="mt-2">
                   {order.zone?.name ?? "Sin zona"}
@@ -501,5 +608,57 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
       <span>{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>
+  );
+}
+
+/**
+ * La foto de un producto en el desglose, y el atajo a su receta.
+ *
+ * Es la miniatura interna de trabajo —la misma que se ve en el catálogo
+ * del panel— y no la foto de tienda: aquí no se vende nada, se reconoce.
+ * Para eso una foto mal iluminada sirve igual que una buena.
+ *
+ * Cuando no hay foto queda el hueco con la inicial. Un cuadro vacío
+ * desalinea la fila y hace que la lista se lea peor que sin fotos.
+ */
+function Miniatura({
+  url,
+  nombre,
+  receta,
+  pequena = false,
+}: {
+  url: string | null;
+  nombre: string;
+  receta: string | null;
+  pequena?: boolean;
+}) {
+  const lado = pequena ? "size-8" : "size-12";
+
+  const cuadro = url ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      className={`${lado} shrink-0 rounded-md border object-cover`}
+    />
+  ) : (
+    <span
+      className={`${lado} flex shrink-0 items-center justify-center rounded-md border bg-muted text-xs font-medium text-muted-foreground`}
+      aria-hidden="true"
+    >
+      {nombre.trim().charAt(0).toUpperCase()}
+    </span>
+  );
+
+  if (!receta) return cuadro;
+
+  return (
+    <Link
+      href={`/sistema/recetario/${receta}`}
+      className="shrink-0 transition-opacity hover:opacity-75"
+      aria-label={`Ver la receta de ${nombre}`}
+    >
+      {cuadro}
+    </Link>
   );
 }

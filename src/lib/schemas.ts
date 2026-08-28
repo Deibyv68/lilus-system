@@ -63,6 +63,17 @@ export const shippingAddressSchema = z.object({
   address: z.string().min(1, "Dirección requerida").max(300),
   reference: z.string().max(300).optional().or(z.literal("")),
   zoneId: z.string().min(1, "Zona de envío requerida"),
+  /*
+    El punto del mapa. Opcional: un pedido dictado por teléfono puede no
+    tenerlo, y exigirlo bloquearía la venta por un dato que mejora el
+    reparto pero no lo condiciona.
+
+    Los límites son los de la Tierra y no los de Ecuador: aquí solo se
+    comprueba que sea una coordenada. Que caiga donde tiene que caer lo
+    decide `punto-de-maps.ts`, que es quien lee lo que llega de fuera.
+  */
+  lat: z.coerce.number().min(-90).max(90).nullish(),
+  lng: z.coerce.number().min(-180).max(180).nullish(),
 });
 
 export const orderItemSchema = z.object({

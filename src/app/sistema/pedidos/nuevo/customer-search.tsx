@@ -19,6 +19,8 @@ export type FoundCustomer = {
     reference: string | null;
     zoneId: string | null;
     zoneName: string | null;
+    lat: number | null;
+    lng: number | null;
   } | null;
 };
 

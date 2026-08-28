@@ -27,6 +27,15 @@ type CreateOrderPayload = {
     address: string;
     reference?: string;
     zoneId: string;
+    /*
+      El punto del mapa, si se pudo conseguir.
+
+      Opcional a propósito: un pedido dictado por teléfono puede no
+      tenerlo, y exigirlo bloquearía la venta por un dato que mejora el
+      reparto pero no lo condiciona.
+    */
+    lat?: number | null;
+    lng?: number | null;
   };
   carrierId: string;
   shippingCost: number;
@@ -141,6 +150,8 @@ export async function createOrderAction(payload: CreateOrderPayload) {
       city: data.address.city,
       address: data.address.address,
       reference: data.address.reference || null,
+      lat: data.address.lat ?? null,
+      lng: data.address.lng ?? null,
       isDefault: true,
     },
   });

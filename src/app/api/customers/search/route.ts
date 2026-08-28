@@ -51,6 +51,15 @@ export async function GET(req: NextRequest) {
             reference: c.addresses[0].reference,
             zoneId: c.addresses[0].zoneId,
             zoneName: c.addresses[0].zone?.name,
+            /*
+              El punto de su última entrega.
+
+              Casi siempre es la misma casa, así que al elegir una clienta
+              conocida el pedido nuevo nace ya con su ubicación — sin
+              volver a pedirle el enlace ni marcarlo otra vez.
+            */
+            lat: c.addresses[0].lat,
+            lng: c.addresses[0].lng,
           }
         : null,
     }))

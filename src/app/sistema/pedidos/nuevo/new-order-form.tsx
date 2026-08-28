@@ -1,5 +1,6 @@
 "use client";
 
+import { Ubicacion } from "./ubicacion";
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -112,6 +113,8 @@ export function NewOrderForm({
     city: "Quito",
     address: "",
     reference: "",
+    lat: null as number | null,
+    lng: null as number | null,
     zoneId: zones.find((z) => z.name === "Quito")?.id ?? zones[0]?.id ?? "",
   });
   const [carrierId, setCarrierId] = useState(carriers[0]?.id ?? "");
@@ -196,6 +199,9 @@ export function NewOrderForm({
         city: c.lastAddress.city,
         address: c.lastAddress.address,
         reference: c.lastAddress.reference ?? "",
+        // El punto de su última entrega: casi siempre es el mismo sitio.
+        lat: c.lastAddress.lat ?? null,
+        lng: c.lastAddress.lng ?? null,
         zoneId: c.lastAddress.zoneId ?? zones[0]?.id ?? "",
       });
     }
@@ -800,6 +806,8 @@ function StepShipping({
     city: string;
     address: string;
     reference: string;
+    lat: number | null;
+    lng: number | null;
     zoneId: string;
   };
   setAddress: (a: typeof address) => void;
@@ -833,6 +841,24 @@ function StepShipping({
           className="text-base"
         />
       </BigField>
+
+      {/*
+        El punto va justo debajo de las calles, no al final del paso.
+
+        Es la misma pregunta —«¿dónde queda?»— contestada de dos maneras, y
+        separarlas haría que la segunda pareciera un trámite aparte que se
+        puede saltar. Aquí se ve que una completa a la otra.
+      */}
+      <Ubicacion
+        punto={
+          address.lat != null && address.lng != null
+            ? { lat: address.lat, lng: address.lng }
+            : null
+        }
+        onCambiar={(p) =>
+          setAddress({ ...address, lat: p?.lat ?? null, lng: p?.lng ?? null })
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <BigField label="Ciudad" required>

@@ -242,9 +242,19 @@ export type UbicacionElegida = {
 export function MapaDireccion({
   onElegir,
   valorInicial,
+  tema = "tienda",
 }: {
   onElegir: (u: UbicacionElegida) => void;
   valorInicial?: { lat: number; lng: number } | null;
+  /**
+   * De qué lado se está usando.
+   *
+   * El mecanismo del mapa es el mismo en la tienda y en el panel —y tener
+   * dos copias sería tenerlo mal en una de las dos en cuanto se toque—
+   * pero los colores no: la tienda es oscura y el panel claro. Solo
+   * cambian las clases del marco, nunca lo que hace.
+   */
+  tema?: "tienda" | "panel";
 }) {
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<MapaLeaflet | null>(null);
@@ -505,17 +515,26 @@ export function MapaDireccion({
     );
   }
 
+  const esPanel = tema === "panel";
+  const claseTenue = esPanel ? "text-muted-foreground" : "text-tienda-tenue";
+  const claseBoton = esPanel
+    ? "rounded-md border px-3 py-1.5 text-xs transition-colors hover:bg-accent disabled:opacity-50"
+    : "rounded-full border border-tienda-linea px-4 py-2 text-xs text-tienda-texto transition-colors duration-[400ms] ease-tienda hover:border-tienda-texto disabled:opacity-50";
+  const claseMarco = esPanel
+    ? "mt-3 h-[280px] w-full overflow-hidden rounded-lg border bg-muted"
+    : "mt-3 h-[280px] w-full overflow-hidden rounded-tienda-sm border border-tienda-linea bg-tienda-velo sm:h-[360px]";
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-tienda-tenue">
+        <p className={`text-xs ${claseTenue}`}>
           Toca el mapa donde entregamos. Puedes mover el punto.
         </p>
         <button
           type="button"
           onClick={usarMiUbicacion}
           disabled={!listo || buscando}
-          className="rounded-full border border-tienda-linea px-4 py-2 text-xs text-tienda-texto transition-colors duration-[400ms] ease-tienda hover:border-tienda-texto disabled:opacity-50"
+          className={claseBoton}
         >
           {buscando ? "Buscando…" : "Usar mi ubicación"}
         </button>
@@ -523,14 +542,14 @@ export function MapaDireccion({
 
       <div
         ref={contenedor}
-        className="mt-3 h-[280px] w-full overflow-hidden rounded-tienda-sm border border-tienda-linea bg-tienda-velo sm:h-[360px]"
+        className={claseMarco}
         // Leaflet pinta sus propios controles; sin esto quedan por debajo
         // de la cabecera fija de la tienda.
         style={{ zIndex: 0 }}
       />
 
       {aviso && (
-        <p className="mt-2 text-xs leading-relaxed text-tienda-tenue">{aviso}</p>
+        <p className={`mt-2 text-xs leading-relaxed ${claseTenue}`}>{aviso}</p>
       )}
     </div>
   );
