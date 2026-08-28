@@ -108,6 +108,15 @@ const esquema = z.object({
     }
   ),
   nota: z.string().trim().max(500).optional().or(z.literal("")),
+  /*
+    El enlace del que vino, si vino de uno.
+
+    Sirve para dos cosas: marcar ese enlace como usado —para que no cree
+    un segundo pedido— y dejar constancia de que la venta se cerró por
+    ahí. No decide nada del precio ni del envío, así que un token
+    inventado no da ninguna ventaja: como mucho no encuentra nada.
+  */
+  enlace: z.string().trim().max(64).optional().or(z.literal("")),
   lineas: z
     .array(
       z.object({
@@ -307,6 +316,23 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
       lineTotal: i.lineTotal,
     })),
   };
+
+  /*
+    El enlace queda marcado como usado, si vino de uno.
+
+    Va después de crear el pedido y su fallo no se propaga: si esto
+    reventara con la venta ya guardada, lo peor sería un enlace que se
+    puede volver a usar — molesto. Al revés, perder una venta por no
+    poder marcar un enlace, sería absurdo.
+  */
+  if (d.enlace) {
+    await prisma.borradorDePedido
+      .updateMany({
+        where: { token: d.enlace, usadoEn: null },
+        data: { usadoEn: new Date(), orderId: pedido.id },
+      })
+      .catch((e) => console.error("[checkout] No se pudo marcar el enlace", e));
+  }
 
   try {
     /*

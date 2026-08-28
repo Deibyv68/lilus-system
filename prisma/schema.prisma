@@ -320,6 +320,8 @@ model Order {
   items           OrderItem[]
   comprobantes    ComprobanteDePago[]
   productionUnits ProductionUnit[]
+  /// El enlace del que salió, si vino de uno.
+  borrador        BorradorDePedido?
 }
 
 enum OrderStatus {
@@ -938,4 +940,61 @@ model CuentaDeCobro {
   updatedAt DateTime @updatedAt
 
   @@index([activa, orden])
+}
+
+/// Un pedido a medio empezar, para que lo termine quien compra.
+///
+/// ── Qué resuelve ──
+///
+/// La venta se acuerda por WhatsApp y después alguien tiene que escribir
+/// la dirección que la otra persona dicta. Ahí es donde se pierden los
+/// datos: calles mal transcritas, sin punto en el mapa, sin cédula.
+///
+/// Con esto, quien vende elige los productos y manda un enlace; quien
+/// compra llena sus propios datos con el mismo formulario de la tienda —
+/// el que valida la cédula, deduce el cantón y saca el punto del mapa.
+/// La dirección la escribe quien vive ahí, que es el único que la sabe.
+///
+/// ── Por qué NO es un pedido con estado «borrador» ──
+///
+/// Porque un pedido lleva número, y los números no pueden tener huecos.
+/// Si un borrador se llevara el LILUS-000015 y nadie lo completara, ese
+/// número faltaría para siempre en la contabilidad. Aquí no hay número
+/// hasta que hay venta.
+model BorradorDePedido {
+  id    String @id @default(cuid())
+  /// La llave del enlace. 24 bytes al azar, como el token de un pedido.
+  token String @unique
+
+  /// Hasta cuándo sirve. Un enlace viejo abierto por error no debería
+  /// crear hoy una venta que se habló la semana pasada.
+  expiraEn  DateTime
+  /// Cuándo se usó, y qué pedido salió de él. Nulo mientras espera.
+  usadoEn   DateTime?
+  orderId   String?   @unique
+  /// Quién lo creó, por nombre. Para saber a quién preguntarle.
+  creadoPor String?
+  createdAt DateTime  @default(now())
+
+  items BorradorItem[]
+  order Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([expiraEn])
+}
+
+/// Lo que va en un borrador. Puede estar vacío: entonces el enlace sirve
+/// para que quien compra elija también los productos.
+model BorradorItem {
+  id         String @id @default(cuid())
+  borradorId String
+  /// "producto" o "pack".
+  tipo       String
+  /// El id del Product o del Pack. Sin llave foránea a propósito: son
+  /// dos tablas distintas, y el borrador se valida al completarse.
+  refId      String
+  cantidad   Int    @default(1)
+
+  borrador BorradorDePedido @relation(fields: [borradorId], references: [id], onDelete: Cascade)
+
+  @@index([borradorId])
 }

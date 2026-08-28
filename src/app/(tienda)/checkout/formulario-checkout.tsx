@@ -2,14 +2,13 @@
 
 import { aplicarPunto } from "@/lib/ubicacion-a-direccion";
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { useCarrito, subtotal } from "@/lib/carrito";
 import { formatCurrency } from "@/lib/format";
 import {
   PROVINCIAS,
-  cantonEntre,
   cantonesDe,
   cedulaValida,
   telefonoValido,
@@ -122,6 +121,12 @@ function leerGuardado(): Datos {
 }
 
 export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
+  /*
+    `?p=` lo pone la página del enlace que manda quien vende. Se lee aquí
+    en vez de pasarlo por props porque el checkout se puede abrir de las
+    dos formas, y la que no trae token no debería tener que decir nada.
+  */
+  const enlaceDelPedido = useSearchParams().get("p");
   const router = useRouter();
   const [enviando, startTransition] = useTransition();
   const { lineas, listo, vaciar } = useCarrito();
@@ -276,6 +281,14 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
           lng: d.lng,
         },
         nota: d.nota,
+        /*
+          El token del enlace, si se llegó por uno.
+
+          Va en la dirección de la página y no guardado en el navegador: el
+          carrito sobrevive a cerrar el navegador, y un token viejo
+          guardado ahí ataría al enlace una compra de la semana que viene.
+        */
+        enlace: enlaceDelPedido ?? "",
         // Del carrito solo van el qué y el cuánto. El precio lo pone el
         // servidor.
         lineas: lineas.map((l) => ({

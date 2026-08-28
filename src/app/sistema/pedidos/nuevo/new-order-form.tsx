@@ -1,5 +1,6 @@
 "use client";
 
+import { BotonEnlace } from "./boton-enlace";
 import { Ubicacion } from "./ubicacion";
 import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
@@ -311,6 +312,14 @@ export function NewOrderForm({
 
       {/* Contenido del paso */}
       <div className="mt-6">
+        {/*
+          El enlace, en los dos momentos de la conversación.
+
+          En el paso de productos, con lo que se haya elegido hasta ahí —o
+          vacío— para que la clienta termine de elegir. En el de envío,
+          con todo cerrado, para que solo llene sus datos. El mecanismo es
+          el mismo; cambia el momento en que se manda.
+        */}
         {step === 1 && (
           <StepProducts
             products={filteredProducts}
@@ -325,6 +334,22 @@ export function NewOrderForm({
             onRemove={removeLine}
             subtotal={subtotal}
           />
+        )}
+
+        {step === 1 && (
+          <div className="mt-6 border-t pt-6">
+            <BotonEnlace
+              momento="productos"
+              items={cart.map((l) => ({
+                tipo: l.kind === "pack" ? ("pack" as const) : ("producto" as const),
+                refId: l.refId,
+                cantidad: l.quantity,
+              }))}
+            />
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Le llega lo que hayas elegido y puede cambiarlo.
+            </p>
+          </div>
         )}
 
         {step === 2 && (
@@ -353,6 +378,23 @@ export function NewOrderForm({
             source={source}
             setSource={setSource}
           />
+        )}
+
+        {step === 3 && cart.length > 0 && (
+          <div className="mt-6 border-t pt-6">
+            <BotonEnlace
+              momento="datos"
+              items={cart.map((l) => ({
+                tipo: l.kind === "pack" ? ("pack" as const) : ("producto" as const),
+                refId: l.refId,
+                cantidad: l.quantity,
+              }))}
+            />
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Ella escribe su dirección y marca su punto en el mapa. El pedido
+              llega solo.
+            </p>
+          </div>
         )}
 
         {step === 4 && (
