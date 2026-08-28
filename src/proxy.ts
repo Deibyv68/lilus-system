@@ -89,10 +89,18 @@ export function proxy(req: NextRequest) {
     return sinIndexar(NextResponse.next());
   }
 
-  // A una petición de API se le responde 401. Un redirect al login le
-  // devolvería el HTML de una pantalla a un `fetch` que espera JSON, y el
-  // error que vería el programador sería incomprensible.
-  if (pathname.startsWith("/api/")) {
+  /*
+    A una petición de API se le responde 401. Un redirect al login le
+    devolvería el HTML de una pantalla a un `fetch` que espera JSON, y el
+    error que vería el programador sería incomprensible.
+
+    Con una excepción: `/api/compartir` no la llama código, la abre una
+    persona. Es donde aterriza el teléfono al compartir una imagen con la
+    app desde WhatsApp, y ahí un `{"error":"unauthorized"}` en pantalla
+    no dice nada ni deja hacer nada. Esa sigue de largo y su propio
+    manejador la manda al login.
+  */
+  if (pathname.startsWith("/api/") && pathname !== "/api/compartir") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

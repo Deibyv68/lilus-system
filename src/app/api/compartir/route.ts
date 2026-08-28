@@ -33,6 +33,34 @@ export const dynamic = "force-dynamic";
  * Ocupan lo que ocupa una captura de pantalla y no aparecen en ningún
  * sitio: no llevan fila en la base, así que no hay pedido que los enseñe.
  */
+/*
+  El destino va RELATIVO, y eso es a propósito.
+
+  `NextResponse.redirect()` exige una dirección absoluta y la arma con
+  `req.url`, que del lado del servidor es la interna —
+  `https://localhost:3000/…`— aunque el teléfono haya pedido al dominio
+  del túnel. El teléfono recibía eso, y para el teléfono «localhost» es
+  el teléfono: conexión rechazada.
+
+  Detrás hay un túnel —hoy Tailscale, mañana un dominio propio— así que
+  el servidor no puede saber por qué nombre le llegó la petición sin
+  fiarse de cabeceras que él no controla. Una `Location` relativa la
+  resuelve el cliente contra la dirección que él mismo pidió, que es la
+  correcta por definición.
+
+  Es el mismo fallo que ya nos pasó en `api/movil/abrir`, y la misma
+  cura. Que reaparezca dice que el atajo de `NextResponse.redirect()` es
+  una trampa en este proyecto: aquí nada se sirve por su dirección real.
+*/
+function irA(ruta: string) {
+  /*
+    303 y no 302: obliga al navegador a pedir la página siguiente con
+    GET. Con un 302 repetiría el POST, y al recargar se guardaría el
+    mismo comprobante otra vez.
+  */
+  return new NextResponse(null, { status: 303, headers: { location: ruta } });
+}
+
 export async function POST(req: NextRequest) {
   /*
     Sin sesión no se guarda nada.
@@ -43,43 +71,30 @@ export async function POST(req: NextRequest) {
     teléfono.
   */
   const usuario = await currentUser();
-  if (!usuario) {
-    return NextResponse.redirect(new URL("/login", req.url), 303);
-  }
+  if (!usuario) return irA("/login");
 
   let archivo: unknown;
   try {
     const form = await req.formData();
     archivo = form.get("comprobante");
   } catch {
-    return NextResponse.redirect(
-      new URL("/sistema/compartido?error=lectura", req.url),
-      303
-    );
+    return irA("/sistema/compartido?error=lectura");
   }
 
   if (!(archivo instanceof File)) {
-    return NextResponse.redirect(
-      new URL("/sistema/compartido?error=sinarchivo", req.url),
-      303
-    );
+    return irA("/sistema/compartido?error=sinarchivo");
   }
 
   try {
     const guardado = await guardarComprobante(archivo);
-    const destino = new URL("/sistema/compartido", req.url);
-    destino.searchParams.set("archivo", guardado.archivo);
-    destino.searchParams.set("tipo", guardado.tipo);
-    destino.searchParams.set("bytes", String(guardado.bytes));
-    /*
-      303 y no 302: obliga al navegador a pedir la página siguiente con
-      GET. Con un 302 repetiría el POST, y al recargar se guardaría el
-      mismo comprobante otra vez.
-    */
-    return NextResponse.redirect(destino, 303);
+    const parametros = new URLSearchParams({
+      archivo: guardado.archivo,
+      tipo: guardado.tipo,
+      bytes: String(guardado.bytes),
+    });
+    return irA(`/sistema/compartido?${parametros}`);
   } catch (e) {
-    const destino = new URL("/sistema/compartido", req.url);
-    destino.searchParams.set("error", (e as Error).message);
-    return NextResponse.redirect(destino, 303);
+    const parametros = new URLSearchParams({ error: (e as Error).message });
+    return irA(`/sistema/compartido?${parametros}`);
   }
 }
