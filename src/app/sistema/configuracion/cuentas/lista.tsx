@@ -104,6 +104,19 @@ export function ListaDeCuentas({ cuentas }: { cuentas: Cuenta[] }) {
                     {c.correo && (
                       <p className="text-xs text-muted-foreground">{c.correo}</p>
                     )}
+
+                    {/*
+                      Sin el nombre del titular, quien transfiere no puede
+                      comprobar que la cuenta es de quien dice. Muchos bancos
+                      además muestran el nombre al confirmar, y si no cuadra
+                      con lo que le dijimos, la persona cancela — con razón.
+                    */}
+                    {!c.titular && (
+                      <p className="mt-2 text-xs text-amber-600 dark:text-amber-500">
+                        Falta a nombre de quién está. Sin eso, quien transfiere
+                        no puede comprobar que la cuenta es tuya.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1">
