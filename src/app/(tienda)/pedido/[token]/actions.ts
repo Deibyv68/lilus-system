@@ -120,6 +120,7 @@ export async function subirComprobanteAction(
             montoLeido: lectura.monto,
             numeroLeido: lectura.numero,
             fechaLeida: lectura.fecha,
+            bancoLeido: lectura.banco,
             textoLeido: lectura.texto,
             leidoEn: new Date(),
           },

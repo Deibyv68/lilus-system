@@ -9,10 +9,10 @@ import {
   Package,
   Boxes,
   Globe,
-  Paperclip,
 } from "lucide-react";
 import { colorDeEstado, etiquetaDeEstado } from "@/lib/estados-pedido";
 import { AvisoDePago, HaceCuanto } from "./pedidos/espera";
+import { EtiquetaDePago } from "@/components/etiqueta-de-pago";
 import { AgentStatusBadge } from "@/components/agent-status-badge";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,8 @@ export default async function DashboardPage() {
         orderBy: { createdAt: "desc" },
         include: {
           customer: true,
-          _count: { select: { items: true, comprobantes: true } },
+          _count: { select: { items: true } },
+          comprobantes: { select: { aceptado: true, montoConfirmado: true } },
         },
       }),
       prisma.order.aggregate({
@@ -154,19 +155,11 @@ export default async function DashboardPage() {
                       </Badge>
                     )}
                     {/* La misma etiqueta que en la lista, por lo mismo. */}
-                    {o.status === "PENDING" &&
-                      (o._count.comprobantes > 0 ? (
-                        <Badge className="text-3xs bg-sky-600 hover:bg-sky-600">
-                          <Paperclip className="size-2.5" /> Comprobante
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="text-3xs text-muted-foreground"
-                        >
-                          Sin comprobante
-                        </Badge>
-                      ))}
+                    <EtiquetaDePago
+                      estado={o.status}
+                      total={o.total}
+                      comprobantes={o.comprobantes}
+                    />
                     <span className="text-3xs text-muted-foreground ml-auto">
                       {o._count.items} {o._count.items === 1 ? "ítem" : "ítems"}
                     </span>

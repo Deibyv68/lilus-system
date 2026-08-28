@@ -119,3 +119,89 @@ export function extraerFecha(texto: string): string | null {
     /\b(\d{1,2}\s+de\s+[a-záéíóú]+\s+de\s+\d{4})\b/i.exec(texto);
   return m ? m[1] : null;
 }
+
+/**
+ * Los bancos y cooperativas que uno se encuentra en un comprobante
+ * ecuatoriano, con lo que hay que buscar para reconocerlos.
+ *
+ * Se busca la palabra distintiva, nunca «banco»: «Produbanco» la lleva
+ * dentro, y en la cabecera de cualquier comprobante aparece suelta.
+ *
+ * La lista no pretende ser completa —hay decenas de cooperativas— y no
+ * pasa nada: lo que no está sale sin banco, y el banco se escribe a mano
+ * al revisar. Es un atajo, no una fuente de verdad.
+ */
+const BANCOS: { nombre: string; busca: RegExp }[] = [
+  { nombre: "Banco Pichincha", busca: /pichincha/ },
+  { nombre: "Banco Guayaquil", busca: /guayaquil/ },
+  { nombre: "Produbanco", busca: /produbanco/ },
+  { nombre: "Banco del Pacífico", busca: /pacifico/ },
+  { nombre: "Banco Internacional", busca: /internacional/ },
+  { nombre: "Banco Bolivariano", busca: /bolivariano/ },
+  { nombre: "Banco del Austro", busca: /austro/ },
+  { nombre: "Banco de Machala", busca: /machala/ },
+  { nombre: "Banco de Loja", busca: /\bde\s+loja\b/ },
+  { nombre: "BanEcuador", busca: /banecuador/ },
+  { nombre: "Banco Solidario", busca: /solidario/ },
+  { nombre: "Banco ProCredit", busca: /procredit/ },
+  { nombre: "Banco Amazonas", busca: /amazonas/ },
+  { nombre: "Banco General Rumiñahui", busca: /ruminahui/ },
+  { nombre: "Diners Club", busca: /diners/ },
+  { nombre: "Banco Capital", busca: /banco\s+capital/ },
+  { nombre: "Banco Delbank", busca: /delbank/ },
+  { nombre: "Banco Finca", busca: /banco\s+finca/ },
+  { nombre: "Cooperativa JEP", busca: /\bjep\b|juventud\s+ecuatoriana/ },
+  { nombre: "Cooperativa Policía Nacional", busca: /policia\s+nacional/ },
+  { nombre: "Cooperativa 29 de Octubre", busca: /29\s+de\s+octubre/ },
+  { nombre: "Cooperativa Alianza del Valle", busca: /alianza\s+del\s+valle/ },
+  { nombre: "Cooperativa Andalucía", busca: /andalucia/ },
+  { nombre: "Cooprogreso", busca: /cooprogreso/ },
+  { nombre: "Cooperativa Riobamba", busca: /coop\w*\s+riobamba|riobamba\s+ltda/ },
+  { nombre: "Cooperativa San Francisco", busca: /san\s+francisco/ },
+  { nombre: "Cooperativa Oscus", busca: /oscus/ },
+  { nombre: "CACPECO", busca: /cacpeco/ },
+  { nombre: "Cooperativa Mushuc Runa", busca: /mushuc/ },
+  { nombre: "Cooperativa Daquilema", busca: /daquilema/ },
+  { nombre: "Cooperativa Jardín Azuayo", busca: /jardin\s+azuayo/ },
+  { nombre: "Cooperativa Vicentina", busca: /vicentina/ },
+  /*
+    DeUna y Peigo son billeteras, no bancos, pero es lo que dice el
+    comprobante y es lo que quien pagó va a reconocer. Se escriben sin
+    espacio a propósito: «de una» suelto aparece en cualquier frase.
+  */
+  { nombre: "DeUna", busca: /deuna|de\s?una!/ },
+  { nombre: "Peigo", busca: /peigo/ },
+];
+
+/**
+ * El banco desde el que se transfirió.
+ *
+ * Se devuelve el que aparezca ANTES en el texto. Un comprobante nombra
+ * dos bancos —el de quien envía y el de quien recibe— y el de origen va
+ * casi siempre en la cabecera, con el logo; el de destino aparece más
+ * abajo, en los datos del beneficiario.
+ *
+ * Es una regla que acierta la mayoría de las veces y falla algunas, así
+ * que sale como propuesta y no como dato: quien revisa lo cambia con
+ * mirar la imagen, que la tiene al lado.
+ */
+export function extraerBanco(texto: string): string | null {
+  // Sin tildes y en minúscula: el OCR se come los acentos a menudo.
+  const plano = texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+
+  let mejor: { nombre: string; donde: number } | null = null;
+
+  for (const banco of BANCOS) {
+    const m = banco.busca.exec(plano);
+    if (!m) continue;
+    if (!mejor || m.index < mejor.donde) {
+      mejor = { nombre: banco.nombre, donde: m.index };
+    }
+  }
+
+  return mejor?.nombre ?? null;
+}

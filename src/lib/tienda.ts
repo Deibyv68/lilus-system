@@ -328,7 +328,23 @@ export async function buscarPedidoPorToken(token: string) {
       },
       comprobantes: {
         orderBy: { createdAt: "desc" },
-        select: { id: true, tipo: true, createdAt: true },
+        /*
+          Se piden `aceptado` y `montoConfirmado`, y NUNCA los `*Leido`.
+
+          Lo que leyó el OCR no puede llegar a la pantalla del cliente ni
+          por descuido: decirle «recibimos $25,50» porque una máquina creyó
+          leer eso en una foto, y descubrir mañana que el dinero no entró,
+          es una conversación que no arregla ninguna disculpa. Dejar los
+          campos fuera del `select` hace que ni siquiera exista la
+          tentación de mostrarlos.
+        */
+        select: {
+          id: true,
+          tipo: true,
+          createdAt: true,
+          aceptado: true,
+          montoConfirmado: true,
+        },
       },
     },
   });

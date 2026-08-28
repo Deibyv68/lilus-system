@@ -855,10 +855,33 @@ model ComprobanteDePago {
   montoLeido   Float?
   numeroLeido  String?
   fechaLeida   String?
+  bancoLeido   String?
   /// El texto crudo, para poder revisar por qué se leyó mal.
   textoLeido   String?
   /// Cuándo terminó de leerse. Nulo mientras está en cola o si falló.
   leidoEn      DateTime?
+
+  /// ── Lo que dijo una persona ──
+  ///
+  /// Los campos `*Leido` son de la máquina y no los toca nadie: son la
+  /// lectura, y sirve poder volver a ver qué creyó leer. Estos otros son
+  /// de quien revisó, y son los únicos que el sistema trata como ciertos.
+  ///
+  /// Tenerlos separados es el punto entero: una cifra escrita por el OCR
+  /// y una cifra comprobada contra el estado de cuenta del banco no valen
+  /// lo mismo, y si comparten campo se vuelven indistinguibles al día
+  /// siguiente.
+  ///
+  /// `aceptado` nulo = todavía sin revisar. `false` = revisado y no
+  /// cuenta (era de otro pedido, o no cuadraba con nada).
+  aceptado         Boolean?
+  montoConfirmado  Float?
+  numeroConfirmado String?
+  fechaConfirmada  String?
+  bancoConfirmado  String?
+  revisadoEn       DateTime?
+  /// Quién revisó, por nombre. Para saber a quién preguntarle después.
+  revisadoPor      String?
 
   createdAt DateTime @default(now())
 
@@ -867,6 +890,7 @@ model ComprobanteDePago {
   @@index([orderId])
   /// Para encontrar el mismo comprobante usado en otro pedido.
   @@index([numeroLeido])
+  @@index([numeroConfirmado])
 }
 
 /// Una cuenta donde se puede recibir el pago.

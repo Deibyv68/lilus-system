@@ -2,10 +2,33 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Paperclip, Check } from "lucide-react";
+import { Paperclip, Check, Clock, X } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 import { subirComprobanteAction } from "./actions";
 
-type Comprobante = { id: string; cuando: string; esPdf: boolean };
+type Comprobante = {
+  id: string;
+  cuando: string;
+  esPdf: boolean;
+  /** Nulo = todavía nadie lo ha mirado. */
+  aceptado: boolean | null;
+  /** Cuánto se le contó. Solo cuando alguien lo confirmó. */
+  monto: number | null;
+};
+
+/**
+ * Lo que se le puede decir a quien compró sobre su pago.
+ *
+ * Solo entran cifras que una persona confirmó. Lo que leyó el OCR no
+ * llega hasta aquí ni por asomo: decirle a alguien «recibimos $25,50»
+ * porque una máquina creyó leer eso en una foto, y descubrir al día
+ * siguiente que el dinero nunca entró, es una conversación que no se
+ * arregla con una disculpa.
+ */
+export type ResumenDePago = {
+  confirmado: number;
+  falta: number;
+};
 
 /**
  * Subir el comprobante desde la propia página del pedido.
@@ -26,9 +49,11 @@ type Comprobante = { id: string; cuando: string; esPdf: boolean };
 export function SubirComprobante({
   token,
   yaSubidos,
+  pago,
 }: {
   token: string;
   yaSubidos: Comprobante[];
+  pago: ResumenDePago;
 }) {
   const router = useRouter();
   const entrada = useRef<HTMLInputElement>(null);
@@ -78,10 +103,30 @@ export function SubirComprobante({
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 rounded-tienda-sm border border-tienda-linea px-4 py-3 text-sm transition-colors duration-[400ms] ease-tienda hover:border-tienda-texto"
               >
-                <Check className="size-4 shrink-0 text-tienda-acento" />
+                {/*
+                  El icono dice en qué punto está sin tener que leer.
+
+                  Un comprobante subido y un comprobante comprobado no son
+                  lo mismo, y hasta ahora los dos salían con el mismo
+                  visto verde — que se lee como «ya está», cuando todavía
+                  nadie lo ha mirado.
+                */}
+                {c.aceptado === true ? (
+                  <Check className="size-4 shrink-0 text-tienda-acento" />
+                ) : c.aceptado === false ? (
+                  <X className="size-4 shrink-0 text-tienda-tenue" />
+                ) : (
+                  <Clock className="size-4 shrink-0 text-tienda-tenue" />
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block text-tienda-texto">
-                    {c.esPdf ? "Comprobante en PDF" : "Comprobante enviado"}
+                    {c.aceptado === true
+                      ? `Confirmado${c.monto != null ? ` · ${formatCurrency(c.monto)}` : ""}`
+                      : c.aceptado === false
+                        ? "Este no lo pudimos usar"
+                        : c.esPdf
+                          ? "Comprobante en PDF · lo estamos revisando"
+                          : "Recibido · lo estamos revisando"}
                   </span>
                   <span className="block text-xs text-tienda-tenue">
                     {c.cuando} · tócalo para verlo
@@ -91,6 +136,28 @@ export function SubirComprobante({
             </li>
           ))}
         </ul>
+      )}
+
+      {/*
+        Cuánto falta, cuando ya se confirmó una parte.
+
+        Aquí se abona a menudo: la mitad ahora y el resto el viernes. Sin
+        esta línea, quien mandó el primer abono no tiene forma de saber
+        cuánto le queda sin ponerse a restar, y escribe para preguntar.
+
+        No sale si no hay nada confirmado: decir «faltan $25,50» a quien
+        acaba de subir su comprobante y espera revisión parece que se le
+        perdió.
+      */}
+      {pago.confirmado > 0 && pago.falta > 0 && (
+        <p className="mt-3 rounded-tienda-sm border border-tienda-linea px-4 py-3 text-sm leading-relaxed">
+          Recibimos {formatCurrency(pago.confirmado)}. Faltan{" "}
+          <strong className="font-medium text-white">
+            {formatCurrency(pago.falta)}
+          </strong>{" "}
+          para completar el pedido — puedes mandarlos cuando puedas y subir
+          el otro comprobante aquí mismo.
+        </p>
       )}
 
       {error && (

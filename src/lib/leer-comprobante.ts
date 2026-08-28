@@ -5,6 +5,7 @@ import {
   extraerMonto,
   extraerNumero,
   extraerFecha,
+  extraerBanco,
 } from "./datos-de-comprobante";
 
 /**
@@ -49,6 +50,7 @@ export type LecturaDeComprobante = {
   monto: number | null;
   numero: string | null;
   fecha: string | null;
+  banco: string | null;
   texto: string;
 };
 
@@ -93,6 +95,7 @@ export async function leerComprobanteConOcr(
       monto: extraerMonto(texto),
       numero: extraerNumero(texto),
       fecha: extraerFecha(texto),
+      banco: extraerBanco(texto),
       texto: texto.slice(0, 4000),
     };
   } catch (e) {

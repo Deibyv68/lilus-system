@@ -9,14 +9,13 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
+import { Pago } from "./pago";
 import { buildTrackingUrl } from "@/lib/share-message";
 import {
   ArrowLeft,
   Truck,
   Printer,
   MapPin,
-  Paperclip,
-  AlertTriangle,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -75,27 +74,53 @@ export default async function OrderDetailPage({
     El mismo número de comprobante usado en otro pedido.
 
     Es la estafa más común y la más fácil de pillar: se manda la misma
-    captura de una transferencia real a dos pedidos distintos. Se busca
-    solo entre los números que el OCR llegó a leer — si no leyó ninguno,
-    no hay nada que comparar y tampoco se inventa una alarma.
-  */
-  const numerosLeidos = order.comprobantes
-    .map((c) => c.numeroLeido)
-    .filter((n): n is string => Boolean(n));
+    captura de una transferencia real a dos pedidos distintos.
 
-  const repetidos =
-    numerosLeidos.length > 0
+    Se buscan tanto los números que leyó la máquina como los que confirmó
+    una persona, en las dos direcciones. Buscar solo por los leídos dejaba
+    un hueco: el comprobante repetido que alguien ya revisó y corrigió a
+    mano dejaba de aparecer justo cuando el número era MÁS fiable.
+  */
+  const numeros = Array.from(
+    new Set(
+      order.comprobantes
+        .flatMap((c) => [c.numeroLeido, c.numeroConfirmado])
+        .filter((n): n is string => Boolean(n))
+    )
+  );
+
+  const repetidos = (
+    numeros.length > 0
       ? await prisma.comprobanteDePago.findMany({
           where: {
-            numeroLeido: { in: numerosLeidos },
             orderId: { not: order.id },
+            OR: [
+              { numeroLeido: { in: numeros } },
+              { numeroConfirmado: { in: numeros } },
+            ],
           },
           select: {
             numeroLeido: true,
+            numeroConfirmado: true,
             order: { select: { id: true, orderNumber: true } },
           },
         })
-      : [];
+      : []
+  ).flatMap((r) =>
+    /*
+      Un comprobante puede coincidir por su número leído o por el
+      confirmado, y no tienen por qué ser el mismo: si el OCR se equivocó
+      allá y alguien lo corrigió, son dos cadenas distintas y solo una
+      cuadra con la de aquí. Se emiten las dos y el componente filtra.
+    */
+    [r.numeroConfirmado, r.numeroLeido]
+      .filter((n): n is string => Boolean(n) && numeros.includes(n!))
+      .map((numero) => ({
+        numero,
+        orderId: r.order.id,
+        orderNumber: r.order.orderNumber,
+      }))
+  );
 
   const paraMensaje = {
     orderNumber: order.orderNumber,
@@ -262,145 +287,6 @@ export default async function OrderDetailPage({
                 </div>
               )}
 
-              {/*
-                El comprobante va junto al selector de estado y no en otra
-                tarjeta al final de la página.
-
-                Es el gesto completo: mirar la foto del banco y marcar
-                «Pagado». Separarlos obligaría a bajar, mirar, subir y
-                acordarse — que es donde se cuela el error de confirmar el
-                pedido equivocado.
-              */}
-              {order.comprobantes.length > 0 && (
-                <div className="rounded-md border bg-muted/40 p-2.5 space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Paperclip className="size-3.5" />
-                    <span className="font-medium">
-                      {order.comprobantes.length === 1
-                        ? "Comprobante"
-                        : `${order.comprobantes.length} comprobantes`}
-                    </span>
-                  </div>
-
-                  {/*
-                    La imagen se ve aquí, no detrás de un enlace.
-
-                    Quien mira esto está comparando una cifra con el banco
-                    abierto en otra pestaña. Obligarla a abrir una pestaña
-                    más, mirar, volver y acordarse del número es pedirle
-                    que haga de memoria lo único que importa de la
-                    pantalla.
-
-                    Se sirve por `/api/comprobante`, que comprueba la
-                    sesión: aquí la hay, así que la imagen carga sola.
-                  */}
-                  <ul className="space-y-2">
-                    {order.comprobantes.map((c) => (
-                      <li key={c.id}>
-                        <a
-                          href={`/api/comprobante/${c.id}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block group"
-                          title="Abrir en tamaño completo"
-                        >
-                          {c.tipo === "application/pdf" ? (
-                            <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-4 text-sm group-hover:border-primary/50">
-                              <Paperclip className="size-4 text-muted-foreground" />
-                              Comprobante en PDF · tócalo para abrirlo
-                            </div>
-                          ) : (
-                            /*
-                              Con <img> y no con next/image: el optimizador
-                              pediría la imagen desde el servidor, sin la
-                              cookie de sesión, y la ruta le respondería
-                              404. Aquí la pide el navegador, que sí la
-                              lleva.
-                            */
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={`/api/comprobante/${c.id}`}
-                              alt="Comprobante de pago"
-                              className="w-full rounded-md border bg-white object-contain group-hover:border-primary/50"
-                              style={{ maxHeight: 420 }}
-                            />
-                          )}
-                        </a>
-                        {/*
-                          Lo que el OCR creyó leer, presentado como lo que
-                          es: una lectura, no un hecho. «El comprobante
-                          dice» y no «pagó $25,50» — la diferencia importa
-                          porque una imagen se edita en dos minutos y la
-                          única prueba de un pago es el estado de cuenta.
-                        */}
-                        {c.leidoEn && (c.montoLeido || c.numeroLeido) && (
-                          <div className="mt-1.5 space-y-1 text-2xs">
-                            <p className="text-muted-foreground">
-                              El comprobante dice:{" "}
-                              {c.montoLeido != null && (
-                                <span className="font-medium text-foreground tabular-nums">
-                                  {formatCurrency(c.montoLeido)}
-                                </span>
-                              )}
-                              {c.numeroLeido && (
-                                <>
-                                  {" · nº "}
-                                  <span className="font-mono text-foreground">
-                                    {c.numeroLeido}
-                                  </span>
-                                </>
-                              )}
-                              {c.fechaLeida && ` · ${c.fechaLeida}`}
-                            </p>
-
-                            {/*
-                              La comparación con un centavo de margen: el
-                              OCR confunde un 0 con un 8 de vez en cuando,
-                              pero una diferencia real de precio nunca es
-                              de un centavo.
-                            */}
-                            {c.montoLeido != null &&
-                              Math.abs(c.montoLeido - order.total) > 0.01 && (
-                                <p className="flex items-start gap-1 rounded bg-amber-50 px-1.5 py-1 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
-                                  <AlertTriangle className="mt-px size-3 shrink-0" />
-                                  <span>
-                                    No cuadra con el total del pedido (
-                                    {formatCurrency(order.total)}). Revísalo
-                                    antes de confirmar.
-                                  </span>
-                                </p>
-                              )}
-
-                            {repetidos
-                              .filter((r) => r.numeroLeido === c.numeroLeido)
-                              .map((r) => (
-                                <Link
-                                  key={r.order.id}
-                                  href={`/sistema/pedidos/${r.order.id}`}
-                                  className="flex items-start gap-1 rounded bg-red-50 px-1.5 py-1 text-red-900 hover:underline dark:bg-red-950/50 dark:text-red-200"
-                                >
-                                  <AlertTriangle className="mt-px size-3 shrink-0" />
-                                  <span>
-                                    Este mismo número ya se usó en{" "}
-                                    {r.order.orderNumber}
-                                  </span>
-                                </Link>
-                              ))}
-                          </div>
-                        )}
-
-                        <p className="mt-1 text-2xs text-muted-foreground">
-                          Subido el {formatDateTime(c.createdAt)}
-                          {!c.leidoEn && c.tipo !== "application/pdf" && (
-                            <span className="ml-1 opacity-70">· leyendo…</span>
-                          )}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <ShareButton
                 order={paraMensaje}
                 status={order.status as never}
@@ -412,6 +298,21 @@ export default async function OrderDetailPage({
               />
             </CardContent>
           </Card>
+
+          {/*
+            El pago va entre el estado y el cliente, no al final.
+
+            Es el gesto completo: mirar la foto del banco, escribir lo que
+            dice, y marcar «Pagado» — que está justo encima. Separarlos
+            obligaría a bajar, mirar, subir y acordarse, que es donde se
+            cuela el error de confirmar el pedido equivocado.
+          */}
+          <Pago
+            total={order.total}
+            estadoPedido={order.status}
+            comprobantes={order.comprobantes}
+            repetidos={repetidos}
+          />
 
           <Card>
             <CardHeader>

@@ -16,7 +16,17 @@ export default async function OrdersPage() {
     include: {
       customer: { select: { name: true } },
       carrier: { select: { name: true } },
-      _count: { select: { items: true, comprobantes: true } },
+      _count: { select: { items: true } },
+      /*
+        Los comprobantes, no su número.
+
+        La etiqueta de la lista distingue el que espera revisión del que
+        ya está comprobado, y esa diferencia no cabe en un contador. Son
+        dos campos por comprobante y hay como mucho cinco por pedido.
+      */
+      comprobantes: {
+        select: { aceptado: true, montoConfirmado: true },
+      },
     },
   });
 
@@ -59,10 +69,8 @@ export default async function OrdersPage() {
             source: o.source,
             customer: { name: o.customer.name },
             carrier: o.carrier ? { name: o.carrier.name } : null,
-            _count: {
-              items: o._count.items,
-              comprobantes: o._count.comprobantes,
-            },
+            _count: { items: o._count.items },
+            comprobantes: o.comprobantes,
           }))}
         />
       )}

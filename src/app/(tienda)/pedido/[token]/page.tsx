@@ -11,6 +11,7 @@ import { qrComoDataUri } from "@/lib/qr";
 import { SubirComprobante } from "./subir-comprobante";
 import { ElegirCuenta } from "./elegir-cuenta";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
+import { estadoDePago } from "@/lib/pago-del-pedido";
 
 /**
  * El pedido, visto por quien lo hizo.
@@ -98,6 +99,16 @@ export default async function PaginaPedido({
           : null;
 
   const hayCuenta = cuentas.length > 0;
+
+  /*
+    Cuánto se ha confirmado de este pedido.
+
+    Solo cuenta lo que una persona miró y aceptó. Lo que leyó el OCR no
+    entra: decirle a quien compró «recibimos tu pago» porque una máquina
+    creyó leer una cifra en una foto es prometer algo que nadie ha
+    comprobado.
+  */
+  const pago = estadoDePago(pedido.comprobantes, pedido.total);
 
   const estado = ESTADOS[pedido.status] ?? ESTADOS.PENDING;
   const primerNombre = pedido.customer.name.split(" ")[0];
@@ -249,7 +260,10 @@ export default async function PaginaPedido({
               id: c.id,
               esPdf: c.tipo === "application/pdf",
               cuando: formatDateTime(c.createdAt),
+              aceptado: c.aceptado,
+              monto: c.montoConfirmado,
             }))}
+            pago={{ confirmado: pago.confirmado, falta: pago.falta }}
           />
 
           {/*
