@@ -1,5 +1,6 @@
 "use client";
 
+import { aplicarPunto } from "@/lib/ubicacion-a-direccion";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -191,56 +192,29 @@ export function FormularioCheckout({ zonas }: { zonas: Zona[] }) {
   }
 
   function onUbicacion(u: UbicacionElegida) {
+    /*
+      La decisión de qué se pisa y qué se respeta vive en
+      `ubicacion-a-direccion.ts`, compartida con el pedido cargado a mano.
+
+      Estaba escrita aquí, y al poner el mapa en el panel se copió solo la
+      parte de las coordenadas: allá el mapa guardaba el punto y dejaba la
+      provincia y la ciudad como estaban. En un sitio solo no puede volver
+      a pasar.
+    */
     setD((prev) => {
-      const siguiente = { ...prev, lat: u.lat, lng: u.lng };
-
-      /*
-        Cada punto nuevo reescribe la dirección que puso el mapa.
-
-        Tres casos, y los tres importan:
-
-        1. El mapa sabe la calle  → se pone, siempre. Quien mueve el
-           marcador está diciendo «no, es acá».
-
-        2. El mapa NO la sabe y lo que hay lo puso el mapa  → se borra.
-           Dejarla sería peor que no tener nada: la dirección diría la
-           calle del punto anterior, que puede estar a kilómetros.
-
-        3. El mapa NO la sabe y lo que hay lo escribió la persona  → se
-           respeta. El mapa no sabe más que ella sobre dónde vive.
-      */
-      if (u.calle) {
-        siguiente.calle = u.calle;
-        setCalleDelMapa(u.calle);
-      } else if (u.recibioRespuesta && prev.calle && prev.calle === calleDelMapa) {
-        siguiente.calle = "";
-        setCalleDelMapa(null);
-      }
-
-      if (u.provincia) {
-        const p = PROVINCIAS.find(
-          (x) => x.nombre.toLowerCase() === u.provincia!.toLowerCase()
-        );
-        // Solo si cae en una provincia de la lista. Cerca de la frontera
-        // el mapa puede devolver una de Colombia o Perú, y esa no está.
-        if (p) {
-          siguiente.provincia = p.nombre;
-          /*
-            El cantón sale de TODOS los nombres de lugar que devolvió el
-            mapa, no del primero que suene a ciudad. En Tumbaco, el mapa
-            manda «Tumbaco» como pueblo y «Distrito Metropolitano de
-            Quito» como comarca: el cantón es el segundo.
-          */
-          const c = cantonEntre(p.nombre, u.lugares ?? []);
-          /*
-            El cantón se limpia si el nuevo punto cayó en otra provincia:
-            dejar «Quito» con la provincia ya cambiada a Manabí sería un
-            dato imposible, y el servidor lo rechazaría al confirmar.
-          */
-          siguiente.ciudad = c ?? (p.nombre === prev.provincia ? prev.ciudad : "");
-        }
-      }
-      return siguiente;
+      const r = aplicarPunto(
+        u,
+        {
+          calle: prev.calle,
+          provincia: prev.provincia,
+          ciudad: prev.ciudad,
+          lat: prev.lat,
+          lng: prev.lng,
+        },
+        calleDelMapa
+      );
+      setCalleDelMapa(r.calleDelMapa);
+      return { ...prev, ...r.direccion };
     });
   }
 

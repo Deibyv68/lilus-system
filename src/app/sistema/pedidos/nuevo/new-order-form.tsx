@@ -855,8 +855,28 @@ function StepShipping({
             ? { lat: address.lat, lng: address.lng }
             : null
         }
-        onCambiar={(p) =>
-          setAddress({ ...address, lat: p?.lat ?? null, lng: p?.lng ?? null })
+        /*
+          Los nombres de los campos no coinciden —aquí son `address`,
+          `province` y `city`; en la tienda son `calle`, `provincia` y
+          `ciudad`— así que se traducen aquí, en el borde. La lógica de
+          qué se pisa vive en un solo sitio y no sabe de estos nombres.
+        */
+        direccion={{
+          calle: address.address,
+          provincia: address.province,
+          ciudad: address.city,
+          lat: address.lat,
+          lng: address.lng,
+        }}
+        onCambiar={(d) =>
+          setAddress({
+            ...address,
+            address: d.calle,
+            province: d.provincia,
+            city: d.ciudad,
+            lat: d.lat,
+            lng: d.lng,
+          })
         }
       />
 

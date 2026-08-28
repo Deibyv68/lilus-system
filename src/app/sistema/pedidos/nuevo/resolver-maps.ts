@@ -19,8 +19,74 @@ import { leerPunto, esEnlaceCorto, type Punto } from "@/lib/punto-de-maps";
  */
 
 type Resultado =
-  | { ok: true; punto: Punto }
+  | { ok: true; punto: Punto; lugar: LugarDelPunto | null }
   | { ok: false; error: string };
+
+/**
+ * Lo que el mapa sabe de ese punto, además de sus coordenadas.
+ *
+ * Un enlace de Google Maps trae coordenadas y nada más. Sin esto, pegar
+ * el enlace de una clienta dejaba el punto puesto y la provincia y la
+ * ciudad como estaban — que es justo lo que se quería evitar al añadir
+ * el mapa aquí. Se busca en el servidor y se devuelve junto al punto,
+ * para que pegar un enlace haga lo mismo que tocar el mapa.
+ */
+export type LugarDelPunto = {
+  calle: string;
+  /** Del más pequeño al más grande. De aquí sale el cantón. */
+  lugares: string[];
+  provincia: string;
+};
+
+/*
+  Los mismos campos que pide el mapa de la tienda, y en el mismo orden.
+
+  Si aquí se pidieran otros, pegar un enlace y tocar el mapa darían
+  cantones distintos para el mismo sitio — y nadie entendería por qué.
+*/
+async function lugarDe(punto: Punto): Promise<LugarDelPunto | null> {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2` +
+        `&lat=${punto.lat}&lon=${punto.lng}&accept-language=es`,
+      {
+        headers: {
+          accept: "application/json",
+          /*
+            Nominatim pide identificarse. Sin esto es legítimo que
+            devuelva 403, y la búsqueda fallaría en silencio.
+          */
+          "user-agent": "LILUS/1.0 (panel de pedidos)",
+        },
+        signal: AbortSignal.timeout(ESPERA_MAXIMA),
+      }
+    );
+    if (!r.ok) return null;
+
+    const j = await r.json();
+    const a = j.address ?? {};
+    return {
+      calle: [a.road, a.house_number].filter(Boolean).join(" "),
+      lugares: [
+        a.city,
+        a.town,
+        a.municipality,
+        a.county,
+        a.state_district,
+        a.village,
+      ].filter((v: unknown): v is string => Boolean(v)),
+      provincia: a.state ?? "",
+    };
+  } catch (e) {
+    /*
+      Que no se sepa el nombre del sitio no invalida el punto: las
+      coordenadas ya sirven para repartir. Se devuelve `null` y la
+      provincia y la ciudad se quedan como estaban.
+    */
+    console.error("[maps] No se pudo buscar el lugar:", e);
+    return null;
+  }
+}
 
 /*
   Cuánto se espera a Google antes de rendirse.
@@ -41,7 +107,7 @@ export async function resolverEnlaceDeMapsAction(
 
   // Si ya trae las coordenadas dentro, no hace falta molestar a nadie.
   const directo = leerPunto(limpio);
-  if (directo) return { ok: true, punto: directo };
+  if (directo) return { ok: true, punto: directo, lugar: await lugarDe(directo) };
 
   if (!esEnlaceCorto(limpio)) {
     return {
@@ -98,11 +164,13 @@ export async function resolverEnlaceDeMapsAction(
       Probar las dos cubre los dos casos sin tener que adivinar cuál toca.
     */
     const deLaUrl = leerPunto(respuesta.url);
-    if (deLaUrl) return { ok: true, punto: deLaUrl };
+    if (deLaUrl) return { ok: true, punto: deLaUrl, lugar: await lugarDe(deLaUrl) };
 
     const cuerpo = (await respuesta.text()).slice(0, 200_000);
     const delCuerpo = leerPunto(cuerpo);
-    if (delCuerpo) return { ok: true, punto: delCuerpo };
+    if (delCuerpo) {
+      return { ok: true, punto: delCuerpo, lugar: await lugarDe(delCuerpo) };
+    }
 
     return {
       ok: false,

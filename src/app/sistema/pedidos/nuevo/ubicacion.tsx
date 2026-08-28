@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Link2, MapPin, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapaDireccion } from "@/components/tienda/mapa-direccion";
 import { enlaceDeMaps, type Punto } from "@/lib/punto-de-maps";
+import { aplicarPunto, type Direccion } from "@/lib/ubicacion-a-direccion";
 import { resolverEnlaceDeMapsAction } from "./resolver-maps";
 
 /**
@@ -28,14 +29,32 @@ import { resolverEnlaceDeMapsAction } from "./resolver-maps";
  *
  * Los dos son opcionales. Escribir las calles a mano sigue bastando, como
  * hasta ahora: esto añade, no obliga.
+ *
+ * ── Y rellena la dirección, no solo el punto ──
+ *
+ * Marcar en el mapa trae también la calle, la provincia y el cantón,
+ * igual que en la tienda. La decisión de qué se pisa y qué se respeta es
+ * literalmente la misma función: `aplicarPunto`.
  */
 export function Ubicacion({
   punto,
+  direccion,
   onCambiar,
 }: {
   punto: Punto | null;
-  onCambiar: (p: Punto | null) => void;
+  /** Lo que hay escrito ahora, para saber qué se puede pisar. */
+  direccion: Direccion;
+  onCambiar: (d: Direccion) => void;
 }) {
+  /*
+    Qué calle puso el mapa la última vez.
+
+    Sirve para distinguir «esto lo escribió ella» de «esto lo puso el
+    mapa»: lo primero no se toca nunca, lo segundo se reemplaza al mover
+    el punto. Va en una ref y no en estado porque no cambia lo que se
+    pinta — solo lo que se decide la próxima vez.
+  */
+  const calleDelMapa = useRef<string | null>(null);
   const [enlace, setEnlace] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [mapaAbierto, setMapaAbierto] = useState(false);
@@ -49,7 +68,33 @@ export function Ubicacion({
         setError(r.error);
         return;
       }
-      onCambiar(r.punto);
+      /*
+        Pegar un enlace hace lo mismo que tocar el mapa.
+
+        El enlace solo trae coordenadas, así que el servidor busca además
+        el nombre del sitio y lo manda junto. Se pasa por `aplicarPunto`,
+        la misma función que usa el mapa y que usa la tienda — si aquí se
+        decidiera otra cosa, un punto daría un cantón al pegarlo y otro
+        al tocarlo.
+
+        `recibioRespuesta` va según si se supo algo del sitio: es lo que
+        distingue «el mapa dijo que no hay calle» de «ni se preguntó», y
+        de eso depende si se borra una calle vieja o se respeta.
+      */
+      const r2 = aplicarPunto(
+        {
+          lat: r.punto.lat,
+          lng: r.punto.lng,
+          calle: r.lugar?.calle || undefined,
+          lugares: r.lugar?.lugares,
+          provincia: r.lugar?.provincia || undefined,
+          recibioRespuesta: r.lugar !== null,
+        },
+        direccion,
+        calleDelMapa.current
+      );
+      calleDelMapa.current = r2.calleDelMapa;
+      onCambiar(r2.direccion);
       setEnlace("");
       setMapaAbierto(true);
     });
@@ -80,7 +125,9 @@ export function Ubicacion({
             variant="ghost"
             size="sm"
             className="h-7 shrink-0 px-2 text-xs"
-            onClick={() => onCambiar(null)}
+            onClick={() =>
+              onCambiar({ ...direccion, lat: null, lng: null })
+            }
           >
             <X className="size-3.5" /> Quitar
           </Button>
@@ -153,7 +200,11 @@ export function Ubicacion({
         <MapaDireccion
           tema="panel"
           valorInicial={punto}
-          onElegir={(u) => onCambiar({ lat: u.lat, lng: u.lng })}
+          onElegir={(u) => {
+            const r = aplicarPunto(u, direccion, calleDelMapa.current);
+            calleDelMapa.current = r.calleDelMapa;
+            onCambiar(r.direccion);
+          }}
         />
       )}
     </div>

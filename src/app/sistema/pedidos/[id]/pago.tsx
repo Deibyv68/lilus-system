@@ -12,6 +12,7 @@ import {
   Loader2,
   MessageCircle,
   RotateCcw,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -31,7 +32,9 @@ import {
   descartarComprobanteAction,
   reabrirComprobanteAction,
   subirComprobanteEnPanelAction,
+  borrarComprobanteAction,
 } from "./revisar-comprobante";
+import { LeerQrDelComprobante } from "./leer-qr-comprobante";
 
 export type ComprobanteEnPanel = {
   id: string;
@@ -386,6 +389,14 @@ function Comprobante({
   const router = useRouter();
   const [revisando, setRevisando] = useState(false);
   const [trabajando, empezar] = useTransition();
+  /*
+    El número que sacó el QR, si se llegó a leer.
+
+    Vive aquí y no dentro del formulario porque quien lo lee es el botón
+    del pie, que está fuera. Pesa más que lo que leyó el OCR —un QR no
+    adivina— pero menos que lo que teclee una persona.
+  */
+  const [numeroDelQr, setNumeroDelQr] = useState<string | null>(null);
 
   /*
     Los PDF no se leen —Tesseract lee imágenes— y uno ya leído no se
@@ -481,6 +492,7 @@ function Comprobante({
       {abierto ? (
         <FormularioDeRevision
           comprobante={c}
+          numeroDelQr={numeroDelQr}
           lectura={lectura}
           esperando={esperando}
           seRindio={seRindio}
@@ -563,9 +575,62 @@ function Comprobante({
         </div>
       )}
 
-      <p className="text-2xs text-muted-foreground">
-        Subido el {formatDateTime(c.createdAt)}
-      </p>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="text-2xs text-muted-foreground">
+          Subido el {formatDateTime(c.createdAt)}
+        </p>
+
+        <div className="ml-auto flex items-center gap-1">
+          {/*
+            Leer el QR solo tiene sentido en una imagen. Un PDF no se
+            puede decodificar en el navegador sin traerse un lector
+            entero, y los PDF son la minoría.
+          */}
+          {c.tipo !== "application/pdf" && (
+            <LeerQrDelComprobante
+              src={`/api/comprobante/${c.id}`}
+              onNumero={setNumeroDelQr}
+            />
+          )}
+
+          {/*
+            Borrar no es lo mismo que «No cuenta».
+
+            «No cuenta» aparta el comprobante y guarda la imagen a
+            propósito. Borrar es para lo que no debería estar: la foto
+            que se subió al pedido equivocado, la que se coló de la
+            galería. Por eso pide confirmación — es lo único de esta
+            pantalla que no tiene vuelta atrás.
+          */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+            disabled={trabajando}
+            onClick={() => {
+              if (
+                !confirm(
+                  "¿Borrar este comprobante? Se elimina también la imagen, y eso no se puede deshacer."
+                )
+              ) {
+                return;
+              }
+              empezar(async () => {
+                const r = await borrarComprobanteAction(c.id);
+                if (!r.ok) {
+                  toast.error(r.error);
+                  return;
+                }
+                toast.success("Comprobante borrado");
+                router.refresh();
+              });
+            }}
+          >
+            <Trash2 className="size-3.5" /> Borrar
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -605,6 +670,7 @@ function Detalles({
  */
 function FormularioDeRevision({
   comprobante: c,
+  numeroDelQr,
   lectura,
   esperando,
   seRindio,
@@ -615,6 +681,8 @@ function FormularioDeRevision({
   onCancelar,
 }: {
   comprobante: ComprobanteEnPanel;
+  /** El número que sacó el QR del propio comprobante, si se leyó. */
+  numeroDelQr: string | null;
   /** La lectura que llegó sola, si llegó. */
   lectura: Lectura | null;
   esperando: boolean;
@@ -658,7 +726,13 @@ function FormularioDeRevision({
       : leido.monto != null
         ? String(leido.monto)
         : "");
-  const numero = tecleado.numero ?? c.numeroConfirmado ?? leido.numero ?? "";
+  /*
+    El orden de preferencia dice cuánto se fía uno de cada fuente: lo
+    tecleado gana siempre, después el QR —que no adivina, o lo lee entero
+    o no lo lee— y al final lo que creyó ver el OCR.
+  */
+  const numero =
+    tecleado.numero ?? numeroDelQr ?? c.numeroConfirmado ?? leido.numero ?? "";
   const fecha = tecleado.fecha ?? c.fechaConfirmada ?? leido.fecha ?? "";
   const banco = tecleado.banco ?? c.bancoConfirmado ?? leido.banco ?? "";
 

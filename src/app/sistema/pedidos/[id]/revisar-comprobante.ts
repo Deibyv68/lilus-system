@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/guard";
 import { anotarComprobante } from "@/lib/anotar-comprobante";
+import { borrarArchivoDeComprobante } from "@/lib/comprobantes";
 
 /**
  * Revisar un comprobante: decir qué dice de verdad, o que no cuenta.
@@ -202,5 +203,56 @@ export async function subirComprobanteEnPanelAction(
   if (!anotado.ok) return { ok: false, error: anotado.error };
 
   refrescar(pedido.id, pedido.publicToken);
+  return { ok: true };
+}
+
+/**
+ * Borrar un comprobante, imagen incluida.
+ *
+ * ── Por qué existe, si «No cuenta» ya lo aparta ──
+ *
+ * Porque son dos cosas distintas. «No cuenta» dice «esto es de otra
+ * cosa» y deja la imagen guardada a propósito: si después hay una
+ * discusión sobre qué se mandó y cuándo, ahí está.
+ *
+ * Borrar es para lo que no debería estar: la foto que se subió al pedido
+ * equivocado, la captura de la galería que se coló por error, el
+ * comprobante duplicado. Nada de eso hace falta guardarlo, y un
+ * comprobante lleva el nombre, el banco y la cuenta de una persona —
+ * quedarse con documentos ajenos que ya no sirven no es prudencia, es
+ * descuido.
+ *
+ * El archivo se va con la fila. Dejarlo huérfano en el disco sería
+ * conservar exactamente lo que se pidió borrar.
+ */
+export async function borrarComprobanteAction(id: string): Promise<Resultado> {
+  await requireUser();
+
+  const comprobante = await prisma.comprobanteDePago.findUnique({
+    where: { id },
+    select: {
+      archivo: true,
+      orderId: true,
+      order: { select: { publicToken: true } },
+    },
+  });
+  if (!comprobante) return { ok: false, error: "Ese comprobante ya no está" };
+
+  await prisma.comprobanteDePago.delete({ where: { id } });
+
+  /*
+    El archivo después de la fila, y sin dejar que su fallo tumbe nada.
+
+    Si se borrara primero y la fila fallara, quedaría un pedido enseñando
+    un comprobante que ya no existe. Al revés lo peor que pasa es un
+    archivo suelto que nadie ve — molesto, no roto.
+  */
+  try {
+    await borrarArchivoDeComprobante(comprobante.archivo);
+  } catch (e) {
+    console.error("[comprobante] No se pudo borrar el archivo:", e);
+  }
+
+  refrescar(comprobante.orderId, comprobante.order.publicToken);
   return { ok: true };
 }

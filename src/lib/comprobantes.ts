@@ -1,5 +1,5 @@
 import "server-only";
-import { mkdir, writeFile, stat } from "node:fs/promises";
+import { rm, mkdir, writeFile, stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
@@ -124,4 +124,18 @@ export async function leerComprobante(archivo: string) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Borra el archivo de un comprobante del disco.
+ *
+ * Se usa al borrar su fila. El nombre siempre viene de la base —lo puso
+ * el servidor al guardarlo— pero se comprueba igual que no lleve
+ * carpetas: un `../` aquí borraría algo que no es un comprobante, y
+ * borrar es lo único que no tiene vuelta atrás.
+ */
+export async function borrarArchivoDeComprobante(archivo: string) {
+  if (!archivo || archivo.includes("/") || archivo.includes("\\")) return;
+  if (archivo.includes("..")) return;
+  await rm(path.join(carpetaDeComprobantes(), archivo), { force: true });
 }
