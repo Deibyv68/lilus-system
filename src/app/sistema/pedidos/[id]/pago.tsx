@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import {
   Check,
   Paperclip,
   Pencil,
+  Loader2,
   RotateCcw,
   Upload,
   X,
@@ -40,6 +41,14 @@ export type ComprobanteEnPanel = {
   fechaConfirmada: string | null;
   bancoConfirmado: string | null;
   revisadoPor: string | null;
+};
+
+/** Lo que el OCR sacó de la imagen. Llega por la ruta de lectura. */
+export type Lectura = {
+  monto: number | null;
+  numero: string | null;
+  fecha: string | null;
+  banco: string | null;
 };
 
 export type Repetido = {
@@ -219,6 +228,104 @@ export function Pago({
   );
 }
 
+/*
+  Cada cuánto se pregunta si ya terminó de leerse, y hasta cuándo.
+
+  Dos segundos: el OCR tarda entre cinco y quince en esta máquina, así
+  que son unas pocas preguntas y ninguna espera perceptible de más.
+
+  Dos minutos de tope: si a los dos minutos no ha terminado, es que se
+  cayó o que el servidor está ahogado. Preguntar para siempre dejaría una
+  pestaña abierta golpeando al servidor toda la tarde, y una imagen
+  borrosa que no se aclara nunca.
+*/
+const CADA = 2000;
+const HASTA = 120000;
+
+/**
+ * Esperar a que el OCR termine, sin recargar la página.
+ *
+ * El OCR corre después de responder a la subida —si no, habría que
+ * esperar quince segundos mirando una pantalla muerta— y escribe el
+ * resultado en la base. Alguien tiene que ir a mirar si ya está, y ese
+ * alguien no puede ser la persona recargando a ver si hay suerte.
+ *
+ * Devuelve `null` mientras espera. Si se rinde, `{ fallo: true }`, para
+ * poder decirlo en vez de dejar una rueda girando sin fin.
+ */
+function useLectura(
+  id: string,
+  hayQueEsperar: boolean,
+  alLlegar: () => void,
+) {
+  const [lectura, setLectura] = useState<Lectura | null>(null);
+  const [seRindio, setSeRindio] = useState(false);
+
+  const esperando = hayQueEsperar && !lectura && !seRindio;
+
+  useEffect(() => {
+    if (!esperando) return;
+
+    let vivo = true;
+    const desde = Date.now();
+
+    const reloj = setInterval(async () => {
+      if (!vivo) return;
+
+      if (Date.now() - desde > HASTA) {
+        clearInterval(reloj);
+        setSeRindio(true);
+        return;
+      }
+
+      try {
+        const r = await fetch(`/api/comprobante/${id}/lectura`, {
+          cache: "no-store",
+        });
+        if (!r.ok || !vivo) return;
+        const d = (await r.json()) as Lectura & { leido: boolean };
+        if (d.leido && vivo) {
+          clearInterval(reloj);
+          setLectura({
+            monto: d.monto,
+            numero: d.numero,
+            fecha: d.fecha,
+            banco: d.banco,
+          });
+          /*
+            Y se refresca la página desde el servidor.
+
+            No es por los campos —esos ya se rellenaron solos— sino por lo
+            que el servidor calcula con el número recién leído: si esa
+            misma captura se usó en otro pedido. Esa comprobación es la
+            que pilla la estafa más común, y sin este refresco no
+            aparecería hasta que alguien recargara.
+          */
+          alLlegar();
+        }
+      } catch {
+        // Un fallo de red suelto no cuenta: se vuelve a preguntar en dos
+        // segundos. Solo el tope de tiempo decide rendirse.
+      }
+    }, CADA);
+
+    /*
+      Al desmontar se para. Sin esto, cada comprobante dejaría un reloj
+      corriendo detrás cada vez que la página se vuelve a renderizar —y
+      esta página se renderiza en cada confirmación.
+    */
+    return () => {
+      vivo = false;
+      clearInterval(reloj);
+    };
+    // `alLlegar` a propósito fuera: es una función nueva en cada render y
+    // meterla aquí reiniciaría el reloj constantemente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esperando, id]);
+
+  return { lectura, esperando, seRindio };
+}
+
 function Linea({ label, valor }: { label: string; valor: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
@@ -241,6 +348,16 @@ function Comprobante({
   const [revisando, setRevisando] = useState(false);
   const [trabajando, empezar] = useTransition();
 
+  /*
+    Los PDF no se leen —Tesseract lee imágenes— y uno ya leído no se
+    vuelve a leer. En los dos casos no hay nada que esperar.
+  */
+  const { lectura, esperando, seRindio } = useLectura(
+    c.id,
+    !c.leidoEn && c.tipo !== "application/pdf",
+    () => router.refresh(),
+  );
+
   const sinRevisar = c.aceptado === null;
   const abierto = sinRevisar || revisando;
 
@@ -254,33 +371,62 @@ function Comprobante({
         acordarse del número es pedirle que haga de memoria lo único que
         importa aquí.
       */}
-      <a
-        href={`/api/comprobante/${c.id}`}
-        target="_blank"
-        rel="noreferrer"
-        className="block group"
-        title="Abrir en tamaño completo"
-      >
-        {c.tipo === "application/pdf" ? (
-          <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-4 text-sm group-hover:border-primary/50">
-            <Paperclip className="size-4 text-muted-foreground" />
-            Comprobante en PDF · tócalo para abrirlo
-          </div>
-        ) : (
+      <div className="relative">
+        <a
+          href={`/api/comprobante/${c.id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="block group"
+          title="Abrir en tamaño completo"
+        >
+          {c.tipo === "application/pdf" ? (
+            <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-4 text-sm group-hover:border-primary/50">
+              <Paperclip className="size-4 text-muted-foreground" />
+              Comprobante en PDF · tócalo para abrirlo
+            </div>
+          ) : (
+            /*
+              Con <img> y no con next/image: el optimizador pediría la
+              imagen desde el servidor, sin la cookie de sesión, y la ruta
+              le respondería 404. Aquí la pide el navegador, que sí la lleva.
+            */
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/comprobante/${c.id}`}
+              alt="Comprobante de pago"
+              /*
+                Difuminada mientras se lee, y se aclara sola al terminar.
+
+                Antes esto era un «· leyendo…» de ocho píxeles al pie. Era
+                cierto y no servía de nada: no se veía, no parecía que
+                algo estuviera pasando, y sobre todo no se entendía que
+                iba a aparecer información sin hacer nada.
+
+                Una imagen borrosa que se aclara dice las dos cosas sin
+                una palabra: hay algo en marcha, y va a terminar.
+              */
+              className={`w-full rounded-md border bg-white object-contain transition-[filter,opacity] duration-500 group-hover:border-primary/50 ${
+                esperando ? "opacity-60 blur-[3px]" : ""
+              }`}
+              style={{ maxHeight: 420 }}
+            />
+          )}
+        </a>
+
+        {esperando && (
           /*
-            Con <img> y no con next/image: el optimizador pediría la
-            imagen desde el servidor, sin la cookie de sesión, y la ruta
-            le respondería 404. Aquí la pide el navegador, que sí la lleva.
+            Encima de la imagen y no debajo: es donde está mirando quien
+            acaba de subirla. `pointer-events-none` para no robarle el
+            clic al enlace de abrir en grande.
           */
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={`/api/comprobante/${c.id}`}
-            alt="Comprobante de pago"
-            className="w-full rounded-md border bg-white object-contain group-hover:border-primary/50"
-            style={{ maxHeight: 420 }}
-          />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="flex items-center gap-2 rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium shadow-sm">
+              <Loader2 className="size-3.5 animate-spin" />
+              Leyendo el comprobante…
+            </span>
+          </div>
         )}
-      </a>
+      </div>
 
       {repetidos.map((r) => (
         <Link
@@ -296,6 +442,9 @@ function Comprobante({
       {abierto ? (
         <FormularioDeRevision
           comprobante={c}
+          lectura={lectura}
+          esperando={esperando}
+          seRindio={seRindio}
           falta={falta}
           trabajando={trabajando}
           onCancelar={revisando ? () => setRevisando(false) : null}
@@ -377,9 +526,6 @@ function Comprobante({
 
       <p className="text-2xs text-muted-foreground">
         Subido el {formatDateTime(c.createdAt)}
-        {!c.leidoEn && c.tipo !== "application/pdf" && (
-          <span className="ml-1 opacity-70">· leyendo…</span>
-        )}
       </p>
     </div>
   );
@@ -420,6 +566,9 @@ function Detalles({
  */
 function FormularioDeRevision({
   comprobante: c,
+  lectura,
+  esperando,
+  seRindio,
   falta,
   trabajando,
   onConfirmar,
@@ -427,6 +576,10 @@ function FormularioDeRevision({
   onCancelar,
 }: {
   comprobante: ComprobanteEnPanel;
+  /** La lectura que llegó sola, si llegó. */
+  lectura: Lectura | null;
+  esperando: boolean;
+  seRindio: boolean;
   falta: number;
   trabajando: boolean;
   onConfirmar: (d: {
@@ -438,20 +591,42 @@ function FormularioDeRevision({
   onDescartar: () => void;
   onCancelar: (() => void) | null;
 }) {
-  const [monto, setMonto] = useState(
-    c.montoConfirmado != null
-      ? String(c.montoConfirmado)
-      : c.montoLeido != null
-        ? String(c.montoLeido)
-        : "",
-  );
-  const [numero, setNumero] = useState(
-    c.numeroConfirmado ?? c.numeroLeido ?? "",
-  );
-  const [fecha, setFecha] = useState(c.fechaConfirmada ?? c.fechaLeida ?? "");
-  const [banco, setBanco] = useState(c.bancoConfirmado ?? c.bancoLeido ?? "");
+  /*
+    Solo se guarda lo que se ha TECLEADO. El resto se deriva.
 
-  const leyoAlgo = c.montoLeido != null || c.numeroLeido || c.bancoLeido;
+    Es lo que permite que la lectura entre sola sin pisar a nadie: cuando
+    llega, los campos que nadie tocó la muestran, y el que se estaba
+    escribiendo se queda como estaba. Con un estado por campo inicializado
+    al montar habría que ir escribiendo encima al llegar la lectura, y
+    entonces habría que decidir a mano cuáles pisar — que es la clase de
+    decisión que se equivoca justo mientras alguien escribe.
+  */
+  const [tecleado, setTecleado] = useState<
+    Record<string, string | undefined>
+  >({});
+
+  const leido = lectura ?? {
+    monto: c.montoLeido,
+    numero: c.numeroLeido,
+    fecha: c.fechaLeida,
+    banco: c.bancoLeido,
+  };
+
+  const monto =
+    tecleado.monto ??
+    (c.montoConfirmado != null
+      ? String(c.montoConfirmado)
+      : leido.monto != null
+        ? String(leido.monto)
+        : "");
+  const numero = tecleado.numero ?? c.numeroConfirmado ?? leido.numero ?? "";
+  const fecha = tecleado.fecha ?? c.fechaConfirmada ?? leido.fecha ?? "";
+  const banco = tecleado.banco ?? c.bancoConfirmado ?? leido.banco ?? "";
+
+  const escribir = (campo: string) => (v: string) =>
+    setTecleado((t) => ({ ...t, [campo]: v }));
+
+  const leyoAlgo = leido.monto != null || leido.numero || leido.banco;
 
   /*
     Qué pasaría con lo que falta si se confirma este monto.
@@ -468,28 +643,44 @@ function FormularioDeRevision({
 
   return (
     <div className="space-y-2 rounded-md border bg-background p-2.5">
-      <p className="text-2xs uppercase tracking-wide text-muted-foreground">
-        {leyoAlgo
-          ? "El comprobante dice — compáralo con la imagen"
-          : c.leidoEn
-            ? "No se pudo leer nada. Escríbelo mirando la imagen"
-            : "Escríbelo mirando la imagen"}
+      {/*
+        El encabezado dice en qué punto va, y siempre deja escribir.
+
+        Ni siquiera mientras lee se bloquean los campos: quien acaba de
+        mirar la captura en WhatsApp sabe el monto de memoria y no tiene
+        por qué esperar a una máquina. Lo que escriba gana.
+      */}
+      <p className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
+        {esperando ? (
+          <>
+            <Loader2 className="size-3 animate-spin" />
+            Leyendo la imagen — o escríbelo tú, si lo sabes
+          </>
+        ) : leyoAlgo ? (
+          "El comprobante dice — compáralo con la imagen"
+        ) : seRindio ? (
+          "La lectura tardó demasiado. Escríbelo mirando la imagen"
+        ) : c.leidoEn || lectura ? (
+          "No se pudo leer nada. Escríbelo mirando la imagen"
+        ) : (
+          "Escríbelo mirando la imagen"
+        )}
       </p>
 
       <div className="grid grid-cols-2 gap-2">
         <Campo
           etiqueta="Monto"
           valor={monto}
-          onChange={setMonto}
+          onChange={escribir("monto")}
           inputMode="decimal"
         />
-        <Campo etiqueta="Banco" valor={banco} onChange={setBanco} />
+        <Campo etiqueta="Banco" valor={banco} onChange={escribir("banco")} />
         <Campo
           etiqueta="Nº de comprobante"
           valor={numero}
-          onChange={setNumero}
+          onChange={escribir("numero")}
         />
-        <Campo etiqueta="Fecha" valor={fecha} onChange={setFecha} />
+        <Campo etiqueta="Fecha" valor={fecha} onChange={escribir("fecha")} />
       </div>
 
       {quedaria !== null && quedaria > 0.009 && (
