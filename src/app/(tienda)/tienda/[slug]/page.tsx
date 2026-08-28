@@ -1,3 +1,4 @@
+import { CalculadoraDeEnvio } from "@/components/tienda/calculadora-envio";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -162,16 +163,7 @@ export default async function FichaArticulo({ params }: Props) {
               <p className="leading-relaxed">
                 Enviamos por {zonas[0].transportadora} a todo el Ecuador.
               </p>
-              <ul className="mt-2 space-y-1">
-                {zonas.map((z) => (
-                  <li key={z.id} className="flex justify-between gap-4">
-                    <span>{z.nombre}</span>
-                    <span className="tabular-nums">
-                      {formatCurrency(z.precio)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <CalculadoraDeEnvio zonas={zonas} />
             </Bloque>
           )}
         </div>

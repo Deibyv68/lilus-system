@@ -1,5 +1,6 @@
 "use client";
 
+import { EscanearGuia } from "./escanear-guia";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -294,6 +295,21 @@ export function StatusSelector({
                   e.preventDefault();
                   confirmShip();
                 }
+              }}
+            />
+
+            {/*
+              Escanear va debajo del campo y no en su lugar.
+
+              El teclado sigue siendo el camino cuando la etiqueta está
+              arrugada, cuando el código no lee, o cuando el número llega
+              por mensaje sin etiqueta delante. La cámara es el atajo para
+              el caso normal, no la única puerta.
+            */}
+            <EscanearGuia
+              onLeido={(numero) => {
+                setTracking(numero);
+                toast.success(`Guía ${numero}`);
               }}
             />
           </div>

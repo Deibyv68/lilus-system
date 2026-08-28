@@ -1,3 +1,4 @@
+import { CalculadoraDeEnvio } from "@/components/tienda/calculadora-envio";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -210,18 +211,15 @@ export default async function PresentacionPack({ params }: Props) {
                 empaca a mano. El pedido sale del taller unos{" "}
                 {DIAS_PREPARACION} días después de confirmar el pago.
               </p>
-              <ul className="space-y-1.5 border-t border-tienda-linea pt-5">
-                {zonas.map((z) => (
-                  <li key={z.id} className="flex justify-between gap-4">
-                    <span>
-                      {z.nombre} · {z.transportadora}
-                    </span>
-                    <span className="tabular-nums text-tienda-texto">
-                      {formatCurrency(z.precio)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {/*
+                La lista de zonas ya no basta.
+
+                Decía cuánto vale cada zona, no cuánto le cuesta a quien
+                lee: para acertar hay que saber que Cumbayá y Sangolquí
+                siguen siendo cantón Quito, y mucha gente no lo sabe.
+                Marcando el punto no hay nada que deducir.
+              */}
+              <CalculadoraDeEnvio zonas={zonas} />
             </div>
           </Revelar>
         </section>

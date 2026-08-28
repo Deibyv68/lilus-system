@@ -39,6 +39,20 @@ export async function anotarComprobante(
     return { ok: false, error: (e as Error).message };
   }
 
+  return anotarArchivoGuardado(orderId, guardado);
+}
+
+/**
+ * Lo mismo, pero para un archivo que YA está guardado en el disco.
+ *
+ * Existe por lo que se comparte desde WhatsApp: ahí el archivo llega
+ * antes de que nadie haya dicho a qué pedido pertenece, así que se guarda
+ * primero y se engancha después, cuando se elige el pedido en la lista.
+ */
+export async function anotarArchivoGuardado(
+  orderId: string,
+  guardado: { archivo: string; tipo: string; bytes: number }
+): Promise<Anotado> {
   const fila = await prisma.comprobanteDePago.create({
     data: {
       orderId,
