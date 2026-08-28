@@ -5,10 +5,11 @@ import {
   buscarPedidoPorToken,
   datosDeCobro,
   datosDeContacto,
+  cuentasDeCobro,
 } from "@/lib/tienda";
 import { qrComoDataUri } from "@/lib/qr";
 import { SubirComprobante } from "./subir-comprobante";
-import { DatoCopiable } from "./dato-copiable";
+import { ElegirCuenta } from "./elegir-cuenta";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 
 /**
@@ -68,10 +69,11 @@ export default async function PaginaPedido({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [pedido, cobro, contacto] = await Promise.all([
+  const [pedido, cobro, contacto, cuentas] = await Promise.all([
     buscarPedidoPorToken(token),
     datosDeCobro(),
     datosDeContacto(),
+    cuentasDeCobro(),
   ]);
 
   if (!pedido) notFound();
@@ -95,7 +97,7 @@ export default async function PaginaPedido({
             )
           : null;
 
-  const hayCuenta = Object.values(cobro.cuenta).some(Boolean);
+  const hayCuenta = cuentas.length > 0;
 
   const estado = ESTADOS[pedido.status] ?? ESTADOS.PENDING;
   const primerNombre = pedido.customer.name.split(" ")[0];
@@ -203,38 +205,11 @@ export default async function PaginaPedido({
                 identificarse.
               */}
               <div className="mt-3">
-                <DatoCopiable
-                  etiqueta="Monto"
-                  valor={pedido.total.toFixed(2)}
-                  destacado
+                <ElegirCuenta
+                  cuentas={cuentas}
+                  monto={pedido.total}
+                  referencia={pedido.orderNumber}
                 />
-                <DatoCopiable
-                  etiqueta="Referencia"
-                  valor={pedido.orderNumber}
-                  destacado
-                  ayuda="Ponlo en el concepto o descripción."
-                />
-                {cobro.cuenta.banco && (
-                  <DatoCopiable etiqueta="Banco" valor={cobro.cuenta.banco} />
-                )}
-                {cobro.cuenta.tipo && (
-                  <DatoCopiable etiqueta="Tipo de cuenta" valor={cobro.cuenta.tipo} />
-                )}
-                {cobro.cuenta.numero && (
-                  <DatoCopiable
-                    etiqueta="Número de cuenta"
-                    valor={cobro.cuenta.numero}
-                  />
-                )}
-                {cobro.cuenta.titular && (
-                  <DatoCopiable etiqueta="A nombre de" valor={cobro.cuenta.titular} />
-                )}
-                {cobro.cuenta.cedula && (
-                  <DatoCopiable etiqueta="Cédula o RUC" valor={cobro.cuenta.cedula} />
-                )}
-                {cobro.cuenta.correo && (
-                  <DatoCopiable etiqueta="Correo" valor={cobro.cuenta.correo} />
-                )}
               </div>
 
               {/* La nota suelta, si la dueña escribió algo más. */}
@@ -246,7 +221,12 @@ export default async function PaginaPedido({
             </div>
           )}
 
-          {!cobro.deuna && !cobro.banco && (
+          {/*
+            Sin ninguna cuenta cargada no se inventa una: se dice la verdad,
+            que los datos van por WhatsApp. Mostrar una cuenta a medias o de
+            ejemplo sería mandar dinero a ninguna parte.
+          */}
+          {!cobro.deuna && !hayCuenta && (
             <p className="mt-4 text-sm text-tienda-tenue">
               Te escribimos por WhatsApp con los datos para pagar. Ten a mano el
               número {pedido.orderNumber}.

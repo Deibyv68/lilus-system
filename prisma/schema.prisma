@@ -868,3 +868,40 @@ model ComprobanteDePago {
   /// Para encontrar el mismo comprobante usado en otro pedido.
   @@index([numeroLeido])
 }
+
+/// Una cuenta donde se puede recibir el pago.
+///
+/// ── Por qué varias y no una ──
+///
+/// En Ecuador transferir entre bancos distintos tarda y a veces cobra;
+/// dentro del mismo banco es inmediato y gratis. Quien compra mira la
+/// lista, encuentra su banco, y paga sin costo ni espera. Con una sola
+/// cuenta, todos los demás pagan comisión o esperan un día — y algunos
+/// simplemente no compran.
+///
+/// ── Por qué campos y no un texto ──
+///
+/// La página del pedido pone un botón de copiar junto a cada dato, porque
+/// quien transfiere pega el número en un campo y el nombre en otro. De un
+/// bloque de texto no se pueden separar de forma fiable.
+model CuentaDeCobro {
+  id      String  @id @default(cuid())
+  banco   String
+  tipo    String? // "Ahorros" | "Corriente" — texto libre, cada banco los llama distinto
+  numero  String
+  titular String?
+  cedula  String?
+  /// Algunos bancos permiten transferir por correo o alias.
+  correo  String?
+
+  /// El orden en que se ofrecen. Primero el banco donde más gente tiene cuenta.
+  orden  Int     @default(0)
+  /// Apagar una cuenta sin borrarla: los pedidos viejos siguen teniendo
+  /// sentido y mañana puede volver a usarse.
+  activa Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([activa, orden])
+}

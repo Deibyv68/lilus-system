@@ -635,12 +635,6 @@ export async function datosDeCobro() {
           "deuna_enlace",
           "deuna_qr",
           "bank_details",
-          "pago_banco",
-          "pago_tipo_cuenta",
-          "pago_numero_cuenta",
-          "pago_titular",
-          "pago_cedula",
-          "pago_correo",
         ],
       },
     },
@@ -663,22 +657,30 @@ export async function datosDeCobro() {
       depósitos», por ejemplo.
     */
     banco: m.bank_details || null,
-    /*
-      Y los datos uno por uno, para poder copiarlos por separado.
-
-      Quien va a transferir pega el número en un campo y el nombre en
-      otro. Darle el bloque entero le obliga a borrar lo que sobra cada
-      vez, que es justo el momento en que se cuela un dígito de menos.
-    */
-    cuenta: {
-      banco: m.pago_banco || null,
-      tipo: m.pago_tipo_cuenta || null,
-      numero: m.pago_numero_cuenta || null,
-      titular: m.pago_titular || null,
-      cedula: m.pago_cedula || null,
-      correo: m.pago_correo || null,
-    },
   };
+}
+
+/**
+ * Las cuentas donde se puede pagar, en el orden en que se ofrecen.
+ *
+ * Solo las activas: una cuenta apagada no se borra —los pedidos viejos
+ * siguen teniendo sentido— pero deja de ofrecerse.
+ */
+export async function cuentasDeCobro() {
+  const cuentas = await prisma.cuentaDeCobro.findMany({
+    where: { activa: true },
+    orderBy: [{ orden: "asc" }, { banco: "asc" }],
+    select: {
+      id: true,
+      banco: true,
+      tipo: true,
+      numero: true,
+      titular: true,
+      cedula: true,
+      correo: true,
+    },
+  });
+  return cuentas;
 }
 
 /**

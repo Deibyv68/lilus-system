@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -136,55 +138,13 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
         <div className="space-y-1.5">
           {/*
-            Los datos de la cuenta van uno por uno, no en un texto suelto.
-
-            La página del pedido pone un botón de copiar junto a cada uno:
-            quien va a transferir pega el número en un campo y el nombre en
-            otro. De un bloque de texto no se pueden separar de forma
-            fiable, y copiar todo junto obliga a borrar lo que sobra cada
-            vez — que es donde se pierde un dígito de la cuenta.
+            Las cuentas bancarias se administran en su propia pantalla,
+            porque ahora son varias y cada una tiene seis campos. Aquí solo
+            queda la nota suelta para lo que no encaje en ninguno.
           */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Banco"
-              value={values.pago_banco ?? ""}
-              onChange={(v) => update("pago_banco", v)}
-              placeholder="Banco Pichincha"
-            />
-            <Field
-              label="Tipo de cuenta"
-              value={values.pago_tipo_cuenta ?? ""}
-              onChange={(v) => update("pago_tipo_cuenta", v)}
-              placeholder="Ahorros"
-            />
-            <Field
-              label="Número de cuenta"
-              value={values.pago_numero_cuenta ?? ""}
-              onChange={(v) => update("pago_numero_cuenta", v)}
-              placeholder="2209876543"
-            />
-            <Field
-              label="A nombre de"
-              value={values.pago_titular ?? ""}
-              onChange={(v) => update("pago_titular", v)}
-              placeholder="Nombre del titular"
-            />
-            <Field
-              label="Cédula o RUC del titular"
-              value={values.pago_cedula ?? ""}
-              onChange={(v) => update("pago_cedula", v)}
-              placeholder="0912345678"
-            />
-            <Field
-              label="Correo para transferencias"
-              value={values.pago_correo ?? ""}
-              onChange={(v) => update("pago_correo", v)}
-              placeholder="pagos@correo.com"
-              hint="Algunos bancos lo piden. Déjalo vacío si no aplica."
-            />
-          </div>
-
-          <Label className="text-xs font-medium">Nota adicional</Label>
+          <Label className="text-xs font-medium">
+            Nota sobre el pago (opcional)
+          </Label>
           <Textarea
             value={values.bank_details ?? ""}
             onChange={(e) => update("bank_details", e.target.value)}
@@ -192,10 +152,15 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             rows={3}
           />
           <p className="text-xs text-muted-foreground">
-            Va debajo de los datos de arriba, para lo que no encaje en un
-            campo. Si dejas todo vacío, la tienda le dice al cliente que le
-            enviamos los datos por WhatsApp en vez de mostrar una cuenta
-            equivocada.
+            Va debajo de los datos de la cuenta que el cliente elija, para lo
+            que no encaje en un campo. Las cuentas se administran en{" "}
+            <Link
+              href="/sistema/configuracion/cuentas"
+              className="underline underline-offset-2"
+            >
+              Dónde te pueden pagar
+            </Link>
+            .
           </p>
         </div>
       </div>

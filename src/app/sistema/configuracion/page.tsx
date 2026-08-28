@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "./settings-form";
@@ -38,12 +38,6 @@ export default async function SettingsPage() {
                 sender_province: map.sender_province ?? "Pichincha",
                 sender_address: map.sender_address ?? "",
                 bank_details: map.bank_details ?? "",
-                pago_banco: map.pago_banco ?? "",
-                pago_tipo_cuenta: map.pago_tipo_cuenta ?? "",
-                pago_numero_cuenta: map.pago_numero_cuenta ?? "",
-                pago_titular: map.pago_titular ?? "",
-                pago_cedula: map.pago_cedula ?? "",
-                pago_correo: map.pago_correo ?? "",
                 deuna_enlace: map.deuna_enlace ?? "",
                 contact_whatsapp: map.contact_whatsapp ?? "",
                 contact_instagram: map.contact_instagram ?? "",
@@ -53,6 +47,23 @@ export default async function SettingsPage() {
                 promo_enlace: map.promo_enlace ?? "",
               }}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Dónde te pueden pagar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Las cuentas bancarias que se ofrecen al terminar un pedido. Quien
+              compra elige su banco y ve solo esos datos.
+            </p>
+            <Button asChild variant="outline" className="mt-3">
+              <Link href="/sistema/configuracion/cuentas">
+                <Landmark className="size-4" /> Administrar cuentas
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
