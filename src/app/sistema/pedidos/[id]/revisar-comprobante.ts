@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/guard";
+import { anotarComprobante } from "@/lib/anotar-comprobante";
 
 /**
  * Revisar un comprobante: decir qué dice de verdad, o que no cuenta.
@@ -159,4 +160,47 @@ function refrescar(orderId: string, publicToken: string | null) {
   revalidatePath("/sistema/pedidos");
   revalidatePath("/sistema");
   if (publicToken) revalidatePath(`/pedido/${publicToken}`);
+}
+
+/**
+ * Subir un comprobante desde el panel.
+ *
+ * ── Por qué hacía falta ──
+ *
+ * Un pedido cargado a mano no tiene página pública: nace sin token
+ * porque no se comparte con nadie. Y un pedido de la web puede tener
+ * cliente que prefiere mandar la captura por WhatsApp, como hace la
+ * mayoría. En los dos casos la imagen llegaba al teléfono de la dueña y
+ * no había dónde ponerla — se quedaba en una conversación, que es donde
+ * las cosas se pierden.
+ *
+ * ── En qué se diferencia de la del cliente ──
+ *
+ * No exige que el pedido esté pendiente: la captura puede llegar tarde,
+ * después de haberlo dado por pagado mirando el banco, y guardarla sigue
+ * valiendo la pena.
+ *
+ * No tiene tope de cinco. Ese tope existe para que alguien con el enlace
+ * no llene el disco; aquí hay una sesión detrás.
+ *
+ * Y no manda aviso al teléfono: el aviso es para enterarse de que llegó
+ * un comprobante, y aquí lo está subiendo justamente quien se enteraría.
+ */
+export async function subirComprobanteEnPanelAction(
+  orderId: string,
+  formData: FormData
+): Promise<Resultado> {
+  await requireUser();
+
+  const pedido = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, publicToken: true },
+  });
+  if (!pedido) return { ok: false, error: "Ese pedido ya no existe" };
+
+  const anotado = await anotarComprobante(pedido.id, formData.get("comprobante"));
+  if (!anotado.ok) return { ok: false, error: anotado.error };
+
+  refrescar(pedido.id, pedido.publicToken);
+  return { ok: true };
 }

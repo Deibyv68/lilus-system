@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import {
   Paperclip,
   Pencil,
   RotateCcw,
+  Upload,
   X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
   confirmarComprobanteAction,
   descartarComprobanteAction,
   reabrirComprobanteAction,
+  subirComprobanteEnPanelAction,
 } from "./revisar-comprobante";
 
 export type ComprobanteEnPanel = {
@@ -68,11 +70,13 @@ export type Repetido = {
  * falta. Se pone en grande, y ya.
  */
 export function Pago({
+  orderId,
   total,
   comprobantes,
   repetidos,
   estadoPedido,
 }: {
+  orderId: string;
   total: number;
   comprobantes: ComprobanteEnPanel[];
   repetidos: Repetido[];
@@ -80,7 +84,12 @@ export function Pago({
 }) {
   const pago = estadoDePago(comprobantes, total);
 
-  if (!pago.hayComprobantes) return null;
+  /*
+    En un pedido cancelado no hay nada que cobrar, así que la tarjeta
+    sobra — salvo que ya tenga comprobantes, y entonces sigue siendo
+    historia que hace falta poder consultar.
+  */
+  if (!pago.hayComprobantes && estadoPedido === "CANCELLED") return null;
 
   return (
     <Card>
@@ -92,20 +101,38 @@ export function Pago({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="space-y-1.5 text-sm">
-          <Linea label="Total del pedido" valor={total} />
-          <Linea label="Confirmado" valor={pago.confirmado} />
+        {/*
+          Sin comprobantes no se despliega la aritmética.
 
-          {pago.falta > 0 &&
-            (estadoPedido === "PENDING" ? (
-              <div className="flex items-baseline justify-between gap-3 border-t pt-1.5">
-                <span className="font-medium">Falta</span>
-                <span className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(pago.falta)}
-                </span>
-              </div>
-            ) : (
-              /*
+          «Confirmado $0,00 · Falta $26,50» sobre un pedido que se pagó en
+          efectivo no informa de nada: repite el total y llama «falta» a
+          algo que no falta. Y esos son casi todos los pedidos cargados a
+          mano. Aquí basta con decir de cuánto es y ofrecer dónde guardar
+          la captura si llega.
+        */}
+        {!pago.hayComprobantes ? (
+          <p className="text-sm text-muted-foreground">
+            Sin comprobantes. El pedido es de{" "}
+            <span className="font-medium text-foreground tabular-nums">
+              {formatCurrency(total)}
+            </span>
+            .
+          </p>
+        ) : (
+          <div className="space-y-1.5 text-sm">
+            <Linea label="Total del pedido" valor={total} />
+            <Linea label="Confirmado" valor={pago.confirmado} />
+
+            {pago.falta > 0 &&
+              (estadoPedido === "PENDING" ? (
+                <div className="flex items-baseline justify-between gap-3 border-t pt-1.5">
+                  <span className="font-medium">Falta</span>
+                  <span className="text-lg font-semibold tabular-nums">
+                    {formatCurrency(pago.falta)}
+                  </span>
+                </div>
+              ) : (
+                /*
                 El pedido ya se dio por pagado y los comprobantes no llegan
                 al total. No es un error: el dinero pudo entrar en efectivo
                 o por una transferencia sin captura.
@@ -115,39 +142,40 @@ export function Pago({
                 caja y no en los comprobantes, la respuesta está aquí en
                 vez de en la memoria de nadie.
               */
-              <p className="border-t pt-1.5 text-xs text-muted-foreground">
-                Marcado como pagado con {formatCurrency(pago.falta)} sin
-                respaldar por comprobantes. Si entró en efectivo o por una
-                transferencia sin captura, está bien.
+                <p className="border-t pt-1.5 text-xs text-muted-foreground">
+                  Marcado como pagado con {formatCurrency(pago.falta)} sin
+                  respaldar por comprobantes. Si entró en efectivo o por una
+                  transferencia sin captura, está bien.
+                </p>
+              ))}
+
+            {pago.cuadra && pago.sobra === 0 && (
+              <p className="flex items-start gap-1.5 rounded bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">
+                <Check className="mt-px size-3.5 shrink-0" />
+                <span>
+                  Cuadra con el total.
+                  {estadoPedido === "PENDING" &&
+                    " Ya puedes marcar el pedido como pagado, aquí arriba."}
+                </span>
               </p>
-            ))}
+            )}
 
-          {pago.cuadra && pago.sobra === 0 && (
-            <p className="flex items-start gap-1.5 rounded bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200">
-              <Check className="mt-px size-3.5 shrink-0" />
-              <span>
-                Cuadra con el total.
-                {estadoPedido === "PENDING" &&
-                  " Ya puedes marcar el pedido como pagado, aquí arriba."}
-              </span>
-            </p>
-          )}
-
-          {/*
+            {/*
             De más sí es raro, y por eso sí avisa. Casi siempre es un
             comprobante de otro pedido metido en este, o el mismo subido
             dos veces y aceptado dos veces.
           */}
-          {pago.sobra > 0 && (
-            <p className="flex items-start gap-1.5 rounded bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
-              <AlertTriangle className="mt-px size-3.5 shrink-0" />
-              <span>
-                Hay {formatCurrency(pago.sobra)} de más. Suele ser un
-                comprobante que pertenece a otro pedido.
-              </span>
-            </p>
-          )}
-        </div>
+            {pago.sobra > 0 && (
+              <p className="flex items-start gap-1.5 rounded bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                <AlertTriangle className="mt-px size-3.5 shrink-0" />
+                <span>
+                  Hay {formatCurrency(pago.sobra)} de más. Suele ser un
+                  comprobante que pertenece a otro pedido.
+                </span>
+              </p>
+            )}
+          </div>
+        )}
 
         {/*
           Lo que dicen los que faltan por mirar, aparte y en gris. Orienta
@@ -168,20 +196,24 @@ export function Pago({
           </p>
         )}
 
-        <ul className="space-y-4">
-          {comprobantes.map((c) => (
-            <li key={c.id}>
-              <Comprobante
-                comprobante={c}
-                falta={pago.falta}
-                repetidos={repetidos.filter((r) => {
-                  const suyo = c.numeroConfirmado ?? c.numeroLeido;
-                  return suyo !== null && r.numero === suyo;
-                })}
-              />
-            </li>
-          ))}
-        </ul>
+        {comprobantes.length > 0 && (
+          <ul className="space-y-4">
+            {comprobantes.map((c) => (
+              <li key={c.id}>
+                <Comprobante
+                  comprobante={c}
+                  falta={pago.falta}
+                  repetidos={repetidos.filter((r) => {
+                    const suyo = c.numeroConfirmado ?? c.numeroLeido;
+                    return suyo !== null && r.numero === suyo;
+                  })}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Subir orderId={orderId} hayAlguno={comprobantes.length > 0} />
       </CardContent>
     </Card>
   );
@@ -304,7 +336,9 @@ function Comprobante({
             fecha={c.fechaConfirmada}
           />
           {c.revisadoPor && (
-            <p className="text-muted-foreground">Revisado por {c.revisadoPor}</p>
+            <p className="text-muted-foreground">
+              Revisado por {c.revisadoPor}
+            </p>
           )}
           <Button
             type="button"
@@ -409,10 +443,10 @@ function FormularioDeRevision({
       ? String(c.montoConfirmado)
       : c.montoLeido != null
         ? String(c.montoLeido)
-        : ""
+        : "",
   );
   const [numero, setNumero] = useState(
-    c.numeroConfirmado ?? c.numeroLeido ?? ""
+    c.numeroConfirmado ?? c.numeroLeido ?? "",
   );
   const [fecha, setFecha] = useState(c.fechaConfirmada ?? c.fechaLeida ?? "");
   const [banco, setBanco] = useState(c.bancoConfirmado ?? c.bancoLeido ?? "");
@@ -450,7 +484,11 @@ function FormularioDeRevision({
           inputMode="decimal"
         />
         <Campo etiqueta="Banco" valor={banco} onChange={setBanco} />
-        <Campo etiqueta="Nº de comprobante" valor={numero} onChange={setNumero} />
+        <Campo
+          etiqueta="Nº de comprobante"
+          valor={numero}
+          onChange={setNumero}
+        />
         <Campo etiqueta="Fecha" valor={fecha} onChange={setFecha} />
       </div>
 
@@ -523,5 +561,87 @@ function Campo({
         className="h-8 text-xs"
       />
     </label>
+  );
+}
+
+/**
+ * Adjuntar un comprobante desde el panel.
+ *
+ * ── Por qué hace falta aquí ──
+ *
+ * La mayoría manda la captura por WhatsApp, no la sube a su página. Y un
+ * pedido cargado a mano ni siquiera tiene página. Hasta ahora esa imagen
+ * se quedaba en la conversación, que es donde las cosas se pierden: a la
+ * semana nadie encuentra de qué pedido era.
+ *
+ * Guardada aquí queda pegada al pedido, se lee sola, y entra en la
+ * comprobación de comprobantes repetidos — que es lo que pilla la misma
+ * captura mandada a dos pedidos distintos.
+ */
+function Subir({
+  orderId,
+  hayAlguno,
+}: {
+  orderId: string;
+  hayAlguno: boolean;
+}) {
+  const router = useRouter();
+  const entrada = useRef<HTMLInputElement>(null);
+  const [subiendo, empezar] = useTransition();
+
+  function onArchivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    const fd = new FormData();
+    fd.set("comprobante", archivo);
+
+    empezar(async () => {
+      const r = await subirComprobanteEnPanelAction(orderId, fd);
+      /*
+        Se limpia siempre. Si falló hay que poder elegir el mismo archivo
+        otra vez, y el navegador no dispara `change` cuando el valor no
+        cambia — así que sin esto el segundo intento no haría nada.
+      */
+      if (entrada.current) entrada.current.value = "";
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      toast.success("Comprobante guardado", {
+        description: "Se está leyendo. Recarga en unos segundos.",
+      });
+      router.refresh();
+    });
+  }
+
+  return (
+    <div>
+      {/*
+        El `label` es el botón y el `input` va escondido: a un campo de
+        archivo no se le puede dar forma, y el de fábrica desentona con
+        todo lo demás.
+      */}
+      <label
+        className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2.5 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground ${
+          subiendo ? "pointer-events-none opacity-60" : ""
+        }`}
+      >
+        <Upload className="size-3.5" />
+        {subiendo
+          ? "Subiendo…"
+          : hayAlguno
+            ? "Adjuntar otro comprobante"
+            : "Adjuntar el comprobante que te mandaron"}
+        <input
+          ref={entrada}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+          onChange={onArchivo}
+          disabled={subiendo}
+          className="sr-only"
+        />
+      </label>
+    </div>
   );
 }

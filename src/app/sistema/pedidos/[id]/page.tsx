@@ -326,6 +326,7 @@ export default async function OrderDetailPage({
             cuela el error de confirmar el pedido equivocado.
           */}
           <Pago
+            orderId={order.id}
             total={order.total}
             estadoPedido={order.status}
             comprobantes={order.comprobantes}
