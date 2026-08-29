@@ -65,6 +65,32 @@ export default function manifest(): MetadataRoute.Manifest {
         ],
       },
     },
+    /*
+      Aparecer en el «abrir con» de una ubicación.
+
+      Al tocar una ubicación en WhatsApp, Android ofrece abrirla con otra
+      app y le pasa una dirección `geo:`. Registrándonos para ese esquema,
+      LILUS sale en esa lista junto a Google Maps — y la ubicación que la
+      clienta mandó por el chat se puede pegar a su pedido sin
+      transcribir nada.
+
+      Es el mismo camino que el comprobante compartido, por otra puerta:
+      WhatsApp no deja compartir una ubicación como texto, pero sí
+      abrirla.
+
+      `geo` está en la lista de esquemas que un sitio puede manejar; no es
+      un invento nuestro. El soporte en Android todavía es desigual, así
+      que esto puede no aparecer en todos los teléfonos — si no aparece,
+      no se pierde nada: sigue estando pegar el enlace a mano.
+
+      El `%s` lo reemplaza el navegador por la dirección completa.
+    */
+    protocol_handlers: [
+      {
+        protocol: "geo",
+        url: "/sistema/ubicacion?g=%s",
+      },
+    ],
     shortcuts: [
       {
         name: "Nuevo pedido",

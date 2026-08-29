@@ -60,6 +60,34 @@ export function leerPunto(texto: string): Punto | null {
   if (!t) return null;
 
   /*
+    0. Una dirección `geo:`, que es lo que manda Android.
+
+    Al tocar una ubicación en WhatsApp, el teléfono ofrece abrirla «con»
+    otra app y le pasa un `geo:`. Va primero porque su formato es
+    inequívoco: lo que hay detrás de los dos puntos son las coordenadas,
+    sin adivinar nada.
+
+    Dos formas: `geo:lat,lng` a secas, y `geo:0,0?q=lat,lng(Etiqueta)`,
+    que es la que usan las apps cuando además quieren poner un nombre al
+    punto. En la segunda las coordenadas buenas son las del `q=` — las de
+    delante van en cero a propósito.
+  */
+  const geo = /^geo:/i.exec(t);
+  if (geo) {
+    const conEtiqueta = /[?&]q=(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i.exec(t);
+    if (conEtiqueta) {
+      const p = valido(Number(conEtiqueta[1]), Number(conEtiqueta[2]));
+      if (p) return p;
+    }
+    const directas = /^geo:(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i.exec(t);
+    if (directas) {
+      const p = valido(Number(directas[1]), Number(directas[2]));
+      if (p) return p;
+    }
+    return null;
+  }
+
+  /*
     El orden importa.
 
     Un mismo enlace puede traer varios pares de números, y no todos son el

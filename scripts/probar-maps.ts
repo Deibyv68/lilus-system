@@ -40,6 +40,18 @@ igual(
 );
 igual("sin espacio", leerPunto("-0.1807,-78.4678"), quito);
 
+console.log("\n── la dirección «geo:» que manda Android ──");
+igual("geo: a secas", leerPunto("geo:-0.1807,-78.4678"), quito);
+igual(
+  "geo: con etiqueta manda el q=, no los ceros de delante",
+  leerPunto("geo:0,0?q=-0.1807,-78.4678(Mi%20casa)"),
+  quito
+);
+igual("geo: con zoom detrás", leerPunto("geo:-0.1807,-78.4678?z=17"), quito);
+igual("geo: en mayúsculas", leerPunto("GEO:-0.1807,-78.4678"), quito);
+igual("geo: sin coordenadas", leerPunto("geo:0,0?q=Mi+casa"), null);
+igual("geo: fuera de Ecuador", leerPunto("geo:48.8566,2.3522"), null);
+
 console.log("\n── lo que NO debe aceptar ──");
 igual("texto cualquiera", leerPunto("de las alondras y de los quindes"), null);
 igual("vacío", leerPunto(""), null);

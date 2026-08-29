@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ElegirPedido } from "./elegir-pedido";
+import { ElegirPedidoParaComprobante } from "./elegir-pedido";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +90,7 @@ export default async function Compartido({
         description="Llegó un comprobante desde otra app. Elige a cuál pertenece."
       />
 
-      <ElegirPedido
+      <ElegirPedidoParaComprobante
         archivo={archivo}
         tipo={tipo}
         bytes={Number(bytes ?? 0)}

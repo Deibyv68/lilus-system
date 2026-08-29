@@ -362,6 +362,29 @@ export function NewOrderForm({
           />
         )}
 
+        {/*
+          También aquí, que es donde más se nota lo que ahorra.
+
+          Este paso es el de teclear nombre, cédula, teléfono y correo de
+          otra persona a partir de lo que dictó por WhatsApp. Es el sitio
+          donde más se equivoca uno y el que el enlace se salta entero.
+        */}
+        {step === 2 && cart.length > 0 && (
+          <div className="mt-6 border-t pt-6">
+            <BotonEnlace
+              momento="datos"
+              items={cart.map((l) => ({
+                tipo: l.kind === "pack" ? ("pack" as const) : ("producto" as const),
+                refId: l.refId,
+                cantidad: l.quantity,
+              }))}
+            />
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Así no tienes que teclear sus datos: los escribe ella.
+            </p>
+          </div>
+        )}
+
         {step === 3 && (
           <StepShipping
             address={address}
