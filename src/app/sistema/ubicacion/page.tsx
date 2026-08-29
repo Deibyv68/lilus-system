@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { leerPunto } from "@/lib/punto-de-maps";
 import { resolverEnlaceDeMapsAction } from "../pedidos/nuevo/resolver-maps";
 import { ElegirDondeVaLaUbicacion } from "./elegir";
 
@@ -38,19 +37,20 @@ export default async function Ubicacion({
   const crudo = g ? decodeURIComponent(g) : "";
 
   /*
-    Lo que llega de Google Maps es un enlace corto sin coordenadas
-    dentro, así que hay que seguirlo. Se reutiliza la misma acción que
-    usa el pedido manual al pegar un enlace: comprueba el dominio antes
-    de salir a la red, y ya está probada.
+    Se usa la misma acción que el pedido manual al pegar un enlace.
 
-    Se intenta leer primero sin salir a ningún lado, por si viene un
-    `geo:` o un enlace largo — que es gratis y no da turnos a nadie.
+    Hace las dos cosas de una vez: saca el punto —siguiendo el enlace
+    corto si hace falta— y le pregunta al mapa cómo se llama ese sitio,
+    con calle principal, transversal y código postal. Comprueba el
+    dominio antes de salir a la red, y ya está probada.
+
+    Antes aquí solo se leía el punto, y por eso asignar una ubicación
+    dejaba la dirección escrita como estaba: nunca se preguntaba el
+    nombre de la calle.
   */
-  let punto = crudo ? leerPunto(crudo) : null;
-  if (!punto && crudo) {
-    const r = await resolverEnlaceDeMapsAction(crudo);
-    if (r.ok) punto = r.punto;
-  }
+  const resuelto = crudo ? await resolverEnlaceDeMapsAction(crudo) : null;
+  const punto = resuelto?.ok ? resuelto.punto : null;
+  const lugar = resuelto?.ok ? resuelto.lugar : null;
 
   if (!punto) {
     return (
@@ -106,6 +106,8 @@ export default async function Ubicacion({
       <ElegirDondeVaLaUbicacion
         lat={punto.lat}
         lng={punto.lng}
+        calleDelMapa={lugar?.calle || null}
+        postalDelMapa={lugar?.postal || null}
         pedidos={pedidos.map((p) => ({
           id: p.id,
           orderNumber: p.orderNumber,

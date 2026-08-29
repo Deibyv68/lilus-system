@@ -10,8 +10,15 @@ import { requireUser } from "@/lib/guard";
  *
  * ── Qué toca y qué no ──
  *
- * Toca el punto: latitud, longitud y, si se sabe, el código postal. Eso
- * mejora el reparto y no le cuesta nada a nadie.
+ * El punto siempre: latitud, longitud y, si se sabe, el código postal.
+ * Eso mejora el reparto y no le cuesta nada a nadie.
+ *
+ * La dirección escrita, solo si se pidió. Quien comparte una ubicación
+ * casi siempre lo hace porque lo escrito no sirve, pero reemplazarlo sin
+ * preguntar tampoco vale: «De las Alondras y De los Quindes» es como se
+ * llama el sitio para quien vive ahí, y el mapa puede devolver la
+ * avenida grande de al lado — correcta, e inútil para llegar. Por eso lo
+ * decide quien mira, en la pantalla anterior.
  *
  * NO toca la zona ni el costo del envío, aunque el punto caiga en otro
  * cantón. Ese pedido ya existe y su total ya se le dijo a la clienta —
@@ -26,7 +33,9 @@ export async function engancharUbicacionAction(
   orderId: string,
   lat: number,
   lng: number,
-  postal: string | null
+  postal: string | null,
+  /** La calle del mapa, solo si se pidió reemplazar la escrita. */
+  calle: string | null
 ): Promise<Resultado> {
   await requireUser();
 
@@ -53,6 +62,12 @@ export async function engancharUbicacionAction(
         esta vez no se supo dejaría peor la dirección que antes.
       */
       ...(postal ? { postal } : {}),
+      /*
+        Lo mismo con la calle: solo si viene. Un `null` aquí significa
+        «no la reemplaces», no «bórrala» — dejar el pedido sin dirección
+        escrita sería peor que dejarlo con una regular.
+      */
+      ...(calle?.trim() ? { address: calle.trim() } : {}),
     },
   });
 
