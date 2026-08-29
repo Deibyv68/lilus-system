@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { leerPunto } from "@/lib/punto-de-maps";
+import { resolverEnlaceDeMapsAction } from "../pedidos/nuevo/resolver-maps";
 import { ElegirDondeVaLaUbicacion } from "./elegir";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,22 @@ export default async function Ubicacion({
   searchParams: Promise<{ g?: string }>;
 }) {
   const { g } = await searchParams;
-  const punto = g ? leerPunto(decodeURIComponent(g)) : null;
+  const crudo = g ? decodeURIComponent(g) : "";
+
+  /*
+    Lo que llega de Google Maps es un enlace corto sin coordenadas
+    dentro, así que hay que seguirlo. Se reutiliza la misma acción que
+    usa el pedido manual al pegar un enlace: comprueba el dominio antes
+    de salir a la red, y ya está probada.
+
+    Se intenta leer primero sin salir a ningún lado, por si viene un
+    `geo:` o un enlace largo — que es gratis y no da turnos a nadie.
+  */
+  let punto = crudo ? leerPunto(crudo) : null;
+  if (!punto && crudo) {
+    const r = await resolverEnlaceDeMapsAction(crudo);
+    if (r.ok) punto = r.punto;
+  }
 
   if (!punto) {
     return (
@@ -45,8 +61,8 @@ export default async function Ubicacion({
             <p className="flex items-start gap-2 text-sm">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
               <span>
-                {g
-                  ? "Lo que llegó no traía coordenadas dentro de Ecuador. Puedes marcar el punto a mano en el pedido."
+                {crudo
+                  ? "Lo que llegó no traía un punto que podamos leer, o cae fuera de Ecuador. Puedes marcarlo a mano en el pedido."
                   : "No llegó ninguna ubicación."}
               </span>
             </p>

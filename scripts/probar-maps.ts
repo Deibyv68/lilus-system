@@ -74,6 +74,23 @@ igual(
 );
 igual("latitud imposible", leerPunto("120.5, -78.4"), null);
 
+console.log("\n── lo que comparte Google Maps: el nombre y debajo el enlace ──");
+igual(
+  "enlace largo dentro del texto",
+  leerPunto("Estación La Carolina\nhttps://www.google.com/maps/@-0.1807,-78.4678,17z"),
+  quito
+);
+igual(
+  "enlace corto dentro del texto se reconoce como corto",
+  esEnlaceCorto("Mi casa\nhttps://maps.app.goo.gl/AbCdEf123"),
+  true
+);
+igual(
+  "...y todavía no tiene punto: lo resuelve el servidor",
+  leerPunto("Mi casa\nhttps://maps.app.goo.gl/AbCdEf123"),
+  null
+);
+
 console.log("\n── los cortos se reconocen para pedir ayuda al servidor ──");
 igual("maps.app.goo.gl", esEnlaceCorto("https://maps.app.goo.gl/AbCdEf"), true);
 igual("goo.gl/maps", esEnlaceCorto("https://goo.gl/maps/AbCdEf"), true);

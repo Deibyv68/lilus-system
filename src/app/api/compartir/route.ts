@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@/lib/guard";
 import { guardarComprobante } from "@/lib/comprobantes";
+import { leerPunto, esEnlaceCorto } from "@/lib/punto-de-maps";
 
 export const dynamic = "force-dynamic";
 
@@ -74,11 +75,33 @@ export async function POST(req: NextRequest) {
   if (!usuario) return irA("/login");
 
   let archivo: unknown;
+  let texto = "";
   try {
     const form = await req.formData();
     archivo = form.get("comprobante");
+    texto = [form.get("texto"), form.get("titulo")]
+      .filter((v): v is string => typeof v === "string")
+      .join(" ")
+      .trim();
   } catch {
     return irA("/sistema/compartido?error=lectura");
+  }
+
+  /*
+    Sin imagen, pero con un enlace de mapa: es una ubicación.
+
+    Esta es la única forma que quedó de meter en el sistema la ubicación
+    que una clienta manda por WhatsApp. WhatsApp no la comparte, pero al
+    tocarla se abre en Google Maps, y desde Maps sí se comparte — como un
+    enlace de texto, que es justo lo que este destino ya sabía recibir.
+
+    Se comprueba antes que el «no llegó nada» para que un texto útil no
+    termine en un mensaje de error.
+  */
+  if (!(archivo instanceof File) && texto) {
+    if (leerPunto(texto) || esEnlaceCorto(texto)) {
+      return irA(`/sistema/ubicacion?g=${encodeURIComponent(texto)}`);
+    }
   }
 
   if (!(archivo instanceof File)) {

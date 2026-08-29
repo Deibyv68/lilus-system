@@ -185,9 +185,18 @@ export async function resolverEnlaceDeMapsAction(
     la URL ya parseada: una cadena puede parecer una cosa y resolverse a
     otra.
   */
+  /*
+    El enlace puede venir DENTRO de un texto.
+
+    Google Maps no comparte la dirección sola: manda «Estación La
+    Carolina» y debajo el enlace. Y quien pega a mano suele traerse la
+    frase entera del chat. Intentar convertir todo eso en una URL falla,
+    así que primero se saca el enlace de dentro.
+  */
+  const enElTexto = /https?:\/\/[^\s]+/i.exec(limpio);
   let url: URL;
   try {
-    url = new URL(limpio);
+    url = new URL(enElTexto ? enElTexto[0] : limpio);
   } catch {
     return { ok: false, error: "Ese enlace no se entiende" };
   }

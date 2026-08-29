@@ -56,6 +56,20 @@ export default function manifest(): MetadataRoute.Manifest {
       enctype: "multipart/form-data",
       params: {
         title: "titulo",
+        /*
+          El texto compartido, que sirve para dos cosas distintas.
+
+          Una es lo que se espera: alguien comparte una nota. La otra
+          resultó ser la única forma de meter una ubicación de WhatsApp
+          en el sistema — WhatsApp no la comparte, pero al tocarla se
+          abre en Google Maps, y Maps SÍ la comparte, como un enlace.
+
+          Lo intentamos antes por `protocol_handlers` con el esquema
+          `geo:` y no funcionó: eso lo soporta Chrome de escritorio, no el
+          de Android. En el «abrir con» de una ubicación solo salen apps
+          nativas con su intent declarado, y una app instalada desde el
+          navegador nunca lo tiene.
+        */
         text: "texto",
         files: [
           {
@@ -65,32 +79,6 @@ export default function manifest(): MetadataRoute.Manifest {
         ],
       },
     },
-    /*
-      Aparecer en el «abrir con» de una ubicación.
-
-      Al tocar una ubicación en WhatsApp, Android ofrece abrirla con otra
-      app y le pasa una dirección `geo:`. Registrándonos para ese esquema,
-      LILUS sale en esa lista junto a Google Maps — y la ubicación que la
-      clienta mandó por el chat se puede pegar a su pedido sin
-      transcribir nada.
-
-      Es el mismo camino que el comprobante compartido, por otra puerta:
-      WhatsApp no deja compartir una ubicación como texto, pero sí
-      abrirla.
-
-      `geo` está en la lista de esquemas que un sitio puede manejar; no es
-      un invento nuestro. El soporte en Android todavía es desigual, así
-      que esto puede no aparecer en todos los teléfonos — si no aparece,
-      no se pierde nada: sigue estando pegar el enlace a mano.
-
-      El `%s` lo reemplaza el navegador por la dirección completa.
-    */
-    protocol_handlers: [
-      {
-        protocol: "geo",
-        url: "/sistema/ubicacion?g=%s",
-      },
-    ],
     shortcuts: [
       {
         name: "Nuevo pedido",
