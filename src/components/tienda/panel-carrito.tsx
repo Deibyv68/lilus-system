@@ -38,6 +38,26 @@ export function PanelCarrito({
   const panel = useRef<HTMLDivElement>(null);
   const cerrarRef = useRef<HTMLButtonElement>(null);
   const focoPrevio = useRef<HTMLElement | null>(null);
+  /*
+    `onCerrar` NO puede estar entre las dependencias del efecto.
+
+    Llega como una flecha escrita en el JSX de la cabecera, así que es una
+    función distinta en cada render — y la cabecera se vuelve a pintar
+    cada vez que cambia el carrito. Con `onCerrar` en las dependencias, el
+    efecto se desmontaba y se volvía a montar EN CADA TOQUE al «+» o al
+    «−»: soltaba el bloqueo del desplazamiento y lo volvía a poner, y de
+    paso movía el foco al botón de cerrar. Mover el foco arrastra la
+    vista, así que la lista del carrito saltaba arriba sola cada vez que
+    se cambiaba una cantidad. Eso es lo que se veía roto en el teléfono.
+
+    Guardada en una referencia, el efecto se monta una sola vez —al
+    abrir— y sigue llamando a la última versión.
+  */
+  const cerrar = useRef(onCerrar);
+  useEffect(() => {
+    cerrar.current = onCerrar;
+  });
+
 
   useEffect(() => {
     if (!abierto) return;
@@ -51,7 +71,7 @@ export function PanelCarrito({
 
     function alPulsar(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onCerrar();
+        cerrar.current();
         return;
       }
       if (e.key !== "Tab" || !panel.current) return;
@@ -80,7 +100,7 @@ export function PanelCarrito({
       document.body.style.overflow = overflowPrevio;
       focoPrevio.current?.focus();
     };
-  }, [abierto, onCerrar]);
+  }, [abierto]);
 
   const total = subtotal(lineas);
   const unidades = totalUnidades(lineas);
@@ -144,7 +164,27 @@ export function PanelCarrito({
           
           Aquí lo que se pide es que aparezca, no que haga una entrada.
         */
-        className={`absolute right-0 top-0 flex h-full w-full max-w-[520px] flex-col bg-tienda-fondo-alt
+        /*
+          En el teléfono NO ocupa todo el ancho, y eso es lo que hace que
+          la entrada se entienda.
+
+          Ocupando el 100 %, lo que se veía era un rectángulo casi negro
+          entrando sobre una página casi negra: sin borde, sin sombra y
+          sin nada del sitio asomando, no se leía como un panel que llega
+          — se leía como si el contenido saltara solo. El velo estaba
+          ahí, pero tapado por el propio panel, así que no servía de nada.
+
+          Dejando una franja de la tienda a la vista y oscurecida, más el
+          borde y la sombra del canto, el movimiento tiene de dónde salir
+          y contra qué medirse. Y esa franja es además el sitio donde
+          todo el mundo toca para cerrar.
+
+          En pantalla grande no cambia nada: el 92 % de 1280 pasa de
+          sobra los 520 px del tope.
+        */
+        className={`absolute right-0 top-0 flex h-full w-[92%] max-w-[520px] flex-col
+          border-l border-tienda-linea bg-tienda-fondo-alt
+          shadow-[-24px_0_60px_-16px_rgba(0,0,0,0.75)]
           transition-transform duration-300 ease-out
           ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >
@@ -166,7 +206,7 @@ export function PanelCarrito({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 py-8 sm:px-10">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-8 py-8 sm:px-10">
           {!listo ? null : vacio ? (
             <Vacio onCerrar={onCerrar} />
           ) : (

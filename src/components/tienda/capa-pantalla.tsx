@@ -30,6 +30,26 @@ export function CapaPantalla({
 }) {
   const caja = useRef<HTMLDivElement>(null);
   const focoPrevio = useRef<HTMLElement | null>(null);
+  /*
+    `onCerrar` NO puede estar entre las dependencias del efecto.
+
+    Llega como una flecha escrita en el JSX de la cabecera, así que es una
+    función distinta en cada render — y la cabecera se vuelve a pintar
+    cada vez que cambia el carrito. Con `onCerrar` en las dependencias, el
+    efecto se desmontaba y se volvía a montar EN CADA TOQUE al «+» o al
+    «−»: soltaba el bloqueo del desplazamiento y lo volvía a poner, y de
+    paso movía el foco al botón de cerrar. Mover el foco arrastra la
+    vista, así que la lista del carrito saltaba arriba sola cada vez que
+    se cambiaba una cantidad. Eso es lo que se veía roto en el teléfono.
+
+    Guardada en una referencia, el efecto se monta una sola vez —al
+    abrir— y sigue llamando a la última versión.
+  */
+  const cerrar = useRef(onCerrar);
+  useEffect(() => {
+    cerrar.current = onCerrar;
+  });
+
 
   useEffect(() => {
     if (!abierta) return;
@@ -41,7 +61,7 @@ export function CapaPantalla({
 
     function alPulsar(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onCerrar();
+        cerrar.current();
         return;
       }
       if (e.key !== "Tab" || !caja.current) return;
@@ -70,7 +90,7 @@ export function CapaPantalla({
       document.body.style.overflow = overflowPrevio;
       focoPrevio.current?.focus();
     };
-  }, [abierta, onCerrar]);
+  }, [abierta]);
 
   return (
     <div

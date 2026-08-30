@@ -659,24 +659,22 @@ function StepProducts({
 }
 
 /**
- * La rejilla del catálogo, con el contador dentro de cada tarjeta.
+ * La rejilla del catálogo, con el contador en la esquina de la foto.
+ *
+ * ── Por qué el contador va encima de la foto ──
+ *
+ * Ahí ya estaba el número. Ponerle el «+ / −» debajo, en una fila
+ * aparte, obligaba a mirar dos sitios de la misma tarjeta para una sola
+ * cosa: cuántos van. Ahora el número y los botones son una pieza, en el
+ * sitio donde ya se buscaba el número.
  *
  * ── Por qué la tarjeta ya no es un botón ──
  *
- * Antes lo era: se tocaba y sumaba una unidad. Para bajar de tres a dos
- * había que ir hasta el carrito, al final de la página, y buscar la
- * línea. Con veinte productos en pantalla eso es mucho viaje para
- * corregir un dedazo.
- *
- * Ahora la tarjeta es un contenedor y el botón de agregar es lo de
- * arriba —foto, nombre y precio—, que es donde se toca de todos modos.
- * El «+ / −» va aparte, debajo, y solo aparece cuando ya hay algo que
- * ajustar: mientras el artículo no esté en el pedido, dos botones que no
- * hacen nada solo estorban.
- *
- * Un botón dentro de otro botón no es HTML válido —el navegador
- * reordena el marcado y los clics dejan de llegar donde se cree—, así
- * que la tarjeta tenía que dejar de serlo para que esto funcionara.
+ * Un botón dentro de otro botón no es HTML válido: el navegador reordena
+ * el marcado y los clics dejan de llegar donde uno cree. Así que la
+ * tarjeta es un contenedor, y «agregar» es un botón estirado por encima
+ * de toda ella —se sigue tocando donde sea— con el contador flotando por
+ * delante.
  */
 function CatalogGrid({
   items,
@@ -707,72 +705,71 @@ function CatalogGrid({
         return (
           <div
             key={it.id}
-            className={`flex flex-col rounded-xl border-2 p-2 transition-colors
+            className={`relative flex flex-col rounded-xl border-2 p-2 transition-colors
               ${enCarrito ? "border-primary bg-primary/5" : "border-border"}
             `}
           >
+            {/*
+              El botón estirado. Va por encima de la foto y del texto —que
+              no necesitan ser tocables— y por debajo del contador.
+            */}
             <button
               type="button"
               onClick={() => onAdd(it)}
               aria-label={`Agregar ${it.name}`}
-              className="text-left rounded-lg transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <div className="relative aspect-square w-full rounded-lg bg-muted mb-2 overflow-hidden">
-                {it.imageUrl && (
-                  <Image
-                    src={it.imageUrl}
-                    alt={it.name}
-                    fill
-                    className="object-cover"
-                    sizes="160px"
-                  />
-                )}
-                {enCarrito && (
-                  <div className="absolute top-1.5 right-1.5 size-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-md tabular-nums">
-                    {enCarrito.quantity}
-                  </div>
-                )}
-              </div>
-              <p className="text-xs font-semibold line-clamp-2 leading-tight">
-                {it.name}
-              </p>
-              <p className="text-sm font-bold mt-1 tabular-nums">
-                {formatCurrency(it.price)}
-              </p>
-            </button>
+              className="absolute inset-0 z-10 rounded-xl transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            />
+
+            <div className="relative aspect-square w-full rounded-lg bg-muted mb-2 overflow-hidden">
+              {it.imageUrl && (
+                <Image
+                  src={it.imageUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="160px"
+                />
+              )}
+            </div>
+            <p className="text-xs font-semibold line-clamp-2 leading-tight">
+              {it.name}
+            </p>
+            <p className="text-sm font-bold mt-1 tabular-nums">
+              {formatCurrency(it.price)}
+            </p>
 
             {enCarrito && (
-              <div className="mt-2 flex items-center justify-between gap-1 rounded-lg border bg-background p-1">
-                <Button
+              <div className="absolute right-3 top-3 z-20 flex items-center rounded-full bg-primary text-primary-foreground shadow-lg">
+                <button
                   type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 shrink-0"
-                  aria-label={`Quitar una unidad de ${it.name}`}
+                  className="grid size-8 shrink-0 place-items-center rounded-full transition-opacity hover:opacity-70 active:opacity-50"
+                  aria-label={
+                    enCarrito.quantity === 1
+                      ? `Quitar ${it.name} del pedido`
+                      : `Quitar una unidad de ${it.name}`
+                  }
                   onClick={() => onChangeQty(idx, -1)}
                 >
                   {/* Con una sola unidad, el «−» la saca del pedido. Que
                       lo diga el icono evita el susto de ver desaparecer
                       la línea sin haber tocado la papelera. */}
                   {enCarrito.quantity === 1 ? (
-                    <Trash2 className="size-4 text-destructive" />
+                    <Trash2 className="size-3.5" />
                   ) : (
-                    <Minus className="size-4" />
+                    <Minus className="size-3.5" />
                   )}
-                </Button>
-                <span className="min-w-6 text-center text-sm font-bold tabular-nums">
+                </button>
+                <span className="min-w-5 text-center text-xs font-bold tabular-nums">
                   {enCarrito.quantity}
                 </span>
-                <Button
+                <button
                   type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-8 shrink-0"
+                  className="grid size-8 shrink-0 place-items-center rounded-full transition-opacity hover:opacity-70 active:opacity-50"
                   aria-label={`Sumar una unidad de ${it.name}`}
                   onClick={() => onChangeQty(idx, 1)}
                 >
-                  <Plus className="size-4" />
-                </Button>
+                  <Plus className="size-3.5" />
+                </button>
               </div>
             )}
           </div>

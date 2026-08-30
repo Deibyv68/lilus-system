@@ -177,6 +177,21 @@
     border-color: var(--border);
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
+  /*
+    El hueco de la barra de desplazamiento se reserva siempre.
+
+    Cuando se abre el carrito, el menú o el buscador, se bloquea el
+    desplazamiento del fondo poniéndole `overflow: hidden` al body. Sin
+    esta línea eso hace desaparecer la barra, la ventana se ensancha 15 px
+    de golpe y TODA la página da un tirón hacia la derecha justo en el
+    momento en que el panel está entrando. La animación estaba bien; lo
+    que se veía mal era la página moviéndose debajo.
+
+    En el teléfono no hay barra que reservar, así que no cambia nada ahí.
+  */
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     background: var(--background);
     color: var(--foreground);
