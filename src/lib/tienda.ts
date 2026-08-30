@@ -116,6 +116,27 @@ const RESUMEN_PACK = {
  */
 const VISIBLE = { isPublic: true, isActive: true, slug: { not: null } };
 
+/**
+ * Las fotos de un artículo, en el orden en que se enseñan.
+ *
+ * Es la misma regla que usa `aResumen` para la miniatura, pero para la
+ * galería entera: manda la foto de tienda, y si no hay ninguna se cae a
+ * la miniatura interna del panel.
+ *
+ * Existe como función porque la ficha del artículo NO tenía ese respaldo
+ * y las demás pantallas sí. El resultado era desconcertante: la tarjeta
+ * del catálogo enseñaba el jabón y, al entrar, la ficha enseñaba un
+ * hueco — con la foto cargada y todo. Que la regla viva en un solo sitio
+ * es lo que evita que se vuelvan a separar.
+ */
+function galeria(fila: {
+  imageUrl?: string | null;
+  storeImages: { url: string; alt: string | null }[];
+}): { url: string; alt: string | null }[] {
+  if (fila.storeImages.length) return fila.storeImages;
+  return fila.imageUrl ? [{ url: fila.imageUrl, alt: null }] : [];
+}
+
 function aResumen(
   tipo: TipoArticulo,
   fila: {
@@ -217,7 +238,7 @@ export async function buscarPorSlug(slug: string): Promise<ArticuloDetalle | nul
       ...aResumen("producto", producto),
       descripcion: producto.description,
       ingredientes: producto.ingredients,
-      imagenes: producto.storeImages,
+      imagenes: galeria(producto),
       contenido: [],
     };
   }
@@ -241,7 +262,7 @@ export async function buscarPorSlug(slug: string): Promise<ArticuloDetalle | nul
     ...aResumen("pack", pack),
     descripcion: pack.description,
     ingredientes: null,
-    imagenes: pack.storeImages,
+    imagenes: galeria(pack),
     contenido: pack.items.map((i) => ({
       nombre: i.product.name,
       cantidad: i.quantity,
@@ -678,13 +699,7 @@ export async function obtenerPackPresentacion(
 
   const precioSuelto = contenido.reduce((a, c) => a + c.precio * c.cantidad, 0);
 
-  // Si el pack tiene fotos de tienda se usan; si no, la interna sirve de
-  // referencia mientras llegan las buenas.
-  const imagenes = pack.storeImages.length
-    ? pack.storeImages
-    : pack.imageUrl
-      ? [{ url: pack.imageUrl, alt: null }]
-      : [];
+  const imagenes = galeria(pack);
 
   return {
     id: pack.id,
