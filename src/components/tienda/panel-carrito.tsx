@@ -63,7 +63,22 @@ export function PanelCarrito({
     if (!abierto) return;
 
     focoPrevio.current = document.activeElement as HTMLElement;
-    cerrarRef.current?.focus();
+    /*
+      `preventScroll` NO es un detalle: es el fallo del despliegue.
+
+      Al abrir, el panel todavía está apartado a la derecha, fuera del
+      envoltorio que lo recorta. Enfocar el botón de cerrar hacía que el
+      navegador desplazara ese envoltorio para «traer a la vista» lo
+      enfocado —medido: `scrollLeft` saltaba a 345 en un teléfono de 375—
+      y con ello se corría hacia la izquierda TODO lo de dentro. El panel
+      entraba, sí, pero 345 px más allá de donde va; y al terminar el
+      recorrido ya no sobraba nada que desplazar, el navegador devolvía el
+      desplazamiento a cero y el panel daba el tirón de vuelta a su sitio.
+
+      Eso era «se despliega de más y luego regresa». El foco tiene que
+      ponerse sin mover nada.
+    */
+    cerrarRef.current?.focus({ preventScroll: true });
 
     // El fondo no se mueve mientras el panel está abierto.
     const overflowPrevio = document.body.style.overflow;
@@ -87,10 +102,10 @@ export function PanelCarrito({
 
       if (e.shiftKey && document.activeElement === primero) {
         e.preventDefault();
-        ultimo.focus();
+        ultimo.focus({ preventScroll: true });
       } else if (!e.shiftKey && document.activeElement === ultimo) {
         e.preventDefault();
-        primero.focus();
+        primero.focus({ preventScroll: true });
       }
     }
 
@@ -98,7 +113,7 @@ export function PanelCarrito({
     return () => {
       document.removeEventListener("keydown", alPulsar);
       document.body.style.overflow = overflowPrevio;
-      focoPrevio.current?.focus();
+      focoPrevio.current?.focus({ preventScroll: true });
     };
   }, [abierto]);
 
@@ -122,7 +137,17 @@ export function PanelCarrito({
       nada y no deja pasar toques.
     */
     <div
-      className={`fixed inset-0 z-50 overflow-hidden ${
+      /*
+        `overflow-clip` y no `overflow-hidden`.
+
+        Los dos recortan igual, pero `hidden` deja el elemento
+        DESPLAZABLE por programa —tiene `scrollLeft`, aunque no se vea
+        barra— y eso es lo que el navegador aprovechaba para correrlo
+        entero al enfocar algo que asomaba fuera. `clip` recorta y ya: no
+        hay desplazamiento que mover, así que el fallo no puede volver
+        por otra puerta.
+      */
+      className={`fixed inset-0 z-50 overflow-clip ${
         abierto ? "" : "pointer-events-none"
       }`}
     >

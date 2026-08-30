@@ -57,7 +57,7 @@ export function Buscador({
       oculta con opacidad y no con `visibility`, así que el campo ya
       acepta el foco cuando este efecto corre.
     */
-    campo.current?.focus();
+    campo.current?.focus({ preventScroll: true });
   }, [abierto]);
 
   useEffect(() => {

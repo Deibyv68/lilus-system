@@ -77,10 +77,10 @@ export function CapaPantalla({
 
       if (e.shiftKey && document.activeElement === primero) {
         e.preventDefault();
-        ultimo.focus();
+        ultimo.focus({ preventScroll: true });
       } else if (!e.shiftKey && document.activeElement === ultimo) {
         e.preventDefault();
-        primero.focus();
+        primero.focus({ preventScroll: true });
       }
     }
 
@@ -88,7 +88,7 @@ export function CapaPantalla({
     return () => {
       document.removeEventListener("keydown", alPulsar);
       document.body.style.overflow = overflowPrevio;
-      focoPrevio.current?.focus();
+      focoPrevio.current?.focus({ preventScroll: true });
     };
   }, [abierta]);
 
