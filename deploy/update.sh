@@ -48,6 +48,22 @@ echo "  Base: $DB_PATH ($DB_ROWS_BEFORE pedidos)"
 
 echo ""
 echo "─── 1) git pull ───"
+
+# El npm de esta laptop reescribe `package-lock.json` en cada instalación
+# —su versión no escribe los campos `libc` que sí escribe la de
+# desarrollo— así que el archivo aparece modificado sin que nadie lo haya
+# tocado, y el `git pull` se aborta en cuanto un commit lo cambia. Ya
+# pasó: dejó el sitio a medias.
+#
+# Es un archivo generado y el del repositorio es el bueno, así que se
+# descarta esa deriva antes de traer nada. Solo ese archivo: cualquier
+# otro cambio local sigue frenando el despliegue, que es lo correcto —
+# significaría que alguien editó el código aquí y hay que mirarlo.
+if ! sudo -u "$APP_USER" git diff --quiet -- package-lock.json; then
+  echo "  package-lock.json venía modificado por npm: se descarta"
+  sudo -u "$APP_USER" git checkout -- package-lock.json
+fi
+
 sudo -u "$APP_USER" git pull --rebase
 
 echo ""
