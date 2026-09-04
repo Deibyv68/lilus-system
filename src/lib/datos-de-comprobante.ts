@@ -249,6 +249,44 @@ function bancosEn(plano: string): { nombre: string; donde: number }[] {
 }
 
 /*
+  Cómo se reconoce un comprobante de DeUna.
+
+  ── Por qué no basta con buscar «DeUna» ──
+
+  Porque la palabra NO está escrita en ninguna parte. Arriba hay un
+  logotipo que dice «d!» y nada más, y eso el OCR lo devuelve como
+  «d!», «dl», «al» o directamente nada, según cómo saliera la captura.
+  Buscar el nombre era buscar algo que el comprobante no dice.
+
+  ── Por qué esto sí ──
+
+  DeUna escribe siempre las mismas frases, y son suyas: ningún banco
+  ecuatoriano dice «Pagaste a», ni «Tu dinero llegó al instante», ni
+  pone un QR rotulado «Código de verificación».
+
+  Se exigen DOS. Con una sola, una frase suelta en el comprobante de
+  otra app —o un garabato del OCR que se parezca— bastaría para
+  etiquetar mal el pago. Con dos, la casualidad se vuelve muy poco
+  probable y sigue sobrando margen: el comprobante trae cinco.
+*/
+const MARCAS_DEUNA = [
+  /\bpagaste\s+a\b/,
+  /tu\s+dinero\s+llego\s+al\s+instante/,
+  /codigo\s+de\s+verificacion/,
+  /nro\.?\s+de\s+transaccion/,
+  /cuidar\s+el\s+medio\s+ambiente/,
+];
+
+function esDeUna(plano: string): boolean {
+  let marcas = 0;
+  for (const m of MARCAS_DEUNA) {
+    if (m.test(plano)) marcas++;
+    if (marcas >= 2) return true;
+  }
+  return false;
+}
+
+/*
   Cómo llama cada banco a las dos partes de una transferencia.
 
   «Desde», «Origen», «Ordenante» son quien paga. «Para», «Destino»,
@@ -297,9 +335,24 @@ export function extraerBanco(
   misBancos: string[] = []
 ): string | null {
   const plano = aplanar(texto);
+
+  /*
+    0. DeUna se reconoce por su forma y gana a cualquier otra cosa.
+
+    En un comprobante de DeUna el único banco escrito es el de QUIEN
+    COBRA —aparece bajo «Para», debajo del nombre de la dueña— y el de
+    quien paga no está por ninguna parte: DeUna identifica al pagador
+    por su cuenta de DeUna, no por su banco. Sin esto, cada pago por
+    DeUna se guardaba diciendo que venía del banco propio, que es
+    exactamente al revés.
+
+    Y el dato correcto ES «DeUna»: por ahí entró el dinero, y así es
+    como aparece después en el estado de cuenta.
+  */
+  if (esDeUna(plano)) return "DeUna";
+
   const todos = bancosEn(plano);
   if (todos.length === 0) return null;
-  if (todos.length === 1) return todos[0].nombre;
 
   // 1. El bloque de origen manda.
   const origen = ORIGEN.exec(plano);
@@ -320,7 +373,30 @@ export function extraerBanco(
     if (enElBloque.length > 0) return enElBloque[0].nombre;
   }
 
-  // 2. Descartar los nuestros: el dinero entra en una cuenta de la casa.
+  /*
+    2. Si TODOS los bancos nombrados caen dentro del bloque «Para»,
+       ninguno es el de quien pagó.
+
+    Es la misma lección que dejó el comprobante del BGR, llevada al caso
+    en que solo hay un banco escrito: que aparezca uno solo no lo
+    convierte en el del pagador si está puesto debajo de «Para». Antes
+    la función se rendía antes de mirar —devolvía el único que había— y
+    proponía el banco propio.
+
+    Se exige que NO haya bloque de origen. Si lo hay, el paso 1 ya tuvo
+    su oportunidad y falló por no reconocer el banco de ahí; rendirse
+    entonces sería peor que arriesgar una propuesta.
+
+    Devolver nada es mejor que devolver lo contrario: un hueco se
+    rellena mirando la imagen, que está al lado. Una respuesta con
+    aspecto de correcta se acepta sin mirarla.
+  */
+  const destino = DESTINO.exec(plano);
+  if (!origen && destino && todos.every((b) => b.donde > destino.index)) {
+    return null;
+  }
+
+  // 3. Descartar los nuestros: el dinero entra en una cuenta de la casa.
   const mios = misBancos.map(aplanar).filter(Boolean);
   if (mios.length > 0) {
     const ajenos = todos.filter(
@@ -329,6 +405,6 @@ export function extraerBanco(
     if (ajenos.length > 0) return ajenos[0].nombre;
   }
 
-  // 3. El primero, como antes.
+  // 4. El primero, como antes.
   return todos[0].nombre;
 }

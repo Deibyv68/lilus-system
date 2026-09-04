@@ -150,5 +150,73 @@ igual(
   null
 );
 
+/* ── DeUna: el logo es un dibujo y el unico banco escrito es el NUESTRO ── */
+const deuna = `d!
+Pagaste a Guadalupe Silvia Cajas Robles
+Tu dinero llego al instante
+$100,00
+Este pago te ayuda a cuidar el medio ambiente
+Fecha de pago 04 sep 2026 - 10:28 am
+Nro. de transaccion 17889887
+Bh mS iE (a
+El wl Sa
+Codigo de verificacion
+De
+DS Dilon Stalin Erazo Cutos
+******9992
+Para
+GS Guadalupe Silvia Cajas Robles
+Banco Pichincha ******7600`;
+
+console.log("");
+console.log("── DeUna ──");
+igual("el monto grande, con coma decimal", extraerMonto(deuna), 100);
+igual("el numero va detras de «Nro. de transaccion»", extraerNumero(deuna), "17889887");
+igual("la fecha, sin la hora de al lado", extraerFecha(deuna), "04 sep 2026");
+igual(
+  "el banco es DeUna, NO el Pichincha del bloque «Para»",
+  extraerBanco(deuna),
+  "DeUna"
+);
+igual(
+  "...y tampoco cambia si el Pichincha es nuestro",
+  extraerBanco(deuna, ["Banco Pichincha"]),
+  "DeUna"
+);
+igual(
+  "la basura del QR no se cuela como numero",
+  extraerNumero("Bh mS iE (a El wl Sa"),
+  null
+);
+
+/*
+  Con UNA sola marca no alcanza: se exigen dos para no etiquetar de
+  DeUna un comprobante ajeno donde aparezca la frase por casualidad.
+*/
+igual(
+  "una marca suelta no convierte nada en DeUna",
+  extraerBanco(`Pagaste a Fulano
+Banco Guayaquil
+Cuenta 123`),
+  "Banco Guayaquil"
+);
+
+/* ── El unico banco escrito esta bajo «Para» y no hay bloque de origen ── */
+igual(
+  "un solo banco, y esta en el lado de quien cobra: mejor nada",
+  extraerBanco(`Transferencia exitosa
+$50,00
+Para
+Maria Perez
+Banco Pichincha
+Cuenta 22---33`),
+  null
+);
+igual(
+  "pero si NO hay bloque «Para», el unico que hay vale",
+  extraerBanco("Transferencia exitosa $50,00 Banco Pichincha Cuenta 22---33"),
+  "Banco Pichincha"
+);
+
 console.log(fallos === 0 ? "\nTodo bien." : `\n${fallos} fallo(s).`);
 process.exitCode = fallos === 0 ? 0 : 1;
