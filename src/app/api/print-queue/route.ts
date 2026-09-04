@@ -4,9 +4,34 @@ import {
   validateAgentToken,
   agentHasPrinter,
   STALE_JOB_MS,
+  LATIDO_MS,
+  BARRIDO_MS,
 } from "@/lib/print-queue";
 
 export const dynamic = "force-dynamic";
+
+/*
+  Lo que ya escribimos, recordado en memoria.
+
+  ── Por qué en memoria y no en la base ──
+
+  Porque el punto entero es no tocar la base. Guardar «cuándo escribí por
+  última vez» escribiendo en la base sería la serpiente mordiéndose la
+  cola.
+
+  ── Qué pasa al reiniciar ──
+
+  Se olvida, y el primer latido de cada agente vuelve a escribirse. Es
+  exactamente lo que hace falta: tras un reinicio queremos la fila
+  fresca, no heredada.
+*/
+const ultimoLatido = new Map<
+  string,
+  { cuando: number; estado: string; impresora: string | null }
+>();
+
+/** Cuándo se barrieron por última vez los trabajos vencidos. */
+let ultimoBarrido = 0;
 
 /**
  * El agente pregunta cada 2 segundos si hay algo que imprimir.
@@ -30,27 +55,54 @@ export async function GET(req: NextRequest) {
   const printerStatus = req.nextUrl.searchParams.get("printer") || "unknown";
   const printerName = req.nextUrl.searchParams.get("printerName") || null;
 
-  await prisma.printAgent.upsert({
-    where: { name: agentName },
-    update: { printerStatus, printerName, lastSeenAt: new Date() },
-    create: { name: agentName, printerStatus, printerName },
-  });
+  /*
+    El latido se escribe solo si cambió algo o si el guardado se está
+    quedando viejo. Ver `LATIDO_MS`.
+
+    Un cambio de estado NO espera turno: si la impresora se desenchufó,
+    eso tiene que verse ya, porque de ahí depende a quién se le entregan
+    los trabajos.
+  */
+  const ahora = Date.now();
+  const previo = ultimoLatido.get(agentName);
+  const cambio =
+    !previo ||
+    previo.estado !== printerStatus ||
+    previo.impresora !== printerName;
+
+  if (cambio || ahora - previo.cuando >= LATIDO_MS) {
+    await prisma.printAgent.upsert({
+      where: { name: agentName },
+      update: { printerStatus, printerName, lastSeenAt: new Date() },
+      create: { name: agentName, printerStatus, printerName },
+    });
+    ultimoLatido.set(agentName, {
+      cuando: ahora,
+      estado: printerStatus,
+      impresora: printerName,
+    });
+  }
 
   // Trabajos que quedaron colgados porque la impresora no estaba
   // enchufada en ninguna parte. Sin esto, mañana al conectarla saldrían
   // de golpe todas las etiquetas de ayer.
-  await prisma.printJob.updateMany({
-    where: {
-      status: "PENDING",
-      createdAt: { lt: new Date(Date.now() - STALE_JOB_MS) },
-    },
-    data: {
-      status: "FAILED",
-      error:
-        "Se venció esperando: ninguna PC tuvo la impresora conectada a tiempo.",
-      finishedAt: new Date(),
-    },
-  });
+  //
+  // Una vez por minuto, no en cada pregunta: ver `BARRIDO_MS`.
+  if (ahora - ultimoBarrido >= BARRIDO_MS) {
+    ultimoBarrido = ahora;
+    await prisma.printJob.updateMany({
+      where: {
+        status: "PENDING",
+        createdAt: { lt: new Date(ahora - STALE_JOB_MS) },
+      },
+      data: {
+        status: "FAILED",
+        error:
+          "Se venció esperando: ninguna PC tuvo la impresora conectada a tiempo.",
+        finishedAt: new Date(),
+      },
+    });
+  }
 
   if (!agentHasPrinter(printerStatus)) {
     return new NextResponse(null, { status: 204 });

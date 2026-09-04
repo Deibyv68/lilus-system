@@ -272,6 +272,40 @@ export async function validateAgentToken(token: string | null): Promise<boolean>
 export const AGENT_STALE_MS = 10_000;
 
 /**
+ * Cada cuánto se ESCRIBE el latido del agente, como mucho.
+ *
+ * ── Por qué no en cada pregunta ──
+ *
+ * El agente pregunta si hay algo que imprimir cada 2 segundos, y hasta
+ * ahora cada pregunta actualizaba su fila: 43.000 escrituras al día por
+ * computadora sin que nadie imprimiera nada. Contra un archivo SQLite en
+ * la misma máquina eso es gratis; contra una base que vive en internet
+ * —a donde va esto— es la mitad del presupuesto gastado en decir «sigo
+ * aquí».
+ *
+ * ── Por qué la mitad y no otro número ──
+ *
+ * Sale de `AGENT_STALE_MS`, no es un número suelto. Escribiendo cada
+ * mitad del plazo, lo guardado nunca puede tener más de media vida
+ * cuando alguien lo mira, así que el agente jamás aparece caído estando
+ * vivo. Y si mañana alguien cambia el plazo, esto lo acompaña solo.
+ *
+ * Un cambio de estado —se desenchufó la impresora— se escribe igual al
+ * instante, sin esperar turno: eso es justo lo que hay que ver rápido.
+ */
+export const LATIDO_MS = AGENT_STALE_MS / 2;
+
+/**
+ * Cada cuánto se barren los trabajos vencidos.
+ *
+ * Se hacía en cada pregunta del agente, treinta veces por minuto, para
+ * caducar cosas que llevan quince minutos esperando. Una vez por minuto
+ * llega de sobra y el retraso máximo que añade es despreciable frente a
+ * los quince minutos que se están midiendo.
+ */
+export const BARRIDO_MS = 60_000;
+
+/**
  * Cuánto espera un trabajo antes de darse por vencido.
  *
  * Con una sola impresora que se muda, es normal que pase un rato sin
