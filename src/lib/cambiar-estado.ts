@@ -2,6 +2,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ESTADOS, type EstadoPedido } from "./estados-pedido";
+import { anotarEvento } from "./historial-pedido";
 
 /**
  * Mover un pedido de estado.
@@ -64,6 +65,16 @@ export async function cambiarEstadoDePedido(
   if (guia) data.trackingNumber = guia;
 
   await prisma.order.update({ where: { id: orderId }, data });
+
+  /*
+    El historial se anota aquí, no en la server action del panel.
+
+    Es el mismo motivo por el que el cambio de estado vive en este
+    archivo: hay dos puertas —el panel y la app de Android— y anotarlo
+    arriba dejaría a una de las dos sin historial. Aquí pasan las dos.
+  */
+  await anotarEvento(orderId, "ESTADO", { estado });
+  if (guia) await anotarEvento(orderId, "GUIA", { detalle: guia });
 
   revalidatePath("/sistema/pedidos");
   revalidatePath(`/sistema/pedidos/${orderId}`);

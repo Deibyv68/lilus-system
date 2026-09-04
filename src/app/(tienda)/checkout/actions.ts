@@ -15,6 +15,7 @@ import {
   type ProductoParaEtiqueta,
 } from "@/lib/order-utils";
 import { avisarAlCliente, avisarAlAdmin } from "@/lib/avisos-pedido";
+import { anotarEvento } from "@/lib/historial-pedido";
 import { avisarVentaNueva } from "@/lib/avisos-push";
 
 /**
@@ -343,7 +344,7 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
       la configuración de uno no puede impedir que salga el otro, y por eso
       van en un allSettled y no encadenados.
     */
-    await Promise.allSettled([
+    const [alCliente] = await Promise.allSettled([
       avisarAlCliente(aviso),
       avisarAlAdmin(aviso),
       avisarVentaNueva({
@@ -353,6 +354,23 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
         items: items.length,
       }),
     ]);
+
+    /*
+      Solo se anota el correo A LA CLIENTA, no los otros dos.
+
+      El historial es de cara a quien compró: sirve para responderle
+      «¿me llegó algo?». Que la dueña recibiera su aviso interno no le
+      dice nada a nadie que mire este pedido, y llenar la lista de
+      líneas que no se consultan es la forma más rápida de que deje de
+      leerse entera.
+
+      Y este sí puede decir «enviado» sin mentir: lo manda el sistema y
+      el servidor de correo le contesta.
+    */
+    const salio = alCliente.status === "fulfilled" && alCliente.value === true;
+    await anotarEvento(pedido.id, "CORREO", {
+      detalle: salio ? "ok" : "fallo",
+    });
   } catch (e) {
     // allSettled ya no lanza; esto es el cinturón por si algo del armado
     // del mensaje falla. El pedido está guardado igual.

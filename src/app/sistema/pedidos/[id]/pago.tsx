@@ -36,6 +36,7 @@ import {
   borrarComprobanteAction,
   releerComprobanteAction,
 } from "./revisar-comprobante";
+import { registrarMensajeAction } from "./registrar-mensaje";
 import { LeerQrDelComprobante } from "./leer-qr-comprobante";
 
 export type ComprobanteEnPanel = {
@@ -241,6 +242,7 @@ export function Pago({
           pago.confirmado > 0 &&
           pago.falta > 0 && (
             <PedirElResto
+              orderId={orderId}
               pedido={pedido}
               confirmado={pago.confirmado}
               falta={pago.falta}
@@ -996,12 +998,14 @@ function Subir({
  * que la clienta avisó por otro lado de que ya transfirió, por ejemplo.
  */
 function PedirElResto({
+  orderId,
   pedido,
   confirmado,
   falta,
   telefono,
   telefonoContacto,
 }: {
+  orderId: string;
   pedido: ShareableOrder;
   confirmado: number;
   falta: number;
@@ -1018,7 +1022,24 @@ function PedirElResto({
 
   return (
     <Button asChild variant="outline" className="w-full">
-      <a href={url} target="_blank" rel="noreferrer">
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        /*
+          Se anota ANTES de abrir WhatsApp, y sin esperar.
+
+          Esperar la respuesta del servidor para después abrir la
+          ventana la convierte en un `window.open` que ya no cuelga del
+          clic, y el navegador la bloquea por emergente. Así que sale el
+          apunte por un lado y WhatsApp por el otro. Si el apunte falla,
+          se pierde una línea del historial; si se hiciera al revés, se
+          perdería el mensaje.
+        */
+        onClick={() => {
+          void registrarMensajeAction(orderId, "cobro");
+        }}
+      >
         <MessageCircle className="size-4" />
         Pedirle los {formatCurrency(falta)} que faltan
       </a>

@@ -322,6 +322,8 @@ model Order {
   productionUnits ProductionUnit[]
   /// El enlace del que salió, si vino de uno.
   borrador        BorradorDePedido?
+  /// Lo que le fue pasando, en orden.
+  eventos         EventoDePedido[]
 }
 
 enum OrderStatus {
@@ -645,6 +647,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   sessions       Session[]
+  eventos        EventoDePedido[]
   trustedDevices TrustedDevice[]
   pushSubs       PushSubscription[]
   dispositivos   DispositivoMovil[]
@@ -997,4 +1000,53 @@ model BorradorItem {
   borrador BorradorDePedido @relation(fields: [borradorId], references: [id], onDelete: Cascade)
 
   @@index([borradorId])
+}
+
+/// Lo que le fue pasando a un pedido.
+///
+/// ── Qué se guarda aquí y qué NO ──
+///
+/// Aquí van los actos que no dejan rastro en ninguna otra tabla: mover
+/// el estado, preparar un mensaje para la clienta, anotar la guía. Lo
+/// que ya está guardado en otro sitio —cuándo se creó el pedido, cuándo
+/// entró un comprobante— NO se copia aquí: el historial se arma
+/// juntando las dos cosas al mostrarlo (`historial-pedido.ts`).
+///
+/// Eso importa por una razón muy concreta: los pedidos que ya existen no
+/// tienen ni una fila en esta tabla, y aun así su historial no sale
+/// vacío. Duplicar el dato habría dejado a todo lo viejo mudo.
+///
+/// ── Sobre «mensaje enviado» ──
+///
+/// El sistema NO puede saber si un mensaje de WhatsApp llegó. Lo único
+/// que sabe es que alguien pidió prepararlo y se abrió WhatsApp con el
+/// texto dentro. Por eso el tipo se llama MENSAJE y en pantalla dice
+/// «preparado», nunca «enviado». Prometer lo segundo sería mentir en el
+/// único sitio donde alguien iría a comprobar si avisó o no.
+model EventoDePedido {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Qué clase de cosa pasó. Los valores viven en `eventos-pedido.ts`.
+  tipo String
+
+  /// El estado al que se movió. Solo en los de tipo ESTADO.
+  estado String?
+
+  /// Qué mensaje se preparó. Solo en los de tipo MENSAJE.
+  mensaje String?
+
+  /// Lo que no cabe arriba: el número de guía, por ejemplo.
+  detalle String?
+
+  /// Quién lo hizo. Nulo si no había sesión —la app de Android entra por
+  /// su propia puerta— y se pone a nulo si el usuario se borra: perder
+  /// quién lo hizo es mucho menos malo que perder que pasó.
+  usuarioId String?
+  usuario   User?   @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
 }

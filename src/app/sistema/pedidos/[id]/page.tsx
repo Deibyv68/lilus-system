@@ -9,6 +9,8 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import { StatusSelector } from "./status-selector";
 import { AvisoDePago } from "../espera";
 import { ShareButton } from "./share-button";
+import { Historial } from "./historial";
+import { historialDelPedido } from "@/lib/historial-pedido";
 import { Pago } from "./pago";
 import { MapaMini } from "./mapa-mini";
 import { estadoDePago } from "@/lib/pago-del-pedido";
@@ -85,6 +87,15 @@ export default async function OrderDetailPage({
     },
   });
   if (!order) notFound();
+
+  /*
+    El historial se pide aparte y no dentro del `findUnique` de arriba.
+
+    Porque no sale de una sola tabla: junta los eventos anotados con
+    cosas que ya viven en otro lado —cuándo entró el pedido, qué
+    comprobantes tuvo—. Ver `historial-pedido.ts`.
+  */
+  const historial = await historialDelPedido(order.id);
 
   // Detectar productos sin PDF de etiqueta
   const missingLabels = Array.from(
@@ -418,6 +429,7 @@ export default async function OrderDetailPage({
               )}
 
               <ShareButton
+                orderId={order.id}
                 order={paraMensaje}
                 status={order.status as never}
                 customerPhone={order.customer.phone}
@@ -469,6 +481,17 @@ export default async function OrderDetailPage({
                   pública de la tienda (<code>APP_URL</code>) en la laptop.
                 </p>
               )}
+
+              {/*
+                El historial cierra la tarjeta, debajo de los botones.
+
+                Va aquí y no en una tarjeta aparte porque contesta a las
+                preguntas que se hacen mirando justo esto: «¿ya le avisé?»,
+                «¿cuándo lo marqué enviado?». Puesto en otro sitio habría
+                que acordarse de ir a buscarlo, y a lo que hay que
+                acordarse de mirar no se mira.
+              */}
+              <Historial entradas={historial} />
             </CardContent>
           </Card>
 

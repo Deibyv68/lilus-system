@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Truck, AlertTriangle } from "lucide-react";
 import { updateOrderStatusAction, markAsShippedAction } from "../actions";
+import { registrarMensajeAction } from "./registrar-mensaje";
 import { formatCurrency } from "@/lib/format";
 import {
   buildStatusMessage,
@@ -131,7 +132,12 @@ export function StatusSelector({
       duration: 12000,
       action: {
         label: "Avisar",
-        onClick: () => window.open(url, "_blank", "noopener"),
+        onClick: () => {
+          /* Ver la nota de `share-button.tsx`: primero el apunte, sin
+             esperarlo, y después la ventana. */
+          void registrarMensajeAction(id, "estado");
+          window.open(url, "_blank", "noopener");
+        },
       },
     });
   }

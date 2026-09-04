@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { registrarMensajeAction } from "./registrar-mensaje";
 import { MessageCircle, Copy, ExternalLink, Share2 } from "lucide-react";
 import {
   buildStatusMessage,
@@ -24,12 +25,14 @@ import {
 } from "@/lib/share-message";
 
 export function ShareButton({
+  orderId,
   order,
   status,
   customerPhone,
   customerContactPhone,
   carrierTrackingTemplate,
 }: {
+  orderId: string;
   order: ShareableOrder;
   status: OrderStatus;
   customerPhone: string | null;
@@ -54,12 +57,29 @@ export function ShareButton({
     ? `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`
     : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
+  /*
+    Se anota que el mensaje se preparó, sin esperar la respuesta.
+
+    Si se esperara al servidor antes de abrir WhatsApp, la ventana ya no
+    colgaría del clic y el navegador la bloquearía por emergente. Así
+    que el apunte va por su lado: si falla, se pierde una línea del
+    historial; al revés, se perdería el mensaje.
+  */
+  function anotar() {
+    void registrarMensajeAction(orderId, "estado");
+  }
+
   function clickShare() {
     if (waPhone) {
       // Tiene teléfono → abre WhatsApp directo al chat
+      anotar();
       window.open(waUrl, "_blank", "noopener");
     } else {
-      // Sin teléfono → muestra el dialog con opciones
+      /*
+        Abrir el diálogo todavía no es preparar nada: desde ahí se puede
+        cerrar sin copiar ni abrir WhatsApp. Se anota en los dos botones
+        de dentro, que son los que sí sacan el mensaje de la pantalla.
+      */
       setOpen(true);
     }
   }
@@ -67,6 +87,7 @@ export function ShareButton({
   async function copyMessage() {
     try {
       await navigator.clipboard.writeText(message);
+      anotar();
       toast.success("Mensaje copiado");
     } catch {
       toast.error("No se pudo copiar");
@@ -74,6 +95,7 @@ export function ShareButton({
   }
 
   function openWhatsApp() {
+    anotar();
     window.open(waUrl, "_blank", "noopener");
   }
 
