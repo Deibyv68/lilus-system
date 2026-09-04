@@ -29,6 +29,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, DEVICE_COOKIE } from "@/lib/constants";
+import { soloTienda, fueraDeLaTienda } from "@/lib/modo-tienda";
 
 /**
  * Lo que se revisa. Todo lo demás es tienda y se sirve a cualquiera.
@@ -79,6 +80,27 @@ function empiezaPor(pathname: string, rutas: string[]): boolean {
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  /*
+    Lo primero de todo: si este despliegue es solo la tienda, el panel no
+    existe.
+
+    Va ANTES que nada, incluidas las rutas con token propio. Si fuera
+    después, `/api/agent` y compañía se colarían por la puerta de al
+    lado: esa lista las deja pasar a propósito porque su cerradura está
+    un paso más adentro, pero en la nube no hay nada que deban hacer.
+
+    404 y no 401 ni un redirect: un 401 confirma que ahí hay algo, y un
+    redirect al login enseña que existe un login. Un 404 no dice nada,
+    que es exactamente lo que tiene que decir una dirección que en este
+    despliegue no existe.
+  */
+  if (soloTienda() && fueraDeLaTienda(pathname)) {
+    return new NextResponse(null, {
+      status: 404,
+      headers: { "x-robots-tag": "noindex, nofollow" },
+    });
+  }
 
   if (empiezaPor(pathname, CON_TOKEN_PROPIO)) return NextResponse.next();
   if (!empiezaPor(pathname, REQUIERE_SESION)) return NextResponse.next();
