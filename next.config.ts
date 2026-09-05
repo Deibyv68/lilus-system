@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import path from "node:path";
 
 /*
   ¿Este build es el de la tienda en la nube?
@@ -23,7 +22,9 @@ const soloTienda = process.env.SOLO_TIENDA === "1";
   porque los tres cuelgan solo del panel, y el panel no va a la nube.
 */
 const NATIVOS = ["sharp", "tesseract.js", "pdf-to-png-converter", "pdfjs-dist", "@napi-rs/canvas"];
-const HUECO = path.join(__dirname, "cloud", "nativo-ausente.js");
+/* Relativo a la raíz de Turbopack: una ruta absoluta la lee como
+   «./home/...» y no encuentra nada. */
+const HUECO = "./cloud/nativo-ausente.js";
 
 const nextConfig: NextConfig = {
   // Evita que Turbopack intente empaquetar el cliente de Prisma (binarios nativos).
