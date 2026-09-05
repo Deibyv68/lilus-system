@@ -100,7 +100,7 @@ export function Cabecera({
       Sacándolo, vuelve a medir contra la ventana.
     */
     <>
-      <header className="sticky top-0 z-50 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-tienda-linea bg-tienda-fondo/80 backdrop-blur-md print:hidden">
         {/*
           La columna del centro se mide por su contenido, no a un tercio.
 

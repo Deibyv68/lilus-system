@@ -106,28 +106,99 @@ export async function enviarCorreo(m: Mensaje): Promise<boolean> {
 }
 
 /**
- * Envuelve el contenido en algo que se vea decente en cualquier cliente.
+ * El sobre de todos los correos de LILUS.
  *
- * Estilos en línea y tabla de una columna a propósito: Gmail borra las
- * hojas de estilo y Outlook todavía maqueta con tablas. Lo que acá parece
- * anticuado es lo único que se ve igual en los dos.
+ * ── Por qué esto parece HTML de 2005 ──
+ *
+ * Porque es lo único que se ve igual en todas partes. Gmail borra las
+ * hojas de estilo, Outlook sigue maquetando con tablas y varios clientes
+ * ignoran la mitad de CSS moderno. Todo va en línea y en tablas de una
+ * columna a propósito: lo que aquí parece anticuado es lo que hace que el
+ * correo llegue entero al teléfono de una clienta.
+ *
+ * ── El modo oscuro ──
+ *
+ * Gmail y Outlook invierten los colores por su cuenta cuando el teléfono
+ * está en oscuro, y lo hacen mal: un fondo declarado y un texto sin
+ * declarar terminan en gris sobre gris. Por eso CADA bloque lleva su
+ * fondo y su color escritos, aunque parezca repetido. Es la diferencia
+ * entre un correo legible y uno que hay que seleccionar con el dedo para
+ * poder leerlo.
+ *
+ * ── El pie ──
+ *
+ * Lleva a quién escribir. Un correo automático sin una forma de responder
+ * es un callejón sin salida, y quien acaba de pagar por internet a un
+ * negocio pequeño quiere ver que hay alguien al otro lado.
  */
-export function plantilla(titulo: string, cuerpo: string): string {
+export function plantilla(
+  titulo: string,
+  cuerpo: string,
+  opciones: { entradilla?: string; pie?: string } = {}
+): string {
+  const entradilla = opciones.entradilla
+    ? `<p style="margin:0 0 20px;font-size:15px;line-height:1.65;color:#57534e">${opciones.entradilla}</p>`
+    : "";
+
   return `<!doctype html>
-<html lang="es"><body style="margin:0;padding:24px;background:#faf9f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c1917">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto">
-    <tr><td style="padding-bottom:20px">
-      <div style="font-size:15px;letter-spacing:.08em;font-weight:600">LILUS</div>
-      <div style="font-size:12px;color:#78716c">Jabones artesanales</div>
-    </td></tr>
-    <tr><td style="background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:24px">
-      <h1 style="margin:0 0 16px;font-size:19px;font-weight:600">${titulo}</h1>
-      ${cuerpo}
-    </td></tr>
-    <tr><td style="padding-top:16px;font-size:11px;color:#a8a29e;line-height:1.6">
-      Este correo se envió automáticamente porque se registró un pedido en
-      la tienda de LILUS.
-    </td></tr>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>${titulo}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f4f2;color:#1c1917;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased">
+  <!-- La entradilla que asoma en la lista del correo, antes de abrirlo. -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">${opciones.entradilla ?? titulo}</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f5f4f2;padding:28px 16px">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px">
+
+          <tr>
+            <td style="padding:0 4px 18px">
+              <span style="font-size:20px;font-weight:700;letter-spacing:.14em;color:#1c1917">LILUS</span>
+              <span style="font-size:12px;color:#a8a29e;padding-left:8px">jabones artesanales</span>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#ffffff;border:1px solid #e7e5e4;border-radius:14px;padding:30px 26px">
+              <h1 style="margin:0 0 14px;font-size:21px;line-height:1.3;font-weight:600;color:#1c1917">${titulo}</h1>
+              ${entradilla}
+              ${cuerpo}
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:20px 6px 0;font-size:12px;line-height:1.75;color:#a8a29e">
+              ${opciones.pie ?? ""}
+              <p style="margin:10px 0 0">Este correo salió solo, porque se movió tu pedido en la tienda de LILUS.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
   </table>
-</body></html>`;
+</body>
+</html>`;
+}
+
+/**
+ * Un botón que se ve como un botón en Outlook también.
+ *
+ * Outlook no pinta `border-radius` ni respeta el relleno de un `<a>`, así
+ * que el botón se arma con una tabla de una celda. Es feo por dentro y es
+ * la única forma de que se vea igual en los dos sitios.
+ */
+export function boton(texto: string, url: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 0">
+    <tr><td style="background:#1c1917;border-radius:999px">
+      <a href="${url}" style="display:inline-block;padding:13px 26px;font-size:14px;font-weight:500;color:#fafaf9;text-decoration:none">${texto}</a>
+    </td></tr>
+  </table>`;
 }

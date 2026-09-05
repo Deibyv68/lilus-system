@@ -369,6 +369,7 @@ export async function crearPedidoWebAction(datos: unknown): Promise<Resultado> {
     */
     const salio = alCliente.status === "fulfilled" && alCliente.value === true;
     await anotarEvento(pedido.id, "CORREO", {
+      mensaje: "confirmacion",
       detalle: salio ? "ok" : "fallo",
     });
   } catch (e) {

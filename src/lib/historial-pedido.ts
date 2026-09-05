@@ -84,6 +84,19 @@ const TITULO_DE_MENSAJE: Record<ClaseDeMensaje, string> = {
   cobro: "Mensaje de cobro preparado",
 };
 
+/*
+  Cómo se llama cada correo automático en la lista.
+
+  Se guarda la clase y no el título ya escrito porque el texto se va a
+  retocar —siempre se retoca— y un historial que enseña el texto viejo
+  junto al nuevo se lee como si fueran cosas distintas.
+*/
+const NOMBRE_DE_CORREO: Record<string, string> = {
+  confirmacion: "Correo de confirmación",
+  pago: "Correo de pago confirmado",
+  envio: "Correo de envío",
+};
+
 export async function historialDelPedido(
   orderId: string
 ): Promise<EntradaDelHistorial[]> {
@@ -182,13 +195,12 @@ export async function historialDelPedido(
         Es el único de la lista que puede decir «enviado» sin mentir.
       */
       const salio = e.detalle !== "fallo";
+      const cual = NOMBRE_DE_CORREO[e.mensaje ?? "confirmacion"] ?? "Correo";
       lineas.push({
         id: e.id,
         cuando: e.createdAt.toISOString(),
         icono: "correo",
-        titulo: salio
-          ? "Correo de confirmación enviado"
-          : "El correo de confirmación no salió",
+        titulo: salio ? `${cual} enviado` : `${cual}: no salió`,
         tono: salio ? "bueno" : "aviso",
       });
     }

@@ -335,6 +335,23 @@ export default async function PaginaPedido({
             </dd>
           </div>
         </dl>
+
+        {/*
+          El comprobante va debajo del total, que es donde uno lo busca.
+
+          No es un botón grande porque no es lo que la mayoria viene a
+          hacer: quien entra aqui quiere saber como va su pedido. El
+          comprobante lo busca quien lleva las cuentas, y ese lo encuentra
+          igual estando junto a las cifras.
+        */}
+        <p className="mt-4">
+          <Link
+            href={`/pedido/${token}/recibo`}
+            className="text-sm text-tienda-tenue underline underline-offset-4 transition-colors duration-[400ms] ease-tienda hover:text-tienda-texto"
+          >
+            Ver comprobante de compra
+          </Link>
+        </p>
       </section>
 
       {pedido.shippingAddress && (

@@ -1,8 +1,10 @@
 import "server-only";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ESTADOS, type EstadoPedido } from "./estados-pedido";
 import { anotarEvento } from "./historial-pedido";
+import { avisarDelCambioDeEstado } from "./avisar-cambio-de-estado";
 
 /**
  * Mover un pedido de estado.
@@ -75,6 +77,20 @@ export async function cambiarEstadoDePedido(
   */
   await anotarEvento(orderId, "ESTADO", { estado });
   if (guia) await anotarEvento(orderId, "GUIA", { detalle: guia });
+
+  /*
+    El correo a la clienta sale DESPUES de contestar, con `after()`.
+
+    Mandar un correo son un par de segundos hablando con un servidor de
+    fuera. Metido aqui en medio, quien mueve el estado en el panel ve la
+    pantalla congelada ese rato y no entiende por que —el estado ya
+    cambio, lo unico que falta es el aviso—. Con `after()` la respuesta
+    sale ya y el correo se manda detras.
+
+    `avisarDelCambioDeEstado` decide sola si toca correo y si ya salio
+    antes; aqui no hay ninguna condicion que mantener al dia.
+  */
+  after(() => avisarDelCambioDeEstado(orderId, estado));
 
   revalidatePath("/sistema/pedidos");
   revalidatePath(`/sistema/pedidos/${orderId}`);

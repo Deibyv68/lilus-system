@@ -93,13 +93,22 @@ export default async function TiendaLayout({
         cabecera se queda pegada arriba; una promoción que ocupa sitio en
         todas las pantallas todo el rato molesta más de lo que vende.
       */}
+      {/*
+        La cinta y la cabecera se ocultan al imprimir, pero cada una desde
+        SU propio componente, no envolviendolas aqui.
+
+        Envolverlas en un `div` parecia lo natural y rompia la cabecera:
+        un elemento `sticky` solo se queda pegado mientras su padre esta a
+        la vista, asi que al bajar la pagina el envoltorio se iba y la
+        cabecera se iba con el. Ver `cabecera.tsx` y `barra-promo.tsx`.
+      */}
       {promo && <BarraPromo texto={promo.texto} enlace={promo.enlace} />}
 
       <Cabecera marca={marca} contacto={contacto} />
 
       <main className="flex-1">{children}</main>
 
-      <footer className="mt-32 border-t border-tienda-linea">
+      <footer className="mt-32 border-t border-tienda-linea print:hidden">
         <div className="mx-auto max-w-[1440px] px-6 py-20 sm:px-10">
           <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             {/* La marca y lo que hay que decir del producto */}

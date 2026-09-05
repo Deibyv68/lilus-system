@@ -33,8 +33,13 @@ export function BarraPromo({
 
   const cinta = <Marquesina contenido={contenido} segundos={segundos} />;
 
+  /*
+    `print:hidden`: hay una página de la tienda pensada para imprimirse
+    —el comprobante de compra— y una promoción en movimiento no pinta
+    nada en una hoja de papel.
+  */
   return (
-    <div className="overflow-hidden border-b border-tienda-linea bg-tienda-fondo-alt py-2.5 text-xs tracking-[0.06em] text-tienda-tenue">
+    <div className="overflow-hidden border-b border-tienda-linea bg-tienda-fondo-alt py-2.5 text-xs tracking-[0.06em] text-tienda-tenue print:hidden">
       {enlace ? (
         <Link
           href={enlace}

@@ -510,6 +510,60 @@ export async function datosDeContacto() {
  * de imprimir un hueco. Una ficha de vendedor a medias da menos confianza
  * que una corta.
  */
+/**
+ * Todo lo que lleva el comprobante de compra de un pedido.
+ *
+ * ── Por qué una consulta propia y no la de la página del pedido ──
+ *
+ * Porque son dos cosas distintas. La página del pedido es una pantalla
+ * viva —«¿ya salió?»— y por eso trae el QR, las cuentas donde pagar y los
+ * comprobantes subidos. El recibo es un documento: dice qué se compró, a
+ * quién, por cuánto y a dónde va. Nada más.
+ *
+ * Y trae dos datos que la otra no necesita: la cédula y el teléfono de
+ * quien compró. En un comprobante ecuatoriano identificar al comprador es
+ * media razón de que el papel exista.
+ *
+ * Se entra con el mismo token del pedido, así que quien lo abre es quien
+ * ya tenía la llave: enseñarle su propia cédula no revela nada.
+ */
+export async function datosDelRecibo(token: string) {
+  if (!token) return null;
+
+  return prisma.order.findUnique({
+    where: { publicToken: token },
+    select: {
+      orderNumber: true,
+      status: true,
+      createdAt: true,
+      subtotal: true,
+      shippingCost: true,
+      total: true,
+      trackingNumber: true,
+      customer: {
+        select: { name: true, cedula: true, email: true, phone: true },
+      },
+      carrier: { select: { name: true } },
+      shippingAddress: {
+        select: { address: true, city: true, province: true, reference: true },
+      },
+      items: {
+        select: { itemName: true, quantity: true, unitPrice: true, lineTotal: true },
+      },
+      /*
+        Solo lo confirmado por una persona. Igual que en la página del
+        pedido, los campos que leyó el OCR no salen de aquí: un
+        comprobante que dice «pagado» porque una máquina creyó leer una
+        cifra es peor que uno que no dice nada.
+      */
+      comprobantes: {
+        where: { aceptado: true },
+        select: { montoConfirmado: true, fechaConfirmada: true, bancoConfirmado: true },
+      },
+    },
+  });
+}
+
 export async function identidadDelVendedor() {
   const filas = await prisma.setting.findMany({
     where: {
