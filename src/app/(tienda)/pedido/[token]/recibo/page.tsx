@@ -22,18 +22,24 @@ import { BotonImprimir } from "./boton-imprimir";
  * página se convierte en factura añadiéndole lo que falta; hoy sería
  * mentir.
  *
+ * ── Dos presentaciones del mismo documento ──
+ *
+ * En pantalla va oscuro, como el resto de la tienda: quien llega aquí
+ * viene de su página de pedido y una hoja blanca en medio se lee como un
+ * error de la web, no como un documento.
+ *
+ * En papel va blanco. Eso NO se hace aquí sino en `globals.css`, bajo
+ * `.hoja-recibo`: son quince líneas de reglas de impresión en un solo
+ * sitio, y la alternativa —un `print:` colgando de cada color de este
+ * archivo— haría ilegible el marcado para ahorrarse un bloque de CSS.
+ *
  * ── Por qué una página y no un PDF adjunto ──
  *
- * Tres razones, por orden de importancia:
- *
- * 1. Se actualiza sola. Hoy dice «pendiente de pago» y mañana, cuando la
- *    dueña confirme la transferencia, dice «pagado» — con el mismo
- *    enlace. Un PDF mandado el lunes se queda con lo que era verdad el
- *    lunes.
- * 2. Los adjuntos se bloquean. Un enlace se abre siempre.
- * 3. Quien quiera el archivo lo tiene igual: cualquier navegador guarda
- *    como PDF al imprimir, y esta página está maquetada para salir bien
- *    en papel.
+ * Se actualiza sola: hoy dice «pendiente de pago» y mañana, cuando la
+ * dueña confirme la transferencia, dice «pagado» — con el mismo enlace.
+ * Un PDF mandado el lunes se queda con lo que era verdad el lunes. Y
+ * quien quiera el archivo lo tiene igual: el navegador guarda como PDF al
+ * imprimir.
  */
 
 export const metadata: Metadata = {
@@ -72,15 +78,15 @@ export default async function PaginaRecibo({
   const cancelado = pedido.status === "CANCELLED";
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-8 print:max-w-none print:px-0 print:py-0">
+    <div className="mx-auto max-w-3xl px-5 py-10">
       {/*
-        La barra de vuelta e imprimir NO sale en papel: `print:hidden`.
-        En una hoja impresa, un botón que dice «Imprimir» es ruido.
+        La barra de vuelta e imprimir no sale en papel: en una hoja
+        impresa, un botón que dice «Imprimir» es ruido.
       */}
-      <div className="mb-6 flex items-center justify-between gap-4 print:hidden">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 print:hidden">
         <Link
           href={`/pedido/${token}`}
-          className="inline-flex items-center gap-1.5 py-2 text-sm text-tienda-tenue transition-colors hover:text-white"
+          className="inline-flex items-center gap-1.5 py-2 text-sm text-tienda-tenue transition-colors duration-[400ms] ease-tienda hover:text-white"
         >
           <ArrowLeft className="size-4" />
           Volver a mi pedido
@@ -88,20 +94,16 @@ export default async function PaginaRecibo({
         <BotonImprimir />
       </div>
 
-      {/*
-        La hoja. Fondo blanco y letra oscura SIEMPRE, también en la tienda
-        oscura: un documento se lee en blanco y se imprime en blanco, y si
-        heredara el tema oscuro saldría del papel como un rectángulo negro
-        o, peor, en blanco sobre blanco.
-      */}
-      <article className="rounded-tienda-sm bg-white p-8 text-stone-900 shadow-sm print:rounded-none print:p-0 print:shadow-none">
-        <header className="flex flex-wrap items-start justify-between gap-6 border-b border-stone-200 pb-6">
+      <article className="hoja-recibo rounded-tienda-sm border border-tienda-linea bg-tienda-fondo-alt p-8 sm:p-10">
+        <header className="flex flex-wrap items-start justify-between gap-8 border-b border-tienda-linea pb-7">
           <div>
-            <p className="font-display text-2xl leading-none tracking-tight">
+            <p className="font-display text-3xl leading-none tracking-[0.02em] text-white">
               LILUS
             </p>
-            <p className="mt-1 text-xs text-stone-500">Jabones artesanales</p>
-            <div className="mt-3 text-xs leading-relaxed text-stone-600">
+            <p className="mt-1.5 text-xs text-tienda-tenue">
+              Jabones artesanales
+            </p>
+            <div className="mt-4 space-y-0.5 text-xs leading-relaxed text-tienda-tenue">
               <p>{vendedor.nombre}</p>
               {vendedor.cedula && <p>Cédula {vendedor.cedula}</p>}
               {vendedor.ciudad && <p>{vendedor.ciudad}</p>}
@@ -111,13 +113,13 @@ export default async function PaginaRecibo({
           </div>
 
           <div className="text-right">
-            <p className="text-2xs font-medium uppercase tracking-[0.18em] text-stone-500">
+            <p className="text-2xs uppercase tracking-[0.18em] text-tienda-tenue">
               Comprobante de compra
             </p>
-            <p className="mt-1 font-mono text-lg font-semibold tabular-nums">
+            <p className="mt-2 font-display text-2xl leading-none tracking-[0.01em] text-white">
               {pedido.orderNumber}
             </p>
-            <p className="mt-1 text-xs text-stone-600">
+            <p className="mt-2 text-xs text-tienda-tenue">
               {formatDate(pedido.createdAt)}
             </p>
 
@@ -128,12 +130,12 @@ export default async function PaginaRecibo({
               entró.
             */}
             <p
-              className={`mt-3 inline-block rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-wider ${
+              className={`sello mt-4 inline-block rounded-full border px-3.5 py-1.5 text-2xs uppercase tracking-[0.12em] ${
                 cancelado
-                  ? "bg-red-100 text-red-800"
+                  ? "sello-malo border-red-400/30 bg-red-400/10 text-red-300"
                   : estaPagado
-                    ? "bg-green-100 text-green-800"
-                    : "bg-amber-100 text-amber-800"
+                    ? "sello-bueno border-tienda-acento/40 bg-tienda-acento/10 text-tienda-acento"
+                    : "sello-espera border-amber-300/25 bg-amber-300/10 text-amber-200"
               }`}
             >
               {cancelado ? "Anulado" : estaPagado ? "Pagado" : "Pendiente de pago"}
@@ -141,42 +143,38 @@ export default async function PaginaRecibo({
           </div>
         </header>
 
-        <section className="grid gap-6 border-b border-stone-200 py-6 sm:grid-cols-2">
+        <section className="grid gap-8 border-b border-tienda-linea py-7 sm:grid-cols-2">
           <div>
-            <p className="text-2xs font-medium uppercase tracking-[0.14em] text-stone-500">
+            <p className="text-2xs uppercase tracking-[0.14em] text-tienda-tenue">
               Comprador
             </p>
-            <div className="mt-2 text-sm leading-relaxed">
-              <p className="font-medium">{pedido.customer.name}</p>
-              {pedido.customer.cedula && (
-                <p className="text-stone-600">Cédula {pedido.customer.cedula}</p>
-              )}
-              {pedido.customer.phone && (
-                <p className="text-stone-600">{pedido.customer.phone}</p>
-              )}
+            <div className="mt-3 space-y-0.5 text-sm leading-relaxed text-tienda-texto">
+              <p className="text-white">{pedido.customer.name}</p>
+              {pedido.customer.cedula && <p>Cédula {pedido.customer.cedula}</p>}
+              {pedido.customer.phone && <p>{pedido.customer.phone}</p>}
               {pedido.customer.email && (
-                <p className="break-all text-stone-600">{pedido.customer.email}</p>
+                <p className="break-all">{pedido.customer.email}</p>
               )}
             </div>
           </div>
 
           {pedido.shippingAddress && (
             <div>
-              <p className="text-2xs font-medium uppercase tracking-[0.14em] text-stone-500">
+              <p className="text-2xs uppercase tracking-[0.14em] text-tienda-tenue">
                 Entrega
               </p>
-              <div className="mt-2 text-sm leading-relaxed text-stone-700">
+              <div className="mt-3 space-y-0.5 text-sm leading-relaxed text-tienda-texto">
                 <p>{pedido.shippingAddress.address}</p>
                 <p>
                   {pedido.shippingAddress.city}, {pedido.shippingAddress.province}
                 </p>
                 {pedido.shippingAddress.reference && (
-                  <p className="text-stone-500">
+                  <p className="text-tienda-tenue">
                     {pedido.shippingAddress.reference}
                   </p>
                 )}
                 {pedido.carrier && (
-                  <p className="mt-1 text-stone-600">
+                  <p className="pt-1 text-tienda-tenue">
                     {pedido.carrier.name}
                     {pedido.trackingNumber && ` · guía ${pedido.trackingNumber}`}
                   </p>
@@ -186,7 +184,7 @@ export default async function PaginaRecibo({
           )}
         </section>
 
-        <section className="py-6">
+        <section className="py-7">
           {/*
             La tabla se desplaza sola si no cabe, pero en papel no hay
             desplazamiento posible: ahí se deja fluir a ancho completo.
@@ -194,22 +192,24 @@ export default async function PaginaRecibo({
           <div className="overflow-x-auto print:overflow-visible">
             <table className="w-full min-w-[420px] text-sm print:min-w-0">
               <thead>
-                <tr className="border-b border-stone-200 text-2xs uppercase tracking-[0.12em] text-stone-500">
-                  <th className="pb-2 text-left font-medium">Producto</th>
-                  <th className="pb-2 text-right font-medium">Cant.</th>
-                  <th className="pb-2 text-right font-medium">Precio</th>
-                  <th className="pb-2 text-right font-medium">Total</th>
+                <tr className="border-b border-tienda-linea text-2xs uppercase tracking-[0.12em] text-tienda-tenue">
+                  <th className="pb-3 text-left font-normal">Producto</th>
+                  <th className="pb-3 text-right font-normal">Cant.</th>
+                  <th className="pb-3 text-right font-normal">Precio</th>
+                  <th className="pb-3 text-right font-normal">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {pedido.items.map((i, n) => (
-                  <tr key={n} className="border-b border-stone-100">
-                    <td className="py-2.5 pr-3">{i.itemName}</td>
-                    <td className="py-2.5 text-right tabular-nums">{i.quantity}</td>
-                    <td className="py-2.5 text-right tabular-nums text-stone-600">
+                  <tr key={n} className="border-b border-tienda-linea/60">
+                    <td className="py-3 pr-3 text-tienda-texto">{i.itemName}</td>
+                    <td className="py-3 text-right tabular-nums text-tienda-texto">
+                      {i.quantity}
+                    </td>
+                    <td className="py-3 text-right tabular-nums text-tienda-tenue">
                       {formatCurrency(i.unitPrice)}
                     </td>
-                    <td className="py-2.5 text-right tabular-nums">
+                    <td className="py-3 text-right tabular-nums text-tienda-texto">
                       {formatCurrency(i.lineTotal)}
                     </td>
                   </tr>
@@ -218,12 +218,14 @@ export default async function PaginaRecibo({
             </table>
           </div>
 
-          <div className="ml-auto mt-5 w-full max-w-xs space-y-1.5 text-sm">
+          <div className="ml-auto mt-6 w-full max-w-xs space-y-2 text-sm">
             <Fila etiqueta="Productos" valor={formatCurrency(pedido.subtotal)} />
             <Fila etiqueta="Envío" valor={formatCurrency(pedido.shippingCost)} />
-            <div className="flex items-baseline justify-between border-t border-stone-300 pt-2 text-base font-semibold">
-              <span>Total</span>
-              <span className="tabular-nums">{formatCurrency(pedido.total)}</span>
+            <div className="flex items-baseline justify-between border-t border-tienda-linea pt-3">
+              <span className="text-tienda-texto">Total</span>
+              <span className="font-display text-xl tabular-nums text-white">
+                {formatCurrency(pedido.total)}
+              </span>
             </div>
 
             {/*
@@ -233,10 +235,10 @@ export default async function PaginaRecibo({
               lo que quien lo mira quiere saber.
             */}
             {pedido.comprobantes.length > 0 && (
-              <div className="space-y-1.5 pt-2 text-stone-600">
+              <div className="space-y-2 pt-1">
                 <Fila etiqueta="Pagado" valor={formatCurrency(pagado)} />
                 {faltan > 0 && (
-                  <div className="flex items-baseline justify-between font-medium text-amber-700">
+                  <div className="falta flex items-baseline justify-between text-amber-200">
                     <span>Falta</span>
                     <span className="tabular-nums">
                       {formatCurrency(faltan / 100)}
@@ -252,14 +254,19 @@ export default async function PaginaRecibo({
           La advertencia. Es lo más importante del documento después de las
           cifras, y por eso no va en letra diminuta escondida.
         */}
-        <footer className="border-t border-stone-200 pt-5 text-xs leading-relaxed text-stone-500">
+        <footer className="border-t border-tienda-linea pt-6 text-xs leading-relaxed text-tienda-tenue">
           <p>
-            Este documento es un <strong className="font-medium">comprobante de compra</strong>{" "}
-            y sirve como constancia de la transacción. <strong className="font-medium">No
-            constituye una factura ni una nota de venta</strong>, y no tiene validez
-            tributaria para deducir gastos.
+            Este documento es un{" "}
+            <strong className="font-medium text-tienda-texto">
+              comprobante de compra
+            </strong>{" "}
+            y sirve como constancia de la transacción.{" "}
+            <strong className="font-medium text-tienda-texto">
+              No constituye una factura ni una nota de venta
+            </strong>
+            , y no tiene validez tributaria para deducir gastos.
           </p>
-          <p className="mt-2">
+          <p className="mt-2.5">
             Emitido por LILUS · {formatDate(pedido.createdAt)} · Pedido{" "}
             {pedido.orderNumber}
           </p>
@@ -272,8 +279,8 @@ export default async function PaginaRecibo({
 function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (
     <div className="flex items-baseline justify-between">
-      <span className="text-stone-600">{etiqueta}</span>
-      <span className="tabular-nums">{valor}</span>
+      <span className="text-tienda-tenue">{etiqueta}</span>
+      <span className="tabular-nums text-tienda-texto">{valor}</span>
     </div>
   );
 }

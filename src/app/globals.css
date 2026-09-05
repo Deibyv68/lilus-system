@@ -570,3 +570,81 @@
     animation-delay: 0ms;
   }
 }
+
+/* ── El comprobante de compra: oscuro en pantalla, blanco en papel ──
+
+   Ver `pedido/[token]/recibo/page.tsx`.
+
+   En pantalla el comprobante va con los colores de la tienda: quien
+   llega ahi viene de su pagina de pedido, y una hoja blanca en medio del
+   sitio oscuro se lee como un error de la web, no como un documento.
+
+   En papel manda otra cosa. Una hoja con fondo oscuro sale de la
+   impresora como un rectangulo negro —gastando tinta que nadie pidio— o,
+   si el navegador decide no imprimir fondos, como texto claro sobre
+   blanco: ilegible. Asi que al imprimir se le da la vuelta a todo.
+
+   Va aqui y no como `print:` en cada elemento del componente a
+   proposito: son quince reglas en un sitio, contra treinta variantes
+   repartidas por el marcado. Lo segundo hace ilegible el componente para
+   ahorrarse este bloque.
+
+   `!important` porque compite con utilidades de Tailwind que ya vienen
+   con su propia especificidad, y aqui la ultima palabra la tiene el
+   papel. */
+@media print {
+  .hoja-recibo {
+    background: #fff !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    color: #1c1917 !important;
+  }
+
+  /* Bordes de secciones, cabecera de tabla y filas. */
+  .hoja-recibo *,
+  .hoja-recibo *::before,
+  .hoja-recibo *::after {
+    border-color: #e7e5e4 !important;
+  }
+
+  /* Lo que en oscuro era blanco o texto claro, en papel es negro. */
+  .hoja-recibo p,
+  .hoja-recibo td,
+  .hoja-recibo th,
+  .hoja-recibo span,
+  .hoja-recibo strong {
+    color: #1c1917 !important;
+  }
+
+  /* Y lo que era tenue sigue siendo secundario, pero en gris de papel. */
+  .hoja-recibo .text-tienda-tenue,
+  .hoja-recibo .text-tienda-tenue p,
+  .hoja-recibo thead th,
+  .hoja-recibo footer,
+  .hoja-recibo footer p {
+    color: #78716c !important;
+  }
+
+  /* El sello de estado: sin fondo de color, que la tinta se agradece. */
+  .hoja-recibo .sello {
+    background: transparent !important;
+    border-color: #a8a29e !important;
+    color: #44403c !important;
+  }
+  .hoja-recibo .sello-bueno {
+    border-color: #4d7c0f !important;
+    color: #3f6212 !important;
+  }
+  .hoja-recibo .sello-malo {
+    border-color: #b91c1c !important;
+    color: #991b1b !important;
+  }
+
+  /* «Falta X» tiene que seguir saltando a la vista tambien en papel. */
+  .hoja-recibo .falta,
+  .hoja-recibo .falta span {
+    color: #b45309 !important;
+    font-weight: 500 !important;
+  }
+}
