@@ -21,6 +21,7 @@ import {
   Printer,
   MapPin,
   ExternalLink,
+  Receipt,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -452,15 +453,39 @@ export default async function OrderDetailPage({
                 está dentro del panel, es lo único que hace falta.
               */}
               {order.publicToken && (
-                <a
-                  href={`/pedido/${order.publicToken}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
-                >
-                  <ExternalLink className="size-3.5" />
-                  Ver la página del cliente
-                </a>
+                <>
+                  <a
+                    href={`/pedido/${order.publicToken}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Ver la página del cliente
+                  </a>
+
+                  {/*
+                    El comprobante, junto a la página del cliente.
+
+                    Se abre en la misma dirección que ve quien compró, y
+                    desde ahí se imprime o se guarda en PDF. Estaba solo en
+                    el lado del cliente, y eso dejaba fuera el caso más
+                    probable: alguien pide su comprobante por WhatsApp y
+                    hay que sacárselo desde aquí.
+
+                    Va relativo, como el de arriba: así funciona aunque
+                    `APP_URL` no esté puesta.
+                  */}
+                  <a
+                    href={`/pedido/${order.publicToken}/recibo`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    <Receipt className="size-3.5" />
+                    Comprobante de compra
+                  </a>
+                </>
               )}
 
               {/*
