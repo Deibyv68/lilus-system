@@ -47,6 +47,21 @@ export const metadata: Metadata = {
   },
   description:
     "Jabones y cosmética artesanal hechos en Ecuador. Glicerina, aceites vegetales y recetas propias.",
+  /*
+    La tienda NO enlaza el manifiesto.
+
+    Existe `app/manifest.ts`, y Next enlaza ese manifiesto en todas las
+    páginas por su cuenta. El resultado era que Chrome ofrecía «Instalar
+    app» también en la tienda — y lo que instalaba era el PANEL, porque
+    su `start_url` es `/sistema` y su nombre es «LILUS — Gestión de
+    ventas». Una clienta que aceptara se llevaba a la pantalla de inicio
+    un acceso al sistema de administración.
+
+    Poniéndolo en nulo aquí, el enlace desaparece de la tienda y sigue
+    donde tiene que estar. El manifiesto no se toca: sigue en la misma
+    dirección, así que la app ya instalada no se entera de nada.
+  */
+  manifest: null,
 };
 
 export default async function TiendaLayout({

@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { ServiceWorkerRegister } from "@/components/service-worker-register";
-import { InstallPrompt } from "@/components/install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,9 +57,18 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         {children}
+        {/*
+          El Toaster se queda: los avisos de «guardado» y «no se pudo»
+          los usan las dos mitades.
+
+          Lo que se fue de aquí es todo lo de la app instalable —el
+          cartel de instalar y el trabajador de servicio—, que ahora vive
+          en `sistema/layout.tsx`. Estaban en este layout, que comparten
+          el panel y la tienda, así que a cualquiera que entrara a
+          comprar le salía la oferta de instalarse el panel de
+          administración. Ver la nota de allá.
+        */}
         <Toaster richColors position="top-right" />
-        <ServiceWorkerRegister />
-        <InstallPrompt />
       </body>
     </html>
   );

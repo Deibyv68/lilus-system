@@ -3,6 +3,8 @@ import { Sidebar } from "@/components/sidebar";
 import { BottomNav } from "@/components/bottom-nav";
 import { MobileHeader } from "@/components/mobile-header";
 import { getCurrentUser, getTrustedDevice } from "@/lib/auth";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { InstallPrompt } from "@/components/install-prompt";
 import type { Metadata } from "next";
 
 /**
@@ -54,6 +56,25 @@ export default async function AppLayout({
       </main>
 
       <BottomNav />
+
+      {/*
+        Lo de la app instalable vive AQUÍ, no en el layout raíz.
+
+        Estaba allá, y allá lo comparten el panel y la tienda: a
+        cualquiera que entrara a comprar jabones le aparecía el cartel
+        ofreciéndole instalarse el panel de administración. Y el
+        trabajador de servicio se le instalaba en el navegador sin que
+        pintara nada.
+
+        La PWA es el panel —su `start_url` es `/sistema`— así que ofrecerla
+        solo aquí no pierde nada: quien la instala está dentro.
+
+        El trabajador se registra con alcance `/` aunque se pida desde
+        aquí, porque el archivo vive en la raíz. O sea que los avisos
+        siguen llegando esté donde esté la app.
+      */}
+      <ServiceWorkerRegister />
+      <InstallPrompt />
     </div>
   );
 }
