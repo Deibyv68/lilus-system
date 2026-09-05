@@ -8,6 +8,23 @@ import {
   METODO_DE_PAGO,
 } from "@/lib/politicas";
 
+/*
+  Se vuelve a generar cada media hora, como la página de contacto.
+
+  Estas páginas leen de la base la identidad del vendedor y sus datos de
+  contacto —nombre, cédula, correo, teléfono—, y sin esta línea Next las
+  daba por fijas: se armaban al compilar y ahí se quedaban para siempre.
+
+  Se notó al cambiar el correo de contacto: la página de contacto lo
+  reflejó sola y estas dos siguieron enseñando el viejo. Y son
+  precisamente las páginas donde ese dato tiene que estar bien, porque es
+  a donde se escribe para ejercer un derecho o hacer una devolución.
+
+  La misma media hora que `contacto`, para que un cambio en la
+  configuración aparezca en toda la tienda a la vez y no a ratos.
+*/
+export const revalidate = 1800;
+
 export const metadata: Metadata = {
   title: "Condiciones de compra",
   description:
