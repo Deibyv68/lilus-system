@@ -35,11 +35,25 @@ import nodemailer from "nodemailer";
  * escrita en un archivo.
  */
 
+type Adjunto = {
+  nombre: string;
+  contenido: Uint8Array;
+  tipo: string;
+};
+
 type Mensaje = {
   para: string;
   asunto: string;
   html: string;
   texto: string;
+  /*
+    Lo que va pegado al correo.
+
+    Opcional a propósito: un adjunto que no se pudo armar no debe impedir
+    que salga el aviso. Quien llama pasa la lista si la tiene y no la pasa
+    si no, y el correo sale igual con el enlace dentro.
+  */
+  adjuntos?: Adjunto[];
 };
 
 function configuracion() {
@@ -97,6 +111,11 @@ export async function enviarCorreo(m: Mensaje): Promise<boolean> {
       subject: m.asunto,
       text: m.texto,
       html: m.html,
+      attachments: m.adjuntos?.map((a) => ({
+        filename: a.nombre,
+        content: Buffer.from(a.contenido),
+        contentType: a.tipo,
+      })),
     });
     return true;
   } catch (e) {

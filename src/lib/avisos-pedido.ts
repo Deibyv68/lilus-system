@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "./prisma";
 import { formatCurrency } from "./format";
 import { enviarCorreo, plantilla, boton, correoDeAdmin } from "./correo";
+import { comprobanteDelPedido } from "./comprobante-de-compra";
 
 /**
  * Los correos automáticos de un pedido.
@@ -121,11 +122,41 @@ function pieDeContacto(whatsapp: string | null): string {
   return `<p style="margin:0">¿Alguna duda? Responde a este correo${wa}.</p>`;
 }
 
-/** El enlace al comprobante, que va debajo del resumen en los tres. */
-function enlaceAlComprobante(token: string): string {
-  return `<p style="margin:16px 0 0;font-size:13px;color:#a8a29e">
-    <a href="${baseUrl()}/pedido/${token}/recibo" style="color:#78716c">Ver el comprobante de compra</a>
-  </p>`;
+/**
+ * El comprobante, debajo del resumen.
+ *
+ * Con `adjunto` puesto lo dice, porque un PDF pegado a un correo pasa
+ * desapercibido: en el teléfono es una tira fina encima del texto y mucha
+ * gente no la mira. Nombrarlo cuesta una línea.
+ *
+ * El enlace se queda aunque vaya el archivo, y no es redundante: el
+ * archivo es una foto del momento en que salió el correo y la página se
+ * actualiza sola. El que se mandó al confirmar el pedido dice «pendiente
+ * de pago» para siempre; la página, en cuanto la dueña confirme la
+ * transferencia, dirá «pagado».
+ */
+function enlaceAlComprobante(token: string, adjunto = false): string {
+  const texto = adjunto
+    ? `Tu comprobante de compra va adjunto en PDF ·
+       <a href="${baseUrl()}/pedido/${token}/recibo" style="color:#78716c">verlo en la web</a>`
+    : `<a href="${baseUrl()}/pedido/${token}/recibo" style="color:#78716c">Ver el comprobante de compra</a>`;
+
+  return `<p style="margin:16px 0 0;font-size:13px;color:#a8a29e">${texto}</p>`;
+}
+
+/**
+ * El comprobante en PDF, listo para pegar al correo.
+ *
+ * Devuelve `undefined` si no se pudo armar, y entonces el correo sale sin
+ * él. Es a propósito: el aviso vale más que el adjunto, y quien lo reciba
+ * tiene el enlace a la misma página dos líneas más abajo.
+ */
+async function adjuntoDelComprobante(token: string) {
+  const c = await comprobanteDelPedido(token);
+  if (!c) return undefined;
+  return [
+    { nombre: c.nombreDeArchivo, contenido: c.bytes, tipo: "application/pdf" },
+  ];
 }
 
 /** Solo el nombre de pila, que es como se habla. */
@@ -189,7 +220,7 @@ export async function avisarAlCliente(p: PedidoParaAviso): Promise<boolean> {
        Guarda ese enlace: es donde ves cómo va tu pedido en cualquier momento,
        sin contraseñas.
      </p>
-     ${enlaceAlComprobante(p.publicToken)}`,
+     ${enlaceAlComprobante(p.publicToken, true)}`,
     {
       entradilla: `Tu pedido ${p.orderNumber} quedó registrado. Falta el pago para empezar a prepararlo.`,
       pie: pieDeContacto(whatsapp),
@@ -205,7 +236,7 @@ export async function avisarAlCliente(p: PedidoParaAviso): Promise<boolean> {
     whatsapp ? `\nMándanos la captura por WhatsApp: https://wa.me/${whatsapp}` : "",
     "",
     `Sigue tu pedido acá: ${enlace}`,
-    `Comprobante: ${baseUrl()}/pedido/${p.publicToken}/recibo`,
+    `Tu comprobante va adjunto en PDF. También está acá: ${baseUrl()}/pedido/${p.publicToken}/recibo`,
   ].join("\n");
 
   return enviarCorreo({
@@ -213,6 +244,7 @@ export async function avisarAlCliente(p: PedidoParaAviso): Promise<boolean> {
     asunto: `Tu pedido ${p.orderNumber} · LILUS`,
     html,
     texto,
+    adjuntos: await adjuntoDelComprobante(p.publicToken),
   });
 }
 
@@ -243,7 +275,7 @@ export async function avisarPagoConfirmado(p: PedidoParaAviso): Promise<boolean>
      </p>
      ${bloqueDeResumen(p)}
      <p style="margin:26px 0 0">${boton("Ver mi pedido", enlace)}</p>
-     ${enlaceAlComprobante(p.publicToken)}`,
+     ${enlaceAlComprobante(p.publicToken, true)}`,
     {
       entradilla: `Recibimos el pago de tu pedido ${p.orderNumber}. Ya lo estamos preparando.`,
       pie: pieDeContacto(whatsapp),
@@ -256,7 +288,8 @@ export async function avisarPagoConfirmado(p: PedidoParaAviso): Promise<boolean>
     `Recibimos ${formatCurrency(p.total)}. Ya lo estamos preparando.`,
     "",
     `Sigue tu pedido acá: ${enlace}`,
-    `Comprobante: ${baseUrl()}/pedido/${p.publicToken}/recibo`,
+    `Tu comprobante, ya como pagado, va adjunto en PDF.`,
+    `También está acá: ${baseUrl()}/pedido/${p.publicToken}/recibo`,
   ].join("\n");
 
   return enviarCorreo({
@@ -264,6 +297,7 @@ export async function avisarPagoConfirmado(p: PedidoParaAviso): Promise<boolean>
     asunto: `Confirmamos tu pago · ${p.orderNumber}`,
     html,
     texto,
+    adjuntos: await adjuntoDelComprobante(p.publicToken),
   });
 }
 
