@@ -78,7 +78,7 @@ export default async function PaginaRecibo({
   const cancelado = pedido.status === "CANCELLED";
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-10">
+    <div className="pagina-recibo mx-auto max-w-3xl px-5 py-10">
       {/*
         La barra de vuelta e imprimir no sale en papel: en una hoja
         impresa, un botón que dice «Imprimir» es ruido.
