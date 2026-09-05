@@ -22,6 +22,7 @@ import {
   MapPin,
   ExternalLink,
   Receipt,
+  Download,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -484,6 +485,19 @@ export default async function OrderDetailPage({
                   >
                     <Receipt className="size-3.5" />
                     Comprobante de compra
+                  </a>
+
+                  {/*
+                    Y el archivo, aparte del enlace. Cuando una clienta lo
+                    pide por WhatsApp, adjuntarlo se resuelve en un clic
+                    desde aquí en vez de abrir la página y buscarlo dentro.
+                  */}
+                  <a
+                    href={`/pedido/${order.publicToken}/recibo/pdf`}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  >
+                    <Download className="size-3.5" />
+                    Descargar el comprobante
                   </a>
                 </>
               )}

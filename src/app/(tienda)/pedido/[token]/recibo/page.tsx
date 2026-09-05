@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { datosDelRecibo, identidadDelVendedor, datosDeContacto } from "@/lib/tienda";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { BotonImprimir } from "./boton-imprimir";
 
 /**
  * El comprobante de compra de un pedido.
@@ -33,13 +32,19 @@ import { BotonImprimir } from "./boton-imprimir";
  * sitio, y la alternativa —un `print:` colgando de cada color de este
  * archivo— haría ilegible el marcado para ahorrarse un bloque de CSS.
  *
- * ── Por qué una página y no un PDF adjunto ──
+ * ── Por qué la página es lo que se enlaza, y el PDF lo que se baja ──
  *
- * Se actualiza sola: hoy dice «pendiente de pago» y mañana, cuando la
- * dueña confirme la transferencia, dice «pagado» — con el mismo enlace.
- * Un PDF mandado el lunes se queda con lo que era verdad el lunes. Y
- * quien quiera el archivo lo tiene igual: el navegador guarda como PDF al
- * imprimir.
+ * La página se actualiza sola: hoy dice «pendiente de pago» y mañana,
+ * cuando la dueña confirme la transferencia, dice «pagado» — con el mismo
+ * enlace. Por eso es lo que viaja en el correo: un archivo mandado el
+ * lunes se queda con lo que era verdad el lunes.
+ *
+ * Pero quien viene aquí a menudo quiere el archivo, no la pantalla: para
+ * reenviarlo, adjuntarlo o guardarlo. Ese archivo lo arma `recibo/pdf` y
+ * se baja de un clic. Antes había en su lugar un botón que abría el
+ * diálogo de impresión del navegador, contando con que la clienta supiera
+ * elegir «Guardar como PDF» ahí dentro. Es un paso de más apoyado en una
+ * suposición, y por eso ya no está.
  */
 
 export const metadata: Metadata = {
@@ -80,8 +85,8 @@ export default async function PaginaRecibo({
   return (
     <div className="pagina-recibo mx-auto max-w-3xl px-5 py-10">
       {/*
-        La barra de vuelta e imprimir no sale en papel: en una hoja
-        impresa, un botón que dice «Imprimir» es ruido.
+        La barra de vuelta y descarga no sale en papel: en una hoja
+        impresa, un botón que dice «Descargar» es ruido.
       */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 print:hidden">
         <Link
@@ -91,7 +96,18 @@ export default async function PaginaRecibo({
           <ArrowLeft className="size-4" />
           Volver a mi pedido
         </Link>
-        <BotonImprimir />
+        {/*
+          Un enlace normal, no un botón: la ruta responde con
+          `Content-Disposition: attachment`, así que el navegador baja el
+          archivo sin abrir nada ni salir de esta página.
+        */}
+        <a
+          href={`/pedido/${token}/recibo/pdf`}
+          className="inline-flex items-center gap-2 rounded-full border border-tienda-linea px-4 py-2 text-sm text-tienda-texto transition-colors duration-[400ms] ease-tienda hover:border-tienda-texto hover:text-white"
+        >
+          <Download className="size-4" />
+          Descargar PDF
+        </a>
       </div>
 
       <article className="hoja-recibo rounded-tienda-sm border border-tienda-linea bg-tienda-fondo-alt p-8 sm:p-10">
