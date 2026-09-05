@@ -1,4 +1,29 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+
+/*
+  ¿Este build es el de la tienda en la nube?
+
+  Es el mismo interruptor que ya usa `proxy.ts` para servir solo la tienda
+  y responder 404 al panel. Aquí decide algo distinto pero de la misma
+  familia: qué módulos entran siquiera en el paquete.
+*/
+const soloTienda = process.env.SOLO_TIENDA === "1";
+
+/*
+  Los módulos nativos, y qué hacer con ellos según dónde vaya el build.
+
+  En la laptop se dejan FUERA del paquete (`serverExternalPackages`): son
+  binarios compilados y empaquetarlos metería los de la máquina que
+  compila, que no tienen por qué ser los de la que ejecuta.
+
+  En la nube no se pueden dejar fuera ni dentro: Cloudflare Workers no
+  ejecuta binarios, y el empaquetador se cae al encontrarse un `.node`.
+  Ahí se cambian por un módulo que lanza si alguien los llama. Es seguro
+  porque los tres cuelgan solo del panel, y el panel no va a la nube.
+*/
+const NATIVOS = ["sharp", "tesseract.js", "pdf-to-png-converter", "pdfjs-dist", "@napi-rs/canvas"];
+const HUECO = path.join(__dirname, "cloud", "nativo-ausente.js");
 
 const nextConfig: NextConfig = {
   // Evita que Turbopack intente empaquetar el cliente de Prisma (binarios nativos).
@@ -15,20 +40,16 @@ const nextConfig: NextConfig = {
       la primera imagen de un comprobante, que es el peor momento para
       enterarse.
     */
-    "sharp",
-    "pdf-to-png-converter",
-    "pdfjs-dist",
-    "@napi-rs/canvas",
+    ...(soloTienda ? [] : ["sharp", "pdf-to-png-converter", "pdfjs-dist", "@napi-rs/canvas"]),
     /*
       Tesseract lanza un worker de Node y resuelve su ruta en tiempo de
       ejecución. Empaquetado, esa ruta apunta a la raíz virtual del
       empaquetador y el worker muere con «Cannot find module
-      C:\ROOT
-ode_modules	esseract.js\...». Dejándolo fuera del
+      C:/ROOT/node_modules/tesseract.js/...». Dejándolo fuera del
       paquete se resuelve desde node_modules como cualquier otro proceso
       de Node.
     */
-    "tesseract.js",
+    ...(soloTienda ? [] : ["tesseract.js"]),
   ],
   experimental: {
     serverActions: {
@@ -58,6 +79,9 @@ ode_modules	esseract.js\...». Dejándolo fuera del
   // Silencia el warning de "multiple lockfiles" anclando el root a este proyecto.
   turbopack: {
     root: __dirname,
+    ...(soloTienda
+      ? { resolveAlias: Object.fromEntries(NATIVOS.map((m) => [m, HUECO])) }
+      : {}),
   },
 };
 
