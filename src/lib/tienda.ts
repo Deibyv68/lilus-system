@@ -219,18 +219,40 @@ export async function listarCatalogo(): Promise<{
  * un artículo despublicado no tiene por qué anunciar que existe.
  */
 export async function buscarPorSlug(slug: string): Promise<ArticuloDetalle | null> {
-  const detalle = {
+  /*
+    Toda la galería, no solo la primera foto: `RESUMEN` y `RESUMEN_PACK`
+    traen una para la tarjeta de la cuadrícula, y aquí hacen falta todas.
+  */
+  const GALERIA = {
+    orderBy: { sortOrder: "asc" },
+    select: { url: true, alt: true },
+  } as const;
+
+  const detalleProducto = {
     ...RESUMEN,
     description: true,
-    storeImages: {
-      orderBy: { sortOrder: "asc" },
-      select: { url: true, alt: true },
-    },
+    storeImages: GALERIA,
+  } as const;
+
+  /*
+    El detalle del pack sale de RESUMEN_PACK, no de RESUMEN.
+
+    Parece una distinción tonta y no lo es: `ingredients` es una columna
+    de Product que no existe en Pack, y pedírsela a la base no falla al
+    compilar sino al ejecutarse. Aquí se reusaba el detalle de productos
+    para consultar packs, y por eso `/tienda/<slug-de-pack>` respondía 500
+    en producción — solo esa ruta, porque `/packs/<slug>` usa otra
+    consulta y por ahí sí funcionaba.
+  */
+  const detallePack = {
+    ...RESUMEN_PACK,
+    description: true,
+    storeImages: GALERIA,
   } as const;
 
   const producto = await prisma.product.findFirst({
     where: { ...VISIBLE, slug },
-    select: { ...detalle, ingredients: true },
+    select: detalleProducto,
   });
 
   if (producto) {
@@ -246,11 +268,18 @@ export async function buscarPorSlug(slug: string): Promise<ArticuloDetalle | nul
   const pack = await prisma.pack.findFirst({
     where: { ...VISIBLE, slug },
     select: {
-      ...detalle,
+      ...detallePack,
+      /*
+        Pisa el `items` de RESUMEN_PACK a propósito: ahí solo se pedía lo
+        justo para componer el texto de ingredientes; aquí hace falta
+        además la cantidad y el enlace de cada pieza.
+      */
       items: {
         select: {
           quantity: true,
-          product: { select: { name: true, slug: true, isPublic: true } },
+          product: {
+            select: { name: true, slug: true, isPublic: true, ingredients: true },
+          },
         },
       },
     },

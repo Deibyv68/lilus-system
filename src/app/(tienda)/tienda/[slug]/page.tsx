@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
-import { buscarPorSlug, opcionesDeEnvio } from "@/lib/tienda";
+import { buscarPorSlug, opcionesDeEnvio, listarCatalogo } from "@/lib/tienda";
 import { formatCurrency } from "@/lib/format";
 import { ImagenArticulo } from "@/components/tienda/imagen-articulo";
 import { BotonAgregar } from "@/components/tienda/boton-agregar";
@@ -18,6 +18,24 @@ import { BotonAgregar } from "@/components/tienda/boton-agregar";
  */
 
 export const revalidate = 1800;
+
+/**
+ * Las fichas que existen hoy, para dejarlas escritas al compilar.
+ *
+ * Sin esto cada ficha se dibujaba en la primera visita, y dibujarla son
+ * varias consultas a la base. Mientras la base era un archivo en el disco
+ * no importaba; con la base en la nube, cada consulta cruza medio
+ * continente y la primera clienta del día pagaba la espera entera.
+ *
+ * Lo que no esté en esta lista sigue funcionando: Next lo dibuja cuando
+ * alguien lo pida. Es una lista de adelantos, no una de permitidos — un
+ * producto publicado a las once de la noche no espera al siguiente
+ * despliegue para tener página.
+ */
+export async function generateStaticParams() {
+  const { packs, productos } = await listarCatalogo();
+  return [...packs, ...productos].map(({ slug }) => ({ slug }));
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
