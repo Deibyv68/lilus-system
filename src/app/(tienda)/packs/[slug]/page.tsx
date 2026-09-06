@@ -7,6 +7,7 @@ import {
   obtenerPackPresentacion,
   otrosPacks,
   opcionesDeEnvio,
+  listarPacksConDescripcion,
 } from "@/lib/tienda";
 import { formatCurrency } from "@/lib/format";
 import { DIAS_PREPARACION } from "@/lib/politicas";
@@ -31,6 +32,19 @@ import { PiezaDelPack } from "@/components/tienda/pieza-del-pack";
  */
 
 export const revalidate = 1800;
+
+/**
+ * Los packs publicados, para dejar sus páginas escritas al compilar.
+ *
+ * Igual que en la ficha de compra: dibujar esta página son varias
+ * consultas, y con la base en la nube cada una cuesta un viaje de ida y
+ * vuelta. Un pack nuevo publicado después del despliegue sigue teniendo
+ * página; simplemente la primera visita la dibuja.
+ */
+export async function generateStaticParams() {
+  const packs = await listarPacksConDescripcion();
+  return packs.map(({ slug }) => ({ slug }));
+}
 
 type Props = { params: Promise<{ slug: string }> };
 
