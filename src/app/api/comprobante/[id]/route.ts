@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Readable } from "node:stream";
 import { prisma } from "@/lib/prisma";
 import { currentUser } from "@/lib/guard";
 import { leerComprobante } from "@/lib/comprobantes";
@@ -63,10 +62,10 @@ export async function GET(
   const archivo = await leerComprobante(comprobante.archivo);
   if (!archivo) return new NextResponse(null, { status: 404 });
 
-  return new NextResponse(Readable.toWeb(archivo.flujo) as ReadableStream, {
+  return new NextResponse(archivo.bytes as unknown as BodyInit, {
     headers: {
       "content-type": comprobante.tipo,
-      "content-length": String(archivo.bytes),
+      "content-length": String(archivo.tamano),
       /*
         `no-store` a propósito: un comprobante no debe quedarse en la
         caché de un proxy ni del navegador de un locutorio.

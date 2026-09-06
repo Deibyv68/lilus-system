@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Readable } from "node:stream";
 import { currentUser } from "@/lib/guard";
 import { leerComprobante } from "@/lib/comprobantes";
 
@@ -57,10 +56,10 @@ export async function GET(
   };
   const extension = archivo.split(".").pop() ?? "";
 
-  return new NextResponse(Readable.toWeb(encontrado.flujo) as ReadableStream, {
+  return new NextResponse(encontrado.bytes as unknown as BodyInit, {
     headers: {
       "content-type": tipos[extension] ?? "application/octet-stream",
-      "content-length": String(encontrado.bytes),
+      "content-length": String(encontrado.tamano),
       "cache-control": "no-store, private",
       "content-disposition": "inline",
     },

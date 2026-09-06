@@ -72,7 +72,8 @@ const CACHE = path.join(process.cwd(), ".tesseract");
  * impedir que el comprobante exista, que es lo que de verdad importa.
  */
 export async function leerComprobanteConOcr(
-  rutaAbsoluta: string,
+  /** Ruta en disco, o los bytes del comprobante. */
+  origen: string | Buffer,
   /**
    * Los bancos donde cobramos.
    *
@@ -103,7 +104,7 @@ export async function leerComprobanteConOcr(
       que casi todas las apps bancarias usan para el monto — que es
       justamente el dato que más importa. Ver `imagen-comprobante.ts`.
     */
-    const imagen = await prepararImagen(rutaAbsoluta);
+    const imagen = await prepararImagen(origen);
 
     const { data } = await worker.recognize(imagen.normal);
     let texto = data.text ?? "";

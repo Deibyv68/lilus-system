@@ -49,8 +49,17 @@ export type Preparada = { normal: Buffer; invertida: Buffer };
 */
 const ANCHO_MINIMO = 1000;
 
-export async function prepararImagen(ruta: string): Promise<Preparada> {
-  const base = sharp(ruta).rotate();
+/**
+ * @param origen Ruta en disco, o los bytes del archivo.
+ *
+ * Acepta las dos cosas porque el comprobante ya no vive siempre en un
+ * disco que este proceso pueda abrir: cuando la clienta lo sube desde la
+ * tienda en la nube, llega a R2 y aquí entra como bytes.
+ */
+export async function prepararImagen(
+  origen: string | Buffer
+): Promise<Preparada> {
+  const base = sharp(origen).rotate();
   const meta = await base.metadata();
 
   const ampliar =
@@ -59,7 +68,7 @@ export async function prepararImagen(ruta: string): Promise<Preparada> {
       : undefined;
 
   const comun = () => {
-    let s = sharp(ruta).rotate().grayscale();
+    let s = sharp(origen).rotate().grayscale();
     if (ampliar) s = s.resize(ampliar);
     return s;
   };

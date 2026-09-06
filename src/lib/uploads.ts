@@ -1,7 +1,13 @@
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { guardar } from "./almacen";
 
+/*
+  La raíz en disco, para la ruta que sirve estos archivos.
+
+  Sigue existiendo porque cuando el almacén es el disco esa ruta lee
+  directamente de ahí. Con R2 no se usa: el almacén resuelve la clave.
+*/
 export const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads");
 
 const ALLOWED_IMAGE = new Set([
@@ -32,15 +38,18 @@ export async function saveUpload(
     );
   }
 
-  const ext =
-    kind === "image" ? mimeToExt(file.type) : "pdf";
+  const ext = kind === "image" ? mimeToExt(file.type) : "pdf";
   const filename = `${randomUUID()}.${ext}`;
-  const dir = path.join(UPLOAD_ROOT, subdir);
-  await mkdir(dir, { recursive: true });
-  const filepath = path.join(dir, filename);
-  const buf = Buffer.from(await file.arrayBuffer());
-  await writeFile(filepath, buf);
-  return `/uploads/${subdir}/${filename}`;
+
+  /*
+    La clave lleva dentro la dirección pública: `uploads/productos/x.jpg`
+    se sirve en `/uploads/productos/x.jpg`. Es a propósito — así lo que ya
+    está guardado en la base sigue valiendo cuando los archivos se muden a
+    R2, sin reescribir una sola fila.
+  */
+  const clave = `uploads/${subdir}/${filename}`;
+  await guardar(clave, new Uint8Array(await file.arrayBuffer()), file.type);
+  return `/${clave}`;
 }
 
 function mimeToExt(mime: string): string {
