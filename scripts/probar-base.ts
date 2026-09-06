@@ -13,7 +13,11 @@
  * Escribe y borra una fila de Setting con una clave que nadie mas usa.
  */
 
-import { prisma, usandoTurso } from "./src/lib/prisma";
+import { prisma, usandoTurso } from "../src/lib/prisma";
+
+/* El cliente que reciben las transacciones: el mismo, sin los metodos que
+   no valen dentro de una. */
+type PrismaTx = Omit<typeof prisma, "$transaction" | "$connect" | "$disconnect" | "$on" | "$use" | "$extends">;
 
 const CLAVE = "__prueba_adaptador__";
 
@@ -29,7 +33,7 @@ async function main() {
 
   // Transacción interactiva: es lo que usa el checkout para crear el
   // pedido, el cliente y las líneas sin dejar nada a medias.
-  const n = await prisma.$transaction(async (tx) => {
+  const n = await prisma.$transaction(async (tx: PrismaTx) => {
     await tx.setting.update({ where: { key: CLAVE }, data: { value: "dos" } });
     return tx.setting.count({ where: { key: CLAVE } });
   });
@@ -40,7 +44,7 @@ async function main() {
 
   // Y que una transacción que falla no deje rastro.
   try {
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: PrismaTx) => {
       await tx.setting.update({ where: { key: CLAVE }, data: { value: "tres" } });
       throw new Error("a proposito");
     });
