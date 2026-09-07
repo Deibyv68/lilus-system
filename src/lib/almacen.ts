@@ -137,8 +137,26 @@ export async function guardar(
   if (usandoR2) {
     const r = await r2().fetch(urlEnR2(clave), {
       method: "PUT",
-      body: bytes as unknown as BodyInit,
-      headers: { "Content-Type": tipo },
+      /*
+        Un ArrayBuffer, no la vista: el cuerpo tiene que llegar con un
+        tamaño conocido para que se pueda anunciar en Content-Length.
+      */
+      body: bytes.slice().buffer,
+      headers: {
+        "Content-Type": tipo,
+        /*
+          R2 rechaza con 411 cualquier subida sin Content-Length: su API
+          no acepta cuerpos troceados. Normalmente `fetch` la pone sola al
+          recibir bytes de tamaño conocido, pero dentro de Next no llega:
+          Next envuelve `fetch` para su caché, rehace la petición y por el
+          camino el cuerpo pasa a ser un flujo sin tamaño.
+
+          Por eso va escrita a mano. Y por eso el fallo no salió en las
+          pruebas: un script suelto usa el `fetch` de Node, que sí la
+          ponía. Solo aparecía dentro del servidor.
+        */
+        "Content-Length": String(bytes.byteLength),
+      },
     });
     if (!r.ok) {
       throw new Error(`R2 no guardó «${clave}»: ${r.status} ${await r.text()}`);
