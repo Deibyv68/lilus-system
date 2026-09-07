@@ -1,18 +1,10 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
-import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
 
-/**
- * Cómo se empaqueta la tienda para Cloudflare.
- *
- * La caché va en R2 y no en memoria porque un Worker se levanta y se
- * muere todo el rato: con caché por instancia, casi toda visita caería en
- * una recién nacida que tendría que volver a preguntar a la base en
- * Virginia. Medimos ese camino y eran 2,5 segundos para pintar el
- * catálogo — justo lo que el trabajo de caché venía a quitar.
- *
- * El bucket se declara en `wrangler.jsonc`, en el enlace
- * `NEXT_INC_CACHE_R2_BUCKET`.
- */
-export default defineCloudflareConfig({
-  incrementalCache: r2IncrementalCache,
-});
+/*
+  PRUEBA: sin cache incremental en R2.
+
+  Las paginas dinamicas se quedaron colgadas en el Worker mientras las
+  estaticas y las rutas seguian bien. La capa de cache envuelve el
+  dibujado de paginas y no las rutas, asi que encaja. Esto lo comprueba.
+*/
+export default defineCloudflareConfig();
