@@ -1,11 +1,53 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
   "name": "lilus-tienda",
-  "compatibility_date": "2026-09-05",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-06",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
+  },
+
+  // Referencia a sí mismo, que OpenNext necesita para revalidar en segundo
+  // plano. El nombre tiene que coincidir con el de arriba.
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "lilus-tienda"
+    }
+  ],
+
+  // Dónde guarda OpenNext las páginas ya dibujadas.
+  //
+  // Hace falta que sea compartido y no memoria de cada instancia: un
+  // Worker se levanta y se muere todo el rato, y con caché en memoria cada
+  // visita caería en una instancia fría que tendría que volver a preguntar
+  // a la base. Es justo el gasto que el trabajo de caché venía a quitar.
+  //
+  // Va en un bucket aparte del de los archivos: esto es material de
+  // andamio, se puede tirar entero cuando haga falta, y no quiero que
+  // borrarlo pueda llevarse por delante las fotos del catálogo.
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "lilus-cache"
+    }
+  ],
+
+  "vars": {
+    // La tienda y nada más: el proxy responde 404 a /sistema, /login y a
+    // todo /api salvo la subida de comprobantes. El panel vive en la
+    // laptop y no tiene por qué existir aquí.
+    "SOLO_TIENDA": "1",
+    "APP_URL": "https://liluscare.com",
+    "R2_BUCKET": "lilus-archivos",
+    "MAIL_FROM": "LILUS <contacto@liluscare.com>",
+    "MAIL_ADMIN": "lilus.negocio@gmail.com"
+  },
+
+  "observability": {
+    "enabled": true
   }
 }
