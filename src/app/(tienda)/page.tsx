@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   listarCatalogo,
+  opcionesDeEnvio,
   listarPacksConDescripcion,
   listarDestacados,
   listarFeed,
@@ -9,9 +10,9 @@ import {
 import { Revelar } from "@/components/tienda/revelar";
 import { ListaColecciones } from "@/components/tienda/lista-colecciones";
 import { SeleccionDestacada } from "@/components/tienda/seleccion-destacada";
-import { Testimonios } from "@/components/tienda/testimonios";
+import { PreguntasFrecuentes } from "@/components/tienda/preguntas-frecuentes";
 import { FeedSocial } from "@/components/tienda/feed-social";
-import { TESTIMONIOS_DE_MUESTRA } from "@/lib/testimonios";
+import { preguntasFrecuentes } from "@/lib/preguntas-frecuentes";
 import { CarruselProductos } from "@/components/tienda/carrusel-productos";
 import { CintaTexto } from "@/components/tienda/cinta-texto";
 
@@ -31,13 +32,15 @@ import { CintaTexto } from "@/components/tienda/cinta-texto";
 export const revalidate = 1800;
 
 export default async function Portada() {
-  const [{ productos }, packs, destacados, feed, contacto] = await Promise.all([
-    listarCatalogo(),
-    listarPacksConDescripcion(),
-    listarDestacados(),
-    listarFeed(),
-    datosDeContacto(),
-  ]);
+  const [{ productos }, packs, destacados, feed, contacto, envios] =
+    await Promise.all([
+      listarCatalogo(),
+      listarPacksConDescripcion(),
+      listarDestacados(),
+      listarFeed(),
+      datosDeContacto(),
+      opcionesDeEnvio(),
+    ]);
 
   return (
     <>
@@ -160,15 +163,14 @@ export default async function Portada() {
       )}
 
       {/*
-        ⚠️ Los testimonios son de muestra e inventados. Ver la advertencia
-        de src/lib/testimonios.ts: hay que reemplazarlos por reales antes
-        de que la tienda salga a internet.
+        Aquí había cuatro testimonios inventados. Ver la explicación en
+        `src/lib/preguntas-frecuentes.ts`.
       */}
       <div className="mx-auto max-w-[1440px] px-6 pb-[120px] sm:px-10">
-        <Testimonios
-          testimonios={TESTIMONIOS_DE_MUESTRA}
-          titulo="Lo que dicen"
-          entrada="Impresiones de clientas que compraron y volvieron. Hablan de olor, textura y trato — de un jabón no se puede esperar más que eso."
+        <PreguntasFrecuentes
+          preguntas={preguntasFrecuentes(envios)}
+          titulo="Antes de comprar"
+          entrada="Lo que más nos preguntan por WhatsApp, contestado aquí para que no tengas que preguntarlo."
         />
       </div>
 
