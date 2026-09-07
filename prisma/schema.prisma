@@ -16,16 +16,16 @@ model Product {
   sku             String   @unique
   name            String
   description     String?
-  shortName       String?  // nombre corto para etiqueta 2x1
-  imageUrl        String?  // /uploads/products/xxx.jpg
-  labelPdfUrl     String?  // PDF de etiqueta de producto (la que el usuario sube)
-  price           Float    // precio de venta unitario (suelto)
-  packPrice       Float?   // precio cuando va dentro de un pack; si null, usa price
+  shortName       String? // nombre corto para etiqueta 2x1
+  imageUrl        String? // /uploads/products/xxx.jpg
+  labelPdfUrl     String? // PDF de etiqueta de producto (la que el usuario sube)
+  price           Float // precio de venta unitario (suelto)
+  packPrice       Float? // precio cuando va dentro de un pack; si null, usa price
   productionCost  Float    @default(0)
-  weightGrams     Float?   // gramos, para envíos
-  ingredients     String?  // texto libre, va en la etiqueta 2x1
+  weightGrams     Float? // gramos, para envíos
+  ingredients     String? // texto libre, va en la etiqueta 2x1
   shelfLifeMonths Int?     @default(6) // meses de vida útil por defecto
-  stock           Int      @default(0)  // stock manual (no se descuenta de packs)
+  stock           Int      @default(0) // stock manual (no se descuenta de packs)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -36,9 +36,9 @@ model Product {
   // algo se sigue vendiendo por WhatsApp mientras todavía no tiene fotos
   // buenas para publicarlo. Nace en false — a la tienda se sale a propósito,
   // no por olvido.
-  slug            String?  @unique // dirección pública: /jabon-de-carbon-activado
-  tagline         String?  // una línea, se lee debajo del nombre en el catálogo
-  isPublic        Boolean  @default(false)
+  slug     String? @unique // dirección pública: /jabon-de-carbon-activado
+  tagline  String? // una línea, se lee debajo del nombre en el catálogo
+  isPublic Boolean @default(false)
 
   /// Aparece en la selección de tres de la portada.
   ///
@@ -46,7 +46,7 @@ model Product {
   /// tres primeros por orden alfabético, y en una marca de jabones eso
   /// ponía el acondicionador y el agua micelar de cara. Cuáles merecen
   /// esa vitrina es una decisión de quien vende, no de un ORDER BY.
-  destacado       Boolean  @default(false)
+  destacado Boolean @default(false)
 
   variants        ProductVariant[]
   packItems       PackItem[]
@@ -54,14 +54,15 @@ model Product {
   productionUnits ProductionUnit[]
   recipes         Recipe[]
   storeImages     StoreImage[]
+  packaging       PackagingItem[]
 }
 
 model ProductVariant {
   id        String  @id @default(cuid())
   productId String
-  name      String  // ej "Lavanda", "Avena", "Tamaño grande"
+  name      String // ej "Lavanda", "Avena", "Tamaño grande"
   sku       String  @unique
-  price     Float?  // si null, hereda del producto
+  price     Float? // si null, hereda del producto
   stock     Int     @default(0)
   isActive  Boolean @default(true)
 
@@ -72,25 +73,26 @@ model ProductVariant {
 // ---------- Packs ----------
 
 model Pack {
-  id              String   @id @default(cuid())
-  sku             String   @unique
-  name            String
-  description     String?
-  imageUrl        String?
-  price           Float
-  productionCost  Float    @default(0)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  sku            String   @unique
+  name           String
+  description    String?
+  imageUrl       String?
+  price          Float
+  productionCost Float    @default(0)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // ── Tienda pública ── (ver la nota en Product)
-  slug     String?  @unique
+  slug     String? @unique
   tagline  String?
-  isPublic Boolean  @default(false)
+  isPublic Boolean @default(false)
 
   items       PackItem[]
   orderItems  OrderItem[]
   storeImages StoreImage[]
+  packaging   PackagingItem[]
 }
 
 /// Las fotos que ve el cliente en la tienda.
@@ -107,7 +109,7 @@ model StoreImage {
   productId String?
   packId    String?
 
-  url String  // /uploads/store/xxx.webp
+  url String // /uploads/store/xxx.webp
   /// Qué se ve en la foto. Lo lee quien navega sin ver, y también Google.
   alt String?
 
@@ -190,7 +192,7 @@ model ShippingZone {
   /// para un dato que se escribe una vez. La zona por defecto es la que
   /// recoge todo lo que no está en ninguna lista, así que dejarlo vacío es
   /// válido y quiere decir «esta zona es el resto del país».
-  cantones  String?
+  cantones String?
 
   rates     ShippingRate[]
   addresses ShippingAddress[]
@@ -201,7 +203,7 @@ model Carrier {
   id                  String   @id @default(cuid())
   name                String   @unique // "Servientrega", "Tramaco", "Laar"
   isActive            Boolean  @default(true)
-  trackingUrlTemplate String?  // ej: "https://www.servientrega.com.ec/Tracking/?guia={tracking}"
+  trackingUrlTemplate String? // ej: "https://www.servientrega.com.ec/Tracking/?guia={tracking}"
   createdAt           DateTime @default(now())
 
   rates  ShippingRate[]
@@ -212,7 +214,7 @@ model ShippingRate {
   id        String  @id @default(cuid())
   zoneId    String
   carrierId String
-  price     Float   // tarifa fija por envío
+  price     Float // tarifa fija por envío
   notes     String?
 
   zone    ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
@@ -226,9 +228,9 @@ model ShippingRate {
 model Customer {
   id           String   @id @default(cuid())
   name         String
-  cedula       String?  // cédula o RUC
-  phone        String?  // teléfono que va en la etiqueta de envío
-  contactPhone String?  // teléfono para WhatsApp / mensajes (puede ser distinto al de envío)
+  cedula       String? // cédula o RUC
+  phone        String? // teléfono que va en la etiqueta de envío
+  contactPhone String? // teléfono para WhatsApp / mensajes (puede ser distinto al de envío)
   email        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -243,7 +245,7 @@ model ShippingAddress {
   zoneId     String? // Quito / Fuera de Quito
   province   String
   city       String
-  address    String  // dirección principal
+  address    String // dirección principal
   reference  String? // referencia adicional
   isDefault  Boolean @default(false)
 
@@ -256,8 +258,8 @@ model ShippingAddress {
   ///
   /// Opcionales a propósito: quien no quiera marcar en el mapa compra
   /// igual. Un campo obligatorio de más en un checkout es una venta menos.
-  lat        Float?
-  lng        Float?
+  lat Float?
+  lng Float?
 
   /// Código postal, sacado del mapa.
   ///
@@ -267,7 +269,7 @@ model ShippingAddress {
   /// ahorra un paso en el mostrador.
   ///
   /// Opcional, como el punto: quien no marca en el mapa compra igual.
-  postal     String?
+  postal String?
 
   customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   zone     ShippingZone? @relation(fields: [zoneId], references: [id])
@@ -280,22 +282,22 @@ model ShippingAddress {
 // ---------- Pedidos ----------
 
 model Order {
-  id                 String      @id @default(cuid())
-  orderNumber        String      @unique // ej "LILUS-000123"
-  status             OrderStatus @default(PENDING)
-  customerId         String
-  shippingAddressId  String?
-  carrierId          String?
-  zoneId             String?
-  shippingCost       Float       @default(0)
-  subtotal           Float       @default(0)
-  total              Float       @default(0)
-  trackingNumber     String?     // guía de la transportadora
-  shippedAt          DateTime?   // cuándo se marcó como enviado
-  notes              String?
-  source             String?     // "WhatsApp", "Instagram", "Manual", "Web"...
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  orderNumber       String      @unique // ej "LILUS-000123"
+  status            OrderStatus @default(PENDING)
+  customerId        String
+  shippingAddressId String?
+  carrierId         String?
+  zoneId            String?
+  shippingCost      Float       @default(0)
+  subtotal          Float       @default(0)
+  total             Float       @default(0)
+  trackingNumber    String? // guía de la transportadora
+  shippedAt         DateTime? // cuándo se marcó como enviado
+  notes             String?
+  source            String? // "WhatsApp", "Instagram", "Manual", "Web"...
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   /// Dirección con la que el cliente ve su propio pedido, sin cuenta ni
   /// contraseña: /pedido/<token>.
@@ -308,15 +310,15 @@ model Order {
   ///
   /// Nulo en los pedidos que se cargan a mano desde el panel: esos no se
   /// comparten con nadie.
-  publicToken        String?     @unique
+  publicToken String? @unique
 
   /// Comprobante de la transferencia, subido por el cliente.
-  paymentProofUrl    String?
+  paymentProofUrl String?
 
-  customer        Customer         @relation(fields: [customerId], references: [id])
-  shippingAddress ShippingAddress? @relation(fields: [shippingAddressId], references: [id])
-  carrier         Carrier?         @relation(fields: [carrierId], references: [id])
-  zone            ShippingZone?    @relation(fields: [zoneId], references: [id])
+  customer        Customer            @relation(fields: [customerId], references: [id])
+  shippingAddress ShippingAddress?    @relation(fields: [shippingAddressId], references: [id])
+  carrier         Carrier?            @relation(fields: [carrierId], references: [id])
+  zone            ShippingZone?       @relation(fields: [zoneId], references: [id])
   items           OrderItem[]
   comprobantes    ComprobanteDePago[]
   productionUnits ProductionUnit[]
@@ -336,16 +338,16 @@ enum OrderStatus {
 }
 
 model OrderItem {
-  id          String  @id @default(cuid())
-  orderId     String
-  productId   String?
-  variantId   String?
-  packId      String?
-  itemName    String  // snapshot del nombre
-  itemSku     String  // snapshot del SKU
-  quantity    Int     @default(1)
-  unitPrice   Float
-  lineTotal   Float
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String?
+  variantId String?
+  packId    String?
+  itemName  String // snapshot del nombre
+  itemSku   String // snapshot del SKU
+  quantity  Int     @default(1)
+  unitPrice Float
+  lineTotal Float
 
   order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product?        @relation(fields: [productId], references: [id])
@@ -359,12 +361,12 @@ model ProductionUnit {
   id              String   @id @default(cuid())
   orderId         String
   productId       String
-  productName     String   // snapshot
-  productSku      String   // snapshot
-  batchCode       String   // lote: ej "L20260521-001"
+  productName     String // snapshot
+  productSku      String // snapshot
+  batchCode       String // lote: ej "L20260521-001"
   manufactureDate DateTime @default(now())
   expiryDate      DateTime // calculada en base a shelfLifeMonths
-  ingredients     String?  // snapshot
+  ingredients     String? // snapshot
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
@@ -373,8 +375,8 @@ model ProductionUnit {
 // ---------- Recetario ----------
 
 model Recipe {
-  id       String @id @default(cuid())
-  slug     String @unique
+  id       String  @id @default(cuid())
+  slug     String  @unique
   name     String
   // "base" | "jabon" | "crema" | "perfume" | "otro"
   category String
@@ -382,7 +384,17 @@ model Recipe {
   imageUrl String?
 
   // Ficha técnica
-  yield     String? // "250 g", "un frasco de 60 ml"
+  yield String? // "250 g", "un frasco de 60 ml"
+
+  /// Cuántas unidades VENDIBLES salen de una tanda.
+  ///
+  /// `yield` es para leer —"250 g de base"— y no sirve para dividir. Este
+  /// es el número que convierte el costo de la tanda en costo por producto,
+  /// y sale de mirar cuántas barras salieron de verdad, con las mermas
+  /// incluidas: de 500 g de base salen 5 jabones, así que una receta de
+  /// 250 g rinde 2,5.
+  unitsPerBatch Float?
+
   restTime  String? // "24 horas"
   container String? // "cajita de metal", "frasco ámbar"
   usage     String? // modo de uso
@@ -398,8 +410,8 @@ model Recipe {
   // Producto del catálogo que sale de esta receta, si existe
   productId String?
 
-  sortOrder Int     @default(0)
-  isActive  Boolean @default(true)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -415,12 +427,12 @@ model Recipe {
 }
 
 model RecipeIngredient {
-  id       String  @id @default(cuid())
-  recipeId String
-  name     String
-  quantity String? // "250 g", "4 gotas", "1/16 cucharadita"
-  note     String? // "disuelta en 1 cucharada de agua"
-  optional Boolean @default(false)
+  id        String  @id @default(cuid())
+  recipeId  String
+  name      String
+  quantity  String? // "250 g", "4 gotas", "1/16 cucharadita"
+  note      String? // "disuelta en 1 cucharada de agua"
+  optional  Boolean @default(false)
   // Agrupa ingredientes cuando la receta tiene variantes
   // (p. ej. las dos fórmulas de crema base)
   variant   String?
@@ -448,10 +460,20 @@ model RecipeIngredient {
   // Es lo que permite saltar de "glicerado de naranja" a su receta.
   linkedRecipeId String?
 
-  recipe       Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  linkedRecipe Recipe? @relation("IngredienteEsReceta", fields: [linkedRecipeId], references: [id], onDelete: SetNull)
+  /// La materia prima del inventario que corresponde a este ingrediente.
+  ///
+  /// `name` sigue siendo el texto que lee quien cocina —"Aceite esencial
+  /// de romero"— y este enlace es el que sabe cuánto cuesta ese frasco.
+  /// Se separan porque la receta se escribe en el idioma de la mesa de
+  /// trabajo y el inventario en el de la factura.
+  materialId String?
+
+  recipe       Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  linkedRecipe Recipe?   @relation("IngredienteEsReceta", fields: [linkedRecipeId], references: [id], onDelete: SetNull)
+  material     Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
 
   @@index([recipeId])
+  @@index([materialId])
 }
 
 model RecipeStep {
@@ -469,8 +491,8 @@ model RecipeStep {
 }
 
 model RecipeBenefit {
-  id       String  @id @default(cuid())
-  recipeId String
+  id         String  @id @default(cuid())
+  recipeId   String
   // Si viene, el beneficio es de un ingrediente concreto y se muestra
   // en tabla. Si es null, es un beneficio general de la receta.
   ingredient String?
@@ -504,7 +526,7 @@ model GlossaryTerm {
 
   /// "quimica" | "ingrediente" | "proceso" | "medida" | "seguridad"
   category  String
-  sortOrder Int    @default(0)
+  sortOrder Int     @default(0)
   isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -531,11 +553,11 @@ model Material {
   purpose      String? // para qué sirve en la fórmula
 
   // ── Datos técnicos, de la ficha del proveedor ──
-  usageMin     Float?  // % mínimo de uso
-  usageMax     Float?  // % máximo de uso
+  usageMin     Float? // % mínimo de uso
+  usageMax     Float? // % máximo de uso
   phMin        Float?
   phMax        Float?
-  maxTemp      Float?  // °C máxima a la que se puede agregar
+  maxTemp      Float? // °C máxima a la que se puede agregar
   solubility   String? // "agua" | "aceite" | "ambas" | "dispersable"
   leaveOn      Boolean? // apto para producto que se queda en la piel
   spectrum     String? // conservantes: contra qué protege
@@ -550,6 +572,14 @@ model Material {
   moistureSensitive Boolean @default(false)
   openedShelfLife   String? // vida útil una vez abierto
 
+  /// Gramos por mililitro.
+  ///
+  /// Hace falta porque se compra en litros y se cocina en gramos: el agua
+  /// destilada cuesta $1 el litro y la receta pide 700 g. Sin esto, un
+  /// litro de glicerina (1.260 g) contaría como 1.000 g y el costo saldría
+  /// 26 % alto. Vacío = se asume 1, que es correcto para el agua.
+  density Float?
+
   notes     String?
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)
@@ -558,8 +588,48 @@ model Material {
 
   lots          MaterialLot[]
   shoppingItems ShoppingItem[]
+  recipeUses    RecipeIngredient[]
+  packagingUses PackagingItem[]
 
   @@index([category])
+}
+
+/// El empaque de un producto o de un pack.
+///
+/// Va aparte de la receta a propósito: el papel film no es un ingrediente
+/// del jabón y no tiene por qué aparecer en la lista que se lee al
+/// cocinar. Pero sí es parte de lo que cuesta tener el producto listo para
+/// vender, así que entra en el costo.
+///
+/// Cuelga de un producto O de un pack — el mismo patrón que usan OrderItem
+/// y StoreImage:
+///
+///   - Del producto va lo que lo acompaña siempre, se venda suelto o
+///     dentro de un pack: el film del jabón, el frasco del agua micelar.
+///   - Del pack va lo que solo existe cuando se arma el pack: la caja, el
+///     papel kraft, la toalla.
+///
+/// Si el frasco se cargara al pack, el agua micelar suelta quedaría sin
+/// frasco en el costo y el pack lo pagaría dos veces.
+model PackagingItem {
+  id         String  @id @default(cuid())
+  productId  String?
+  packId     String?
+  materialId String
+
+  quantity Float // cuánto se usa por unidad de producto o por pack
+  unit     String // "unidad" | "g" | "ml" | "m"
+
+  notes     String?
+  createdAt DateTime @default(now())
+
+  product  Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pack     Pack?    @relation(fields: [packId], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@index([productId])
+  @@index([packId])
+  @@index([materialId])
 }
 
 /// Cada compra de una materia prima. Es lo que permite responder
@@ -670,7 +740,7 @@ model TrustedDevice {
   userId      String
   token       String    @unique // valor del cookie del dispositivo
   pinHash     String
-  name        String?   // ej "iPhone de María"
+  name        String? // ej "iPhone de María"
   lastSeenAt  DateTime  @default(now())
   failedTries Int       @default(0)
   lockedUntil DateTime?
@@ -687,17 +757,17 @@ model TrustedDevice {
 
 model PrintJob {
   id          String         @id @default(cuid())
-  orderId     String?        // pedido del que viene (puede ser null para pruebas)
-  kind        String         // "shipping" | "product-labels" | "expiry-labels" | "box-logo"
-  printerName String         // nombre de la impresora destino en Windows
+  orderId     String? // pedido del que viene (puede ser null para pruebas)
+  kind        String // "shipping" | "product-labels" | "expiry-labels" | "box-logo"
+  printerName String // nombre de la impresora destino en Windows
   copies      Int            @default(1)
-  pdfBase64   String         // PDF a imprimir, encodeado
+  pdfBase64   String // PDF a imprimir, encodeado
   status      PrintJobStatus @default(PENDING)
   error       String?
-  agentName   String?        // qué PC lo agarró, para poder rastrearlo después
+  agentName   String? // qué PC lo agarró, para poder rastrearlo después
   createdAt   DateTime       @default(now())
-  pickedAt    DateTime?      // cuando el agente lo agarró
-  finishedAt  DateTime?      // cuando reportó done/failed
+  pickedAt    DateTime? // cuando el agente lo agarró
+  finishedAt  DateTime? // cuando reportó done/failed
 }
 
 /// Cada PC que tiene el agente instalado.
@@ -737,9 +807,9 @@ enum PrintJobStatus {
 /// Caducan solas: si alguien desinstala la app o limpia el navegador, el
 /// servicio de push responde 404 o 410 y la fila se borra en ese momento.
 model PushSubscription {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   userId   String
-  endpoint String @unique
+  endpoint String  @unique
   p256dh   String // clave pública del navegador, para cifrar el aviso
   auth     String // secreto de autenticación del navegador
   /// Para que se reconozca en la lista: "Chrome en Android".
@@ -765,12 +835,12 @@ model PushSubscription {
 /// eso la app lo vuelve a registrar cada vez que arranca, y por eso el
 /// token es la llave: registrar dos veces actualiza, no duplica.
 model DispositivoMovil {
-  id     String @id @default(cuid())
-  userId String
+  id      String  @id @default(cuid())
+  userId  String
   /// El registration token de Firebase.
-  token  String @unique
+  token   String  @unique
   /// Para reconocerlo en la lista: "Poco X6 Pro".
-  modelo String?
+  modelo  String?
   /// Versión de la app, para saber a quién hay que actualizar.
   version String?
 
@@ -821,12 +891,12 @@ model IntentoDeEntrada {
 /// Guardado en la base, el mensaje existe pase lo que pase. El aviso por
 /// correo se suma cuando esté configurado, pero no es lo que lo sostiene.
 model MensajeDeContacto {
-  id       String  @id @default(cuid())
-  nombre   String
-  correo   String
-  mensaje  String
+  id      String  @id @default(cuid())
+  nombre  String
+  correo  String
+  mensaje String
   /// Se marca al leerlo, para saber cuáles faltan por contestar.
-  leido    Boolean @default(false)
+  leido   Boolean @default(false)
 
   createdAt DateTime @default(now())
 
@@ -867,14 +937,14 @@ model ComprobanteDePago {
   /// tener el número en texto para pegarlo en el buscador del banco, y
   /// detectar el mismo comprobante usado en dos pedidos — que es la
   /// estafa más común y la más fácil de pillar.
-  montoLeido   Float?
-  numeroLeido  String?
-  fechaLeida   String?
-  bancoLeido   String?
+  montoLeido  Float?
+  numeroLeido String?
+  fechaLeida  String?
+  bancoLeido  String?
   /// El texto crudo, para poder revisar por qué se leyó mal.
-  textoLeido   String?
+  textoLeido  String?
   /// Cuándo terminó de leerse. Nulo mientras está en cola o si falló.
-  leidoEn      DateTime?
+  leidoEn     DateTime?
 
   /// ── Lo que dijo una persona ──
   ///

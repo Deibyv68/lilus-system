@@ -17,6 +17,7 @@ import {
   BookMarked,
   FlaskConical,
   Clapperboard,
+  Calculator,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ const links = [
   { href: "/sistema/inventario", label: "Inventario", icon: FlaskConical, description: "Materias primas, lotes y listas de compra" },
   { href: "/sistema/diccionario", label: "Diccionario", icon: BookMarked, description: "Qué significa cada palabra del recetario" },
   { href: "/sistema/audiovisual", label: "Audiovisual", icon: Clapperboard, description: "Estrategia, guiones y plan de rodaje para redes" },
+  { href: "/sistema/costos", label: "Costos", icon: Calculator, description: "Cuánto cuesta producir cada producto y cuánto margen deja" },
   { href: "/sistema/etiquetas", label: "Imprimir etiquetas", icon: Printer, description: "Imprimir etiquetas sueltas sin pedido" },
   { href: "/sistema/packs", label: "Packs", icon: Boxes, description: "Paquetes que agrupan productos" },
   { href: "/sistema/clientes", label: "Clientes", icon: Users, description: "Historial de personas que han comprado" },
