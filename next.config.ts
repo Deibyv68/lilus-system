@@ -53,6 +53,30 @@ const nextConfig: NextConfig = {
     */
     ...(soloTienda ? [] : ["tesseract.js"]),
   ],
+  /*
+    Archivos que el rastreador de Next no copia y hacen falta igual.
+
+    `@libsql/isomorphic-ws` elige su archivo segun donde corra: bajo Node
+    usa `node.mjs` y bajo Cloudflare `web.mjs`. Next rastrea con las
+    reglas de Node, asi que solo copia `node.mjs` — y luego el
+    empaquetador de Cloudflare busca `web.mjs`, no lo encuentra, y el
+    build se cae.
+
+    El modulo ni siquiera se usa: hablamos con Turso por HTTP y no se abre
+    ningun websocket. Pero esta importado arriba del todo en la libreria,
+    y un import que no se resuelve rompe el build igual.
+
+    Solo hace falta en el build de la nube; en la laptop `node.mjs` ya es
+    el correcto.
+  */
+  ...(soloTienda
+    ? {
+        outputFileTracingIncludes: {
+          "/**": ["./node_modules/@libsql/isomorphic-ws/**"],
+        },
+      }
+    : {}),
+
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
