@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/guard";
 import { anotarComprobante } from "@/lib/anotar-comprobante";
 import {
   borrarArchivoDeComprobante,
-  carpetaDeComprobantes,
+  leerComprobante,
 } from "@/lib/comprobantes";
 import { leerComprobanteConOcr } from "@/lib/leer-comprobante";
 import { cuentasDeCobro } from "@/lib/tienda";
@@ -339,8 +338,14 @@ export async function releerComprobanteAction(id: string): Promise<Resultado> {
   after(async () => {
     try {
       const cuentas = await cuentasDeCobro();
+      /*
+        Los bytes, no una ruta: el comprobante puede haber llegado a R2
+        desde la tienda, y entonces no hay archivo que abrir en este disco.
+      */
+      const archivo = await leerComprobante(comprobante.archivo);
+      if (!archivo) return;
       const lectura = await leerComprobanteConOcr(
-        path.join(carpetaDeComprobantes(), comprobante.archivo),
+        Buffer.from(archivo.bytes),
         cuentas.map((c) => c.banco)
       );
 

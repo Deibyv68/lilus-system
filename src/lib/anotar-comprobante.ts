@@ -1,8 +1,7 @@
 import "server-only";
-import path from "node:path";
 import { after } from "next/server";
 import { prisma } from "./prisma";
-import { guardarComprobante, carpetaDeComprobantes } from "./comprobantes";
+import { guardarComprobante, leerComprobante } from "./comprobantes";
 import { leerComprobanteConOcr } from "./leer-comprobante";
 import { cuentasDeCobro } from "./tienda";
 
@@ -89,8 +88,14 @@ export async function anotarArchivoGuardado(
           saberlos convierte una adivinanza en una resta.
         */
         const cuentas = await cuentasDeCobro();
+        /*
+          Los bytes, no una ruta: el comprobante puede haber llegado a R2
+          desde la tienda, y entonces no hay archivo en este disco.
+        */
+        const archivo = await leerComprobante(guardado.archivo);
+        if (!archivo) return;
         const lectura = await leerComprobanteConOcr(
-          path.join(carpetaDeComprobantes(), guardado.archivo),
+          Buffer.from(archivo.bytes),
           cuentas.map((c) => c.banco)
         );
         if (!lectura) return;

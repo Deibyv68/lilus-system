@@ -1,5 +1,4 @@
 import "server-only";
-import nodemailer from "nodemailer";
 
 /**
  * Envío de correo.
@@ -16,12 +15,33 @@ import nodemailer from "nodemailer";
  * anota en el log del servidor y la vida sigue: el pedido está guardado,
  * que es lo que importa. Se avisa a mano y ya.
  *
+ * ── Dos formas de mandarlo, y por qué se prefiere la de arriba ──
+ *
+ * Por HTTP contra la API de Resend, o por SMTP con nodemailer.
+ *
+ * Se prefiere HTTP siempre que haya clave, incluso en la laptop donde
+ * SMTP funciona perfectamente. El motivo no es que sea mejor: es que
+ * Cloudflare Workers no puede abrir una conexión SMTP, y ahí es donde va
+ * a vivir la tienda. Si la laptop mandara por SMTP y la nube por HTTP,
+ * el camino que corre en producción sería justo el que nunca probamos.
+ * Un solo camino, ejercitado todos los días.
+ *
+ * SMTP se queda para quien configure un servidor que no sea Resend.
+ * Se carga solo si se usa: nodemailer es código de Node y no tiene nada
+ * que hacer dentro del paquete que se sube a la nube.
+ *
  * ── Configuración ──
  *
  * Se configura por variables de entorno. Si no están, el sistema no se
  * rompe: no manda nada y lo dice en el log. Eso permite trabajar en local
  * sin cuenta de correo, y permite que la tienda funcione desde el primer
  * día aunque el correo se configure la semana que viene.
+ *
+ *   RESEND_API_KEY=re_...            # el camino preferido
+ *   MAIL_FROM="LILUS <contacto@liluscare.com>"
+ *   MAIL_ADMIN=...                   # a dónde llegan los avisos de venta
+ *
+ * O, para un servidor cualquiera:
  *
  *   SMTP_HOST=smtp.gmail.com
  *   SMTP_PORT=587
@@ -56,7 +76,7 @@ type Mensaje = {
   adjuntos?: Adjunto[];
 };
 
-function configuracion() {
+function configuracionSmtp() {
   const host = process.env.SMTP_HOST;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
@@ -74,13 +94,55 @@ function configuracion() {
   };
 }
 
-/** A dónde llegan los avisos de venta. Sin esto no se avisa a nadie. */
+/**
+ * La clave de la API de Resend, si la hay.
+ *
+ * Acepta que llegue como `SMTP_PASS` cuando el servidor configurado es el
+ * de Resend, y no es un truco: al usar Resend por SMTP, la contraseña ES
+ * la clave de la API, la misma cadena `re_...`. Reconocerla evita tener
+ * el mismo secreto escrito dos veces en el mismo archivo, que es como
+ * empiezan las rotaciones a medias.
+ */
+function claveDeResend(): string | null {
+  const directa = process.env.RESEND_API_KEY?.trim();
+  if (directa) return directa;
+
+  const host = process.env.SMTP_HOST?.trim().toLowerCase() ?? "";
+  const pass = process.env.SMTP_PASS?.trim();
+  if (host.endsWith("resend.com") && pass?.startsWith("re_")) return pass;
+
+  return null;
+}
+
+function remitente(): string {
+  return process.env.MAIL_FROM ?? `LILUS <${process.env.SMTP_USER ?? "no-reply"}>`;
+}
+
+/**
+ * Bytes a base64, sin depender de `Buffer`.
+ *
+ * `Buffer` existe en Node y también en Workers con la compatibilidad
+ * encendida, pero esto son seis líneas y no dependen de que esa
+ * compatibilidad siga encendida dentro de un año.
+ *
+ * Va por trozos porque `String.fromCharCode` con un array de varios
+ * megas revienta la pila, y los comprobantes en PDF pesan lo suyo.
+ */
+function aBase64(bytes: Uint8Array): string {
+  let binario = "";
+  const TROZO = 0x8000;
+  for (let i = 0; i < bytes.length; i += TROZO) {
+    binario += String.fromCharCode(...bytes.subarray(i, i + TROZO));
+  }
+  return btoa(binario);
+}
+
 export function correoDeAdmin(): string | null {
   return process.env.MAIL_ADMIN ?? process.env.SMTP_USER ?? null;
 }
 
 export function correoConfigurado(): boolean {
-  return configuracion() !== null;
+  return claveDeResend() !== null || configuracionSmtp() !== null;
 }
 
 /**
@@ -89,15 +151,73 @@ export function correoConfigurado(): boolean {
  * No lanza nunca. Ver la nota de arriba.
  */
 export async function enviarCorreo(m: Mensaje): Promise<boolean> {
-  const cfg = configuracion();
-  if (!cfg) {
-    console.warn(
-      `[correo] Sin configurar (falta SMTP_HOST/USER/PASS). No se envió «${m.asunto}» a ${m.para}.`
-    );
+  const clave = claveDeResend();
+  if (clave) return porHttp(m, clave);
+
+  const cfg = configuracionSmtp();
+  if (cfg) return porSmtp(m, cfg);
+
+  console.warn(
+    `[correo] Sin configurar (falta RESEND_API_KEY o SMTP_HOST/USER/PASS). No se envió «${m.asunto}» a ${m.para}.`
+  );
+  return false;
+}
+
+/** Por la API de Resend. El camino que también funciona en la nube. */
+async function porHttp(m: Mensaje, clave: string): Promise<boolean> {
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${clave}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: remitente(),
+        to: [m.para],
+        subject: m.asunto,
+        html: m.html,
+        text: m.texto,
+        attachments: m.adjuntos?.map((a) => ({
+          filename: a.nombre,
+          content: aBase64(a.contenido),
+          content_type: a.tipo,
+        })),
+      }),
+    });
+
+    if (!r.ok) {
+      /*
+        El cuerpo del error dice qué pasó —dominio sin verificar, clave
+        revocada, destinatario rechazado— y sin él solo queda un número.
+        Se lee entero: son unos cientos de bytes y es lo único que va a
+        haber cuando alguien pregunte por qué no llegó un correo.
+      */
+      console.error(
+        `[correo] Resend rechazó «${m.asunto}» a ${m.para}: ${r.status} ${await r.text()}`
+      );
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error(`[correo] No salió «${m.asunto}» a ${m.para}:`, e);
     return false;
   }
+}
 
+/** Por SMTP, para un servidor que no sea Resend. Solo corre en la laptop. */
+async function porSmtp(
+  m: Mensaje,
+  cfg: NonNullable<ReturnType<typeof configuracionSmtp>>
+): Promise<boolean> {
   try {
+    /*
+      Se carga aquí y no arriba a propósito: nodemailer es código de Node,
+      y cargándolo arriba viajaría dentro del paquete que se sube a
+      Cloudflare aunque allí no se pueda usar.
+    */
+    const { default: nodemailer } = await import("nodemailer");
+
     const transporte = nodemailer.createTransport({
       host: cfg.host,
       port: cfg.port,

@@ -22,6 +22,7 @@
     "@prisma/adapter-libsql": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "@react-pdf/renderer": "^4.5.1",
+    "aws4fetch": "^1.0.20",
     "bcryptjs": "^3.0.3",
     "bwip-js": "^4.10.1",
     "class-variance-authority": "^0.7.1",

@@ -1,8 +1,7 @@
 import "server-only";
-import { rm, mkdir, writeFile, stat } from "node:fs/promises";
-import { createReadStream } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
+import { guardar, leer, borrar } from "./almacen";
 
 /**
  * Dónde viven los comprobantes de pago.
@@ -24,29 +23,15 @@ import path from "node:path";
  * Viviendo fuera de `public`, no hay forma de llegar a ellos salvo por la
  * ruta que los protege.
  *
- * ── Por qué junto a la base ──
+ * ── Dónde acaban ──
  *
- * Se guardan al lado del archivo de la base de datos, sacando la carpeta
- * de `DATABASE_URL`. Así cualquier respaldo de esa carpeta se los lleva
- * también: separar el comprobante del pedido al que pertenece sería
- * guardar la mitad de la prueba de un pago.
+ * Eso lo decide `almacen.ts`. En la laptop, junto al archivo de la base,
+ * para que cualquier respaldo de esa carpeta se los lleve: separar el
+ * comprobante del pedido al que pertenece sería guardar la mitad de la
+ * prueba de un pago. En la nube, en R2, bajo el prefijo `comprobantes/`.
+ *
+ * Aquí solo se decide qué se acepta y con qué nombre se guarda.
  */
-
-function carpetaDeDatos(): string {
-  const url = process.env.DATABASE_URL ?? "";
-  const archivo = url.replace(/^file:/, "").trim();
-
-  if (archivo.startsWith("/") || /^[a-zA-Z]:/.test(archivo)) {
-    return path.dirname(archivo);
-  }
-
-  // Ruta relativa: Prisma las resuelve desde `prisma/`, no desde la raíz.
-  return path.resolve(process.cwd(), "prisma", path.dirname(archivo || "."));
-}
-
-export function carpetaDeComprobantes(): string {
-  return path.join(carpetaDeDatos(), "comprobantes");
-}
 
 const TIPOS: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -83,9 +68,6 @@ export async function guardarComprobante(
     throw new Error("El archivo pesa más de 8 MB. Manda una foto más liviana.");
   }
 
-  const carpeta = carpetaDeComprobantes();
-  await mkdir(carpeta, { recursive: true });
-
   /*
     El nombre lo pone el servidor, nunca quien sube.
 
@@ -93,8 +75,11 @@ export async function guardarComprobante(
     donde no debe. Con un UUID no hay nada que sanear.
   */
   const archivo = `${randomUUID()}.${extension}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(carpeta, archivo), bytes);
+  await guardar(
+    clave(archivo),
+    new Uint8Array(await file.arrayBuffer()),
+    file.type
+  );
 
   return { archivo, tipo: file.type, bytes: file.size };
 }
@@ -106,24 +91,7 @@ export async function guardarComprobante(
  * la página del pedido.
  */
 export async function leerComprobante(archivo: string) {
-  /*
-    Solo el nombre, sin carpetas.
-
-    `path.basename` corta cualquier intento de salir de la carpeta con
-    `../`. Aunque el nombre venga de la base y lo hayamos puesto nosotros,
-    esto es de las cosas que no cuestan nada y evitan que un cambio futuro
-    abra un agujero sin que nadie se dé cuenta.
-  */
-  const limpio = path.basename(archivo);
-  const destino = path.join(carpetaDeComprobantes(), limpio);
-
-  try {
-    const info = await stat(destino);
-    if (!info.isFile()) return null;
-    return { flujo: createReadStream(destino), bytes: info.size };
-  } catch {
-    return null;
-  }
+  return leer(clave(archivo));
 }
 
 /**
@@ -137,5 +105,17 @@ export async function leerComprobante(archivo: string) {
 export async function borrarArchivoDeComprobante(archivo: string) {
   if (!archivo || archivo.includes("/") || archivo.includes("\\")) return;
   if (archivo.includes("..")) return;
-  await rm(path.join(carpetaDeComprobantes(), archivo), { force: true });
+  await borrar(clave(archivo));
+}
+
+/**
+ * La clave del archivo dentro del almacén.
+ *
+ * `path.basename` corta cualquier intento de salir de la carpeta con
+ * `../`. Aunque el nombre venga de la base y lo hayamos puesto nosotros,
+ * esto no cuesta nada y evita que un cambio futuro abra un agujero sin
+ * que nadie se dé cuenta.
+ */
+function clave(archivo: string): string {
+  return `comprobantes/${path.basename(archivo)}`;
 }
