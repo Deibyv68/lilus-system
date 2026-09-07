@@ -1,14 +1,5 @@
-import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { guardar } from "./almacen";
-
-/*
-  La raíz en disco, para la ruta que sirve estos archivos.
-
-  Sigue existiendo porque cuando el almacén es el disco esa ruta lee
-  directamente de ahí. Con R2 no se usa: el almacén resuelve la clave.
-*/
-export const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads");
 
 const ALLOWED_IMAGE = new Set([
   "image/jpeg",
