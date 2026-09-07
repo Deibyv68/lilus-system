@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSQL } from "@prisma/adapter-libsql";
+import { PrismaLibSQL } from "@prisma/adapter-libsql/web";
 
 /**
  * La conexión a la base.
@@ -42,6 +42,20 @@ function crear(): PrismaClient {
     Es lo que permite que esto corra donde no se pueden ejecutar binarios
     —Cloudflare Workers—, y de paso es el mismo código en la laptop: una
     sola forma de conectarse, no dos que se van separando con el tiempo.
+
+    ── Por qué la entrada `/web` y no la normal ──
+
+    La normal usa una conexión que se mantiene abierta. En un Worker eso
+    no vale: se levanta, atiende unas peticiones y se muere, y esa
+    conexión queda inservible SIN dar error. Lo que se ve entonces no es
+    un fallo sino un cuelgue, hasta que Cloudflare corta la petición — y
+    encima funciona un rato tras cada despliegue, mientras el Worker está
+    recién nacido, que es lo que hace buscar el problema donde no está.
+
+    La de `/web` manda cada consulta por su cuenta, sin nada que
+    mantener abierto. En la laptop funciona igual de bien: también habla
+    con Turso por red. Una entrada para los dos sitios, en vez de una
+    condición que solo se ejercita en uno.
   */
   return new PrismaClient({ adapter: new PrismaLibSQL({ url, authToken }) });
 }

@@ -23,22 +23,6 @@ const soloTienda = process.env.SOLO_TIENDA === "1";
 */
 const NATIVOS = ["sharp", "tesseract.js", "pdf-to-png-converter", "pdfjs-dist", "@napi-rs/canvas"];
 
-/*
-  El adaptador de Prisma tiene dos versiones y hay que elegir la buena.
-
-  `@prisma/adapter-libsql` resuelve siempre a su build de Node, que habla
-  con la base por una conexion que se mantiene abierta. En un Worker eso
-  no vale: los Workers se levantan, atienden varias peticiones y se
-  mueren, y esa conexion queda inservible sin avisar. El sintoma es feo
-  porque no da error: las paginas dinamicas se quedan colgadas hasta que
-  Cloudflare corta la peticion, y encima funciona un rato despues de cada
-  despliegue —mientras el Worker esta recien nacido—, que es justo lo que
-  hace pensar que el problema esta en otro sitio.
-
-  La entrada `/web` del mismo paquete usa peticiones sueltas, sin nada que
-  mantener abierto. Es la que corresponde aqui.
-*/
-const ADAPTADOR = { "@prisma/adapter-libsql": "@prisma/adapter-libsql/web" };
 /* Relativo a la raíz de Turbopack: una ruta absoluta la lee como
    «./home/...» y no encuentra nada. */
 const HUECO = "./cloud/nativo-ausente.js";
@@ -98,12 +82,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
     ...(soloTienda
-      ? {
-          resolveAlias: {
-            ...Object.fromEntries(NATIVOS.map((m) => [m, HUECO])),
-            ...ADAPTADOR,
-          },
-        }
+      ? { resolveAlias: Object.fromEntries(NATIVOS.map((m) => [m, HUECO])) }
       : {}),
   },
 };
